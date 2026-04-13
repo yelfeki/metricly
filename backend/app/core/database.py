@@ -35,13 +35,15 @@ async def run_migrations() -> None:
     no-op (column already exists) doesn't roll back the others.
     """
     migrations = [
-        # Survey builder columns added in v0.2
+        # v0.2 — survey builder columns
         "ALTER TABLE surveys ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'draft'",
         "ALTER TABLE questions ADD COLUMN IF NOT EXISTS question_type VARCHAR(50) NOT NULL DEFAULT 'likert_5'",
         "ALTER TABLE questions ADD COLUMN IF NOT EXISTS options TEXT",
         "ALTER TABLE answers ADD COLUMN IF NOT EXISTS value TEXT NOT NULL DEFAULT ''",
-        # Make score nullable so non-Likert answers can omit it
         "ALTER TABLE answers ALTER COLUMN score DROP NOT NULL",
+        # v0.3 — per-user survey ownership (references auth.users via UUID stored as text)
+        "ALTER TABLE surveys ADD COLUMN IF NOT EXISTS user_id VARCHAR(36)",
+        "CREATE INDEX IF NOT EXISTS ix_surveys_user_id ON surveys (user_id)",
     ]
     for stmt in migrations:
         try:

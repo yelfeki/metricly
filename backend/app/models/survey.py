@@ -32,6 +32,9 @@ class Survey(Base):
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="draft"
     )  # 'draft' | 'published'
+    user_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, index=True
+    )  # Supabase auth.users UUID; NULL on legacy rows
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False
     )

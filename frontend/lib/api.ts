@@ -10,13 +10,33 @@ import type {
 export type { CronbachAlphaResponse }
 
 // ---------------------------------------------------------------------------
-// Base fetch wrapper
+// Auth token provider
+// Set once by AuthProvider; all fetch wrappers call it automatically.
 // ---------------------------------------------------------------------------
 
-async function post<T>(path: string, body: unknown): Promise<T> {
+type TokenProvider = () => Promise<string | null>
+let _tokenProvider: TokenProvider | null = null
+
+export function setTokenProvider(provider: TokenProvider) {
+  _tokenProvider = provider
+}
+
+async function authHeader(): Promise<Record<string, string>> {
+  if (!_tokenProvider) return {}
+  const token = await _tokenProvider()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+// ---------------------------------------------------------------------------
+// Base fetch wrappers
+// ---------------------------------------------------------------------------
+
+async function post<T>(path: string, body: unknown, auth = true): Promise<T> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" }
+  if (auth) Object.assign(headers, await authHeader())
   const res = await fetch(path, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   })
   if (!res.ok) {
@@ -30,8 +50,10 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(path, { cache: "no-store" })
+async function get<T>(path: string, auth = true): Promise<T> {
+  const headers: Record<string, string> = {}
+  if (auth) Object.assign(headers, await authHeader())
+  const res = await fetch(path, { cache: "no-store", headers })
   if (!res.ok) {
     const payload = await res.json().catch(() => ({}))
     throw new Error(
@@ -43,10 +65,12 @@ async function get<T>(path: string): Promise<T> {
   return res.json() as Promise<T>
 }
 
-async function patch<T>(path: string, body: unknown): Promise<T> {
+async function patch<T>(path: string, body: unknown, auth = true): Promise<T> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" }
+  if (auth) Object.assign(headers, await authHeader())
   const res = await fetch(path, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   })
   if (!res.ok) {
@@ -60,25 +84,28 @@ async function patch<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
-async function del(path: string): Promise<void> {
-  const res = await fetch(path, { method: "DELETE" })
+async function del(path: string, auth = true): Promise<void> {
+  const headers: Record<string, string> = {}
+  if (auth) Object.assign(headers, await authHeader())
+  const res = await fetch(path, { method: "DELETE", headers })
   if (!res.ok && res.status !== 204) {
     throw new Error(`Request failed with status ${res.status}`)
   }
 }
 
 // ---------------------------------------------------------------------------
-// Psychometric engine
+// Psychometric engine (no auth required)
 // ---------------------------------------------------------------------------
 
 export function runCronbachAlpha(
   items: number[][],
   scaleName?: string
 ): Promise<CronbachAlphaResponse> {
-  return post<CronbachAlphaResponse>("/api/v1/reliability/cronbach-alpha", {
-    items,
-    scale_name: scaleName || null,
-  })
+  return post<CronbachAlphaResponse>(
+    "/api/v1/reliability/cronbach-alpha",
+    { items, scale_name: scaleName || null },
+    false
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -147,7 +174,7 @@ export const deleteQuestion = (id: string): Promise<void> =>
   del(`/api/v1/questions/${id}`)
 
 // ---------------------------------------------------------------------------
-// Responses
+// Responses  (public — no auth header)
 // ---------------------------------------------------------------------------
 
 export interface AnswerPayload {
@@ -161,7 +188,7 @@ export interface ResponsePayload {
 }
 
 export const submitResponse = (surveyId: string, body: ResponsePayload): Promise<ResponseOut> =>
-  post(`/api/v1/surveys/${surveyId}/responses`, body)
+  post(`/api/v1/surveys/${surveyId}/responses`, body, false)
 
 // ---------------------------------------------------------------------------
 // Results

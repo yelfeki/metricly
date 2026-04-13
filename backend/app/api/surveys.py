@@ -3,12 +3,14 @@
 import json
 import math
 from collections import defaultdict
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from ..core.auth import AuthUser, optional_user, require_user
 from ..core.database import get_db
 from ..models.survey import Answer, Question, Response, Survey
 from ..schemas.reliability import CronbachAlphaRequest, CronbachAlphaResponse
@@ -32,7 +34,7 @@ question_router = APIRouter(prefix="/questions", tags=["questions"])
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Internal helpers
 # ---------------------------------------------------------------------------
 
 
@@ -55,6 +57,12 @@ async def _get_survey_or_404(survey_id: str, db: AsyncSession) -> Survey:
     if survey is None:
         raise HTTPException(status_code=404, detail="Survey not found")
     return survey
+
+
+def _assert_owner(survey: Survey, user_id: str) -> None:
+    """Raise 403 if the authenticated user does not own the survey."""
+    if survey.user_id != user_id:
+        raise HTTPException(status_code=403, detail="You do not have access to this survey.")
 
 
 async def _response_count(survey_id: str, db: AsyncSession) -> int:
@@ -167,7 +175,6 @@ def _compute_question_stat(question: Question, answers: list[Answer]) -> Questio
             except (json.JSONDecodeError, TypeError):
                 pass
 
-        # Preserve the original option order from the question definition
         try:
             original_order: list[str] = json.loads(question.options or "[]")
         except (json.JSONDecodeError, TypeError):
@@ -201,21 +208,24 @@ def _compute_question_stat(question: Question, answers: list[Answer]) -> Questio
 
 
 # ---------------------------------------------------------------------------
-# Survey CRUD
+# Survey CRUD  (all require auth; scoped to owner)
 # ---------------------------------------------------------------------------
 
 
 @survey_router.post("", response_model=SurveyOut, status_code=201)
 async def create_survey(
-    body: SurveyCreate, db: AsyncSession = Depends(get_db)
+    body: SurveyCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
 ) -> SurveyOut:
     survey = Survey(
         name=body.name,
         description=body.description,
         status=body.status,
+        user_id=current_user.user_id,
     )
     db.add(survey)
-    await db.flush()  # assigns survey.id
+    await db.flush()
 
     for q in body.questions:
         db.add(Question(
@@ -233,7 +243,10 @@ async def create_survey(
 
 
 @survey_router.get("", response_model=list[SurveyListItem])
-async def list_surveys(db: AsyncSession = Depends(get_db)) -> list[SurveyListItem]:
+async def list_surveys(
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> list[SurveyListItem]:
     count_subq = (
         select(Response.survey_id, func.count(Response.id).label("cnt"))
         .group_by(Response.survey_id)
@@ -242,6 +255,7 @@ async def list_surveys(db: AsyncSession = Depends(get_db)) -> list[SurveyListIte
     stmt = (
         select(Survey, func.coalesce(count_subq.c.cnt, 0).label("response_count"))
         .outerjoin(count_subq, count_subq.c.survey_id == Survey.id)
+        .where(Survey.user_id == current_user.user_id)
         .order_by(Survey.created_at.desc())
     )
     rows = (await db.execute(stmt)).all()
@@ -259,17 +273,35 @@ async def list_surveys(db: AsyncSession = Depends(get_db)) -> list[SurveyListIte
 
 
 @survey_router.get("/{survey_id}", response_model=SurveyOut)
-async def get_survey(survey_id: str, db: AsyncSession = Depends(get_db)) -> SurveyOut:
+async def get_survey(
+    survey_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: Optional[AuthUser] = Depends(optional_user),
+) -> SurveyOut:
+    """
+    Public for published surveys (respondents need it).
+    Draft surveys are only visible to their owner.
+    """
     survey = await _get_survey_or_404(survey_id, db)
+
+    is_owner = current_user is not None and survey.user_id == current_user.user_id
+    if survey.status != "published" and not is_owner:
+        raise HTTPException(status_code=404, detail="Survey not found")
+
     cnt = await _response_count(survey_id, db)
     return _survey_out(survey, cnt)
 
 
 @survey_router.patch("/{survey_id}", response_model=SurveyOut)
 async def update_survey(
-    survey_id: str, body: SurveyUpdate, db: AsyncSession = Depends(get_db)
+    survey_id: str,
+    body: SurveyUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
 ) -> SurveyOut:
     survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+
     if body.name is not None:
         survey.name = body.name
     if body.description is not None:
@@ -283,22 +315,32 @@ async def update_survey(
 
 
 @survey_router.delete("/{survey_id}", status_code=204)
-async def delete_survey(survey_id: str, db: AsyncSession = Depends(get_db)) -> None:
+async def delete_survey(
+    survey_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> None:
     survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
     await db.delete(survey)
     await db.commit()
 
 
 # ---------------------------------------------------------------------------
-# Question management
+# Question management  (owner only)
 # ---------------------------------------------------------------------------
 
 
 @survey_router.post("/{survey_id}/questions", response_model=QuestionOut, status_code=201)
 async def add_question(
-    survey_id: str, body: QuestionCreate, db: AsyncSession = Depends(get_db)
+    survey_id: str,
+    body: QuestionCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
 ) -> QuestionOut:
-    await _get_survey_or_404(survey_id, db)
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+
     q = Question(
         survey_id=survey_id,
         text=body.text,
@@ -312,13 +354,29 @@ async def add_question(
     return QuestionOut.model_validate(q)
 
 
-@question_router.patch("/{question_id}", response_model=QuestionOut)
-async def update_question(
-    question_id: str, body: QuestionUpdate, db: AsyncSession = Depends(get_db)
-) -> QuestionOut:
+async def _get_question_survey(question_id: str, db: AsyncSession) -> tuple[Question, Survey]:
+    """Return (question, survey) or raise 404."""
     q = (await db.execute(select(Question).where(Question.id == question_id))).scalar_one_or_none()
     if q is None:
         raise HTTPException(status_code=404, detail="Question not found")
+    survey = (await db.execute(
+        select(Survey).options(selectinload(Survey.questions)).where(Survey.id == q.survey_id)
+    )).scalar_one_or_none()
+    if survey is None:
+        raise HTTPException(status_code=404, detail="Survey not found")
+    return q, survey
+
+
+@question_router.patch("/{question_id}", response_model=QuestionOut)
+async def update_question(
+    question_id: str,
+    body: QuestionUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> QuestionOut:
+    q, survey = await _get_question_survey(question_id, db)
+    _assert_owner(survey, current_user.user_id)
+
     if body.text is not None:
         q.text = body.text
     if body.question_type is not None:
@@ -334,23 +392,26 @@ async def update_question(
 
 @question_router.delete("/{question_id}", status_code=204)
 async def delete_question(
-    question_id: str, db: AsyncSession = Depends(get_db)
+    question_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
 ) -> None:
-    q = (await db.execute(select(Question).where(Question.id == question_id))).scalar_one_or_none()
-    if q is None:
-        raise HTTPException(status_code=404, detail="Question not found")
+    q, survey = await _get_question_survey(question_id, db)
+    _assert_owner(survey, current_user.user_id)
     await db.delete(q)
     await db.commit()
 
 
 # ---------------------------------------------------------------------------
-# Response submission
+# Response submission  (public — survey must be published)
 # ---------------------------------------------------------------------------
 
 
 @survey_router.post("/{survey_id}/responses", response_model=ResponseOut, status_code=201)
 async def submit_response(
-    survey_id: str, body: ResponseSubmit, db: AsyncSession = Depends(get_db)
+    survey_id: str,
+    body: ResponseSubmit,
+    db: AsyncSession = Depends(get_db),
 ) -> ResponseOut:
     survey = await _get_survey_or_404(survey_id, db)
     if survey.status != "published":
@@ -395,15 +456,19 @@ async def submit_response(
 
 
 # ---------------------------------------------------------------------------
-# Results
+# Results  (owner only)
 # ---------------------------------------------------------------------------
 
 
 @survey_router.get("/{survey_id}/results", response_model=SurveyResults)
 async def get_results(
-    survey_id: str, db: AsyncSession = Depends(get_db)
+    survey_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
 ) -> SurveyResults:
     survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+
     response_count = await _response_count(survey_id, db)
 
     stmt = (
@@ -422,15 +487,18 @@ async def get_results(
 
 
 # ---------------------------------------------------------------------------
-# Reliability analysis
+# Reliability analysis  (owner only)
 # ---------------------------------------------------------------------------
 
 
 @survey_router.get("/{survey_id}/analyse/reliability", response_model=CronbachAlphaResponse)
 async def analyse_reliability(
-    survey_id: str, db: AsyncSession = Depends(get_db)
+    survey_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
 ) -> CronbachAlphaResponse:
     survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
 
     likert_qs = [q for q in survey.questions if q.question_type in ("likert_5", "likert_7")]
     if len(likert_qs) < 2:
@@ -439,7 +507,6 @@ async def analyse_reliability(
             detail="Reliability analysis requires at least 2 Likert-scale questions.",
         )
 
-    # Load all responses for this survey
     resp_stmt = select(Response.id).where(Response.survey_id == survey_id)
     response_ids = list((await db.execute(resp_stmt)).scalars().all())
     if len(response_ids) < 2:
@@ -448,7 +515,6 @@ async def analyse_reliability(
             detail="Reliability analysis requires at least 2 responses.",
         )
 
-    # Load Likert answers only
     likert_q_ids = {q.id for q in likert_qs}
     ans_stmt = (
         select(Answer)
@@ -458,16 +524,13 @@ async def analyse_reliability(
     )
     answers = list((await db.execute(ans_stmt)).scalars().all())
 
-    # Build (respondent → question_id → score) map
-    from collections import defaultdict as _dd
-    resp_scores: dict[str, dict[str, float]] = _dd(dict)
+    resp_scores: dict[str, dict[str, float]] = defaultdict(dict)
     for a in answers:
         try:
             resp_scores[a.response_id][a.question_id] = float(a.value)
         except (ValueError, TypeError):
             pass
 
-    # Listwise deletion: keep only respondents with scores for ALL likert items
     q_order = [q.id for q in likert_qs]
     matrix: list[list[float]] = []
     for resp_id in response_ids:

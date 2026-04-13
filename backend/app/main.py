@@ -8,6 +8,7 @@ from .api.omega import router as omega_router
 from .api.efa import router as efa_router
 from .api.dif import router as dif_router
 from .api.surveys import survey_router, question_router
+from .core.auth import _fetch_jwks
 from .core.database import Base, engine, run_migrations
 from .models import survey as _survey_models  # noqa: F401 — registers ORM metadata
 
@@ -19,6 +20,12 @@ async def lifespan(app: FastAPI):
     # 2. Create any tables that don't exist yet
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    # 3. Pre-warm the JWKS cache so the first authenticated request is fast
+    try:
+        await _fetch_jwks()
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("JWKS pre-fetch failed (will retry on first request): %s", exc)
     yield
     await engine.dispose()
 

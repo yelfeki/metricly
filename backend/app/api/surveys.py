@@ -15,9 +15,13 @@ from ..core.database import get_db
 from ..models.survey import Answer, Question, Response, Survey, SurveyFactor, ScoringAlgorithm
 from ..schemas.reliability import CronbachAlphaRequest, CronbachAlphaResponse
 from ..schemas.survey import (
+    AnswerReport,
+    CompositeReport,
+    FactorReport,
     FactorScoreEntry,
     FactorScoresResponse,
     FactorScoresSummary,
+    ParticipantReport,
     QuestionCreate,
     QuestionOut,
     QuestionStat,
@@ -850,6 +854,7 @@ async def get_factor_scores(
             else:
                 scores[f] = _empty_entry()
         rows.append(RespondentFactorScores(
+            response_id=resp_id,
             respondent_id=resp_ref or resp_id[:8],
             scores=scores,
         ))
@@ -876,6 +881,169 @@ async def get_factor_scores(
         factors=all_factors,
         rows=rows,
         summary=FactorScoresSummary(mean=mean_d, sd=sd_d),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Participant report  (owner only)
+# ---------------------------------------------------------------------------
+
+
+@survey_router.get(
+    "/{survey_id}/responses/{response_id}/report",
+    response_model=ParticipantReport,
+)
+async def get_participant_report(
+    survey_id: str,
+    response_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> ParticipantReport:
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+
+    # Load the specific response
+    response = (await db.execute(
+        select(Response).where(
+            Response.id == response_id,
+            Response.survey_id == survey_id,
+        )
+    )).scalar_one_or_none()
+    if response is None:
+        raise HTTPException(status_code=404, detail="Response not found")
+
+    # Load answers for this response
+    raw_answers = list((await db.execute(
+        select(Answer).where(Answer.response_id == response_id)
+    )).scalars().all())
+
+    # Load factors and algorithms
+    sf_rows = list((await db.execute(
+        select(SurveyFactor).where(SurveyFactor.survey_id == survey_id)
+        .order_by(SurveyFactor.name)
+    )).scalars().all())
+    name_to_factor_id: dict[str, str] = {sf.name: sf.id for sf in sf_rows}
+
+    algo_rows = list((await db.execute(
+        select(ScoringAlgorithm).where(ScoringAlgorithm.survey_id == survey_id)
+    )).scalars().all())
+    algo_by_factor_id: dict[str | None, ScoringAlgorithm] = {a.factor_id: a for a in algo_rows}
+
+    def _apply_algo(
+        raw_score: float, factor_name: str | None
+    ) -> tuple[float | None, str | None, str | None]:
+        """Return (normalized, label, color) for a raw score + factor."""
+        fid = name_to_factor_id.get(factor_name) if factor_name else None
+        algo = algo_by_factor_id.get(fid) if fid else None
+        if algo is None:
+            return None, None, None
+        norm = normalize(
+            raw_score,
+            algo.min_possible,
+            algo.max_possible,
+            algo.normalized_min,
+            algo.normalized_max,
+        )
+        norm = round(norm, 2)
+        label_info: dict | None = None
+        if algo.labels:
+            try:
+                label_info = get_label(norm, json.loads(algo.labels))
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return norm, (label_info or {}).get("label"), (label_info or {}).get("color")
+
+    # Build question map (id → Question), preserving position order
+    question_map = {q.id: q for q in survey.questions}
+
+    # ── Per-answer details ──────────────────────────────────────────────────
+    answer_reports: list[AnswerReport] = []
+    for ans in raw_answers:
+        q = question_map.get(ans.question_id)
+        if q is None:
+            continue
+        if ans.numeric_score is not None:
+            norm, lbl, clr = _apply_algo(ans.numeric_score, q.factor)
+        else:
+            norm, lbl, clr = None, None, None
+        answer_reports.append(AnswerReport(
+            question_id=q.id,
+            question_text=q.text,
+            factor=q.factor,
+            value=ans.value,
+            raw_score=ans.numeric_score,
+            normalized=norm,
+            label=lbl,
+            color=clr,
+            reverse_scored=q.reverse_scored,
+        ))
+    answer_reports.sort(key=lambda a: question_map[a.question_id].position)
+
+    # ── Factor summaries ────────────────────────────────────────────────────
+    factor_score_acc: dict[str, list[float]] = defaultdict(list)
+    for ans in raw_answers:
+        q = question_map.get(ans.question_id)
+        if q and q.factor and ans.numeric_score is not None:
+            factor_score_acc[q.factor].append(ans.numeric_score)
+
+    factor_item_counts: dict[str, int] = defaultdict(int)
+    for ans in raw_answers:
+        q = question_map.get(ans.question_id)
+        if q and q.factor:
+            factor_item_counts[q.factor] += 1
+
+    factor_reports: list[FactorReport] = []
+    factor_norm_scores: list[float] = []
+
+    for sf in sf_rows:
+        fname = sf.name
+        vals = factor_score_acc.get(fname, [])
+        raw_mean = sum(vals) / len(vals) if vals else None
+        if raw_mean is not None:
+            norm, lbl, clr = _apply_algo(raw_mean, fname)
+            if norm is not None:
+                factor_norm_scores.append(norm)
+        else:
+            norm, lbl, clr = None, None, None
+        factor_reports.append(FactorReport(
+            factor_name=fname,
+            item_count=factor_item_counts.get(fname, 0),
+            raw_mean=round(raw_mean, 4) if raw_mean is not None else None,
+            normalized=norm,
+            label=lbl,
+            color=clr,
+        ))
+
+    # ── Composite ───────────────────────────────────────────────────────────
+    composite_norm = (
+        round(sum(factor_norm_scores) / len(factor_norm_scores), 2)
+        if factor_norm_scores else None
+    )
+    comp_lbl, comp_clr = None, None
+    if composite_norm is not None:
+        comp_algo = algo_by_factor_id.get(None)  # factor_id IS NULL → composite
+        if comp_algo and comp_algo.labels:
+            try:
+                li = get_label(composite_norm, json.loads(comp_algo.labels))
+                if li:
+                    comp_lbl, comp_clr = li["label"], li["color"]
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+    return ParticipantReport(
+        survey_id=survey_id,
+        survey_title=survey.name,
+        survey_description=survey.description,
+        response_id=response_id,
+        respondent_ref=response.respondent_ref,
+        submitted_at=response.submitted_at,
+        answers=answer_reports,
+        factors=factor_reports,
+        composite=CompositeReport(
+            normalized=composite_norm,
+            label=comp_lbl,
+            color=comp_clr,
+        ),
     )
 
 

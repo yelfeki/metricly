@@ -146,7 +146,8 @@ export interface FactorScoreEntry {
 }
 
 export interface RespondentFactorScores {
-  respondent_id: string
+  response_id: string    // actual UUID — for deep-linking to the report
+  respondent_id: string  // display label
   scores: Record<string, FactorScoreEntry>
 }
 
@@ -160,6 +161,49 @@ export interface FactorScoresResponse {
   factors: string[]
   rows: RespondentFactorScores[]
   summary: FactorScoresSummary
+}
+
+// ---------------------------------------------------------------------------
+// Participant report
+// ---------------------------------------------------------------------------
+
+export interface AnswerReport {
+  question_id: string
+  question_text: string
+  factor: string | null
+  value: string
+  raw_score: number | null
+  normalized: number | null
+  label: string | null
+  color: string | null
+  reverse_scored: boolean
+}
+
+export interface FactorReport {
+  factor_name: string
+  item_count: number
+  raw_mean: number | null
+  normalized: number | null
+  label: string | null
+  color: string | null
+}
+
+export interface CompositeReport {
+  normalized: number | null
+  label: string | null
+  color: string | null
+}
+
+export interface ParticipantReport {
+  survey_id: string
+  survey_title: string
+  survey_description: string | null
+  response_id: string
+  respondent_ref: string | null
+  submitted_at: string
+  answers: AnswerReport[]
+  factors: FactorReport[]
+  composite: CompositeReport
 }
 
 // ---------------------------------------------------------------------------

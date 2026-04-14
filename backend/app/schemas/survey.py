@@ -302,7 +302,8 @@ class FactorScoreEntry(BaseModel):
 
 
 class RespondentFactorScores(BaseModel):
-    respondent_id: str
+    response_id: str           # actual UUID — for deep-linking to the report
+    respondent_id: str         # display label (respondent_ref or id[:8])
     scores: dict[str, FactorScoreEntry]  # factor name → score entry
 
 
@@ -316,3 +317,47 @@ class FactorScoresResponse(BaseModel):
     factors: list[str]
     rows: list[RespondentFactorScores]
     summary: FactorScoresSummary
+
+
+# ---------------------------------------------------------------------------
+# Participant report schemas
+# ---------------------------------------------------------------------------
+
+
+class AnswerReport(BaseModel):
+    question_id: str
+    question_text: str
+    factor: str | None
+    value: str          # raw answer string
+    raw_score: float | None
+    normalized: float | None
+    label: str | None
+    color: str | None
+    reverse_scored: bool
+
+
+class FactorReport(BaseModel):
+    factor_name: str
+    item_count: int
+    raw_mean: float | None
+    normalized: float | None
+    label: str | None
+    color: str | None
+
+
+class CompositeReport(BaseModel):
+    normalized: float | None
+    label: str | None
+    color: str | None
+
+
+class ParticipantReport(BaseModel):
+    survey_id: str
+    survey_title: str
+    survey_description: str | None
+    response_id: str
+    respondent_ref: str | None
+    submitted_at: datetime
+    answers: list[AnswerReport]
+    factors: list[FactorReport]
+    composite: CompositeReport

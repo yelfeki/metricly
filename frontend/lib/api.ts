@@ -2,6 +2,7 @@ import type {
   CronbachAlphaResponse,
   FactorScoresResponse,
   LabelThreshold,
+  ParticipantReport,
   QuestionOut,
   ResponseOut,
   ScoringAlgorithm,
@@ -280,3 +281,9 @@ export const getSurveyReliability = (surveyId: string): Promise<CronbachAlphaRes
 
 export const getFactorScores = (surveyId: string): Promise<FactorScoresResponse> =>
   get(`/api/v1/surveys/${surveyId}/factor-scores`)
+
+export const getParticipantReport = (
+  surveyId: string,
+  responseId: string
+): Promise<ParticipantReport> =>
+  get(`/api/v1/surveys/${surveyId}/responses/${responseId}/report`)

@@ -403,7 +403,18 @@ function FactorScoresPanel({ surveyId }: { surveyId: string }) {
                       <tbody className="divide-y divide-slate-100">
                         {data.rows.map((row, i) => (
                           <tr key={i} className="hover:bg-slate-50">
-                            <td className="px-3 py-2 text-slate-600 font-mono">{row.respondent_id}</td>
+                            <td className="px-3 py-2 text-slate-600 font-mono">
+                              <div className="flex items-center gap-2">
+                                <span>{row.respondent_id}</span>
+                                <Link
+                                  href={`/surveys/${surveyId}/responses/${row.response_id}/report`}
+                                  className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-50 transition-colors whitespace-nowrap"
+                                  title="View individual report"
+                                >
+                                  Report →
+                                </Link>
+                              </div>
+                            </td>
                             {data.factors.map(f => (
                               <td key={f} className="px-3 py-2 text-right">
                                 <ScoreCell entry={row.scores[f]} />

@@ -4,9 +4,9 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import Header from "@/components/Header"
-import { getSurveyResults, getSurveyReliability, updateSurvey } from "@/lib/api"
+import { getSurveyResults, getSurveyReliability, getFactorScores, updateSurvey } from "@/lib/api"
 import type { CronbachAlphaResponse } from "@/lib/api"
-import type { ForcedChoiceConfig, QuestionOut, QuestionStat, SurveyResults } from "@/lib/types"
+import type { FactorScoresResponse, ForcedChoiceConfig, QuestionOut, QuestionStat, SurveyResults } from "@/lib/types"
 
 function round2(n: number) { return Math.round(n * 100) / 100 }
 
@@ -277,6 +277,147 @@ function ReliabilityPanel({ surveyId }: { surveyId: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// Factor scores panel
+// ---------------------------------------------------------------------------
+
+function FactorScoresPanel({ surveyId }: { surveyId: string }) {
+  const [data, setData] = useState<FactorScoresResponse | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [open, setOpen] = useState(false)
+
+  async function run() {
+    setOpen(true)
+    if (data) return
+    setLoading(true); setError(null)
+    try {
+      setData(await getFactorScores(surveyId))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function downloadCSV() {
+    if (!data || data.rows.length === 0) return
+    const headers = ["Respondent", ...data.factors]
+    const summaryMean = ["Mean", ...data.factors.map(f => data.summary.mean[f]?.toFixed(4) ?? "")]
+    const summarySd   = ["SD",   ...data.factors.map(f => data.summary.sd[f]?.toFixed(4)   ?? "")]
+    const rows = data.rows.map(row => [
+      row.respondent_id,
+      ...data.factors.map(f => row.scores[f]?.toFixed(4) ?? ""),
+    ])
+    const csv = [headers, ...rows, [], summaryMean, summarySd]
+      .map(r => r.join(","))
+      .join("\n")
+    const blob = new Blob([csv], { type: "text/csv" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url; a.download = `factor-scores-${surveyId}.csv`
+    a.click(); URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <button
+        onClick={open ? () => setOpen(false) : run}
+        className="flex w-full items-center justify-between px-5 py-4 text-left"
+      >
+        <div>
+          <p className="text-sm font-semibold text-slate-800">Factor Scores</p>
+          <p className="text-xs text-slate-400">Mean score per respondent × factor</p>
+        </div>
+        <svg
+          className={`h-4 w-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="border-t border-slate-100 px-5 py-4">
+          {loading && <p className="text-xs text-slate-400">Loading…</p>}
+          {error && <p className="text-xs text-red-600">{error}</p>}
+          {data && data.factors.length === 0 && (
+            <p className="text-xs text-slate-400">
+              No factors assigned to questions yet. Open the survey editor and assign factors to questions to see scores here.
+            </p>
+          )}
+          {data && data.factors.length > 0 && (
+            <div className="space-y-4">
+              {data.rows.length === 0 ? (
+                <p className="text-xs text-slate-400">No responses yet.</p>
+              ) : (
+                <>
+                  {/* Table */}
+                  <div className="overflow-x-auto rounded-lg border border-slate-100">
+                    <table className="min-w-full text-xs">
+                      <thead>
+                        <tr className="bg-slate-50">
+                          <th className="px-3 py-2 text-left font-semibold text-slate-500 whitespace-nowrap">Respondent</th>
+                          {data.factors.map(f => (
+                            <th key={f} className="px-3 py-2 text-right font-semibold text-slate-500 whitespace-nowrap">{f}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {data.rows.map((row, i) => (
+                          <tr key={i} className="hover:bg-slate-50">
+                            <td className="px-3 py-2 text-slate-600 font-mono">{row.respondent_id}</td>
+                            {data.factors.map(f => (
+                              <td key={f} className="px-3 py-2 text-right tabular-nums text-slate-700">
+                                {row.scores[f] !== null && row.scores[f] !== undefined
+                                  ? (row.scores[f] as number).toFixed(2)
+                                  : <span className="text-slate-300">—</span>}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t-2 border-slate-200 bg-slate-50">
+                          <td className="px-3 py-2 font-semibold text-slate-500">Mean</td>
+                          {data.factors.map(f => (
+                            <td key={f} className="px-3 py-2 text-right tabular-nums font-semibold text-indigo-600">
+                              {data.summary.mean[f] !== null ? (data.summary.mean[f] as number).toFixed(2) : "—"}
+                            </td>
+                          ))}
+                        </tr>
+                        <tr className="bg-slate-50">
+                          <td className="px-3 py-2 font-semibold text-slate-500">SD</td>
+                          {data.factors.map(f => (
+                            <td key={f} className="px-3 py-2 text-right tabular-nums text-slate-500">
+                              {data.summary.sd[f] !== null ? (data.summary.sd[f] as number).toFixed(2) : "—"}
+                            </td>
+                          ))}
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+
+                  {/* Download */}
+                  <button
+                    onClick={downloadCSV}
+                    className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"
+                  >
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download CSV
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -374,6 +515,7 @@ export default function ResultsPage() {
               )}
 
               <ReliabilityPanel surveyId={id} />
+              <FactorScoresPanel surveyId={id} />
 
               {results.questions.map(stat => {
                 const question = questions.find(q => q.id === stat.question_id)

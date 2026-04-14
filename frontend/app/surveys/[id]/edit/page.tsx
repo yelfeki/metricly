@@ -9,11 +9,15 @@ import {
   addQuestion,
   updateQuestion,
   deleteQuestion,
+  getFactors,
+  createFactor,
+  updateFactor,
+  deleteFactor,
 } from "@/lib/api"
-import type { QuestionDraft, QuestionOut, QuestionType, SurveyStatus } from "@/lib/types"
+import type { QuestionDraft, QuestionOut, QuestionType, SurveyFactor, SurveyStatus } from "@/lib/types"
 
 // ---------------------------------------------------------------------------
-// Constants (same as new/page.tsx)
+// Constants
 // ---------------------------------------------------------------------------
 
 const QUESTION_TYPES: { value: QuestionType; label: string; icon: string }[] = [
@@ -26,9 +30,9 @@ const QUESTION_TYPES: { value: QuestionType; label: string; icon: string }[] = [
   { value: "text",            label: "Open Text",       icon: "¶" },
 ]
 
-const NEEDS_OPTIONS: QuestionType[] = [
-  "single_choice", "multiple_choice", "ranking", "forced_choice",
-]
+const NEEDS_OPTIONS: QuestionType[] = ["single_choice", "multiple_choice", "ranking", "forced_choice"]
+const SCORED_OPTIONS: QuestionType[] = ["single_choice", "multiple_choice", "forced_choice"]
+const LIKERT_TYPES: QuestionType[] = ["likert_5", "likert_7"]
 
 // ---------------------------------------------------------------------------
 // Extended draft type: serverId is set for questions that already exist in DB
@@ -39,13 +43,18 @@ interface EditDraft extends QuestionDraft {
 }
 
 function newDraft(position: number, type: QuestionType = "likert_5"): EditDraft {
+  const needsList = NEEDS_OPTIONS.includes(type)
   return {
     localId: crypto.randomUUID(),
     serverId: null,
     text: "",
     question_type: type,
-    options: NEEDS_OPTIONS.includes(type) ? ["", ""] : [],
+    options: needsList ? ["", ""] : [],
     forced_choice_labels: ["Most like me", "Least like me"],
+    option_scores: needsList ? [0, 0] : [],
+    factor: "",
+    reverse_scored: false,
+    score_weight: 1.0,
     position,
   }
 }
@@ -53,13 +62,16 @@ function newDraft(position: number, type: QuestionType = "likert_5"): EditDraft 
 function questionOutToEditDraft(q: QuestionOut, position: number): EditDraft {
   let options: string[] = []
   let forced_choice_labels: [string, string] = ["Most like me", "Least like me"]
+  let option_scores: number[] = []
 
   if (q.question_type === "forced_choice" && q.options && !Array.isArray(q.options)) {
     const cfg = q.options as { items: string[]; labels: [string, string] }
     options = cfg.items ?? []
     forced_choice_labels = cfg.labels ?? ["Most like me", "Least like me"]
+    option_scores = options.map(item => q.option_scores?.[item] ?? 0)
   } else if (Array.isArray(q.options)) {
     options = q.options as string[]
+    option_scores = options.map(opt => q.option_scores?.[opt] ?? 0)
   }
 
   return {
@@ -69,36 +81,108 @@ function questionOutToEditDraft(q: QuestionOut, position: number): EditDraft {
     question_type: q.question_type,
     options,
     forced_choice_labels,
+    option_scores,
+    factor: q.factor ?? "",
+    reverse_scored: q.reverse_scored ?? false,
+    score_weight: q.score_weight ?? 1.0,
     position,
   }
 }
 
 // ---------------------------------------------------------------------------
-// Question card (same UI as new/page.tsx)
+// Factor dropdown
+// ---------------------------------------------------------------------------
+
+interface FactorSelectProps {
+  value: string
+  factorNames: string[]
+  onChange: (name: string) => void
+  onCreateFactor: (name: string) => void
+}
+
+function FactorSelect({ value, factorNames, onChange, onCreateFactor }: FactorSelectProps) {
+  const [creating, setCreating] = useState(false)
+  const [newName, setNewName] = useState("")
+
+  function saveNew() {
+    const trimmed = newName.trim()
+    if (trimmed) { onCreateFactor(trimmed); onChange(trimmed) }
+    setCreating(false); setNewName("")
+  }
+
+  if (creating) {
+    return (
+      <div className="flex items-center gap-1">
+        <input
+          autoFocus
+          value={newName}
+          onChange={e => setNewName(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") saveNew(); if (e.key === "Escape") { setCreating(false); setNewName("") } }}
+          placeholder="Factor name"
+          className="w-28 rounded border border-indigo-300 bg-white px-2 py-0.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+        />
+        <button type="button" onClick={saveNew} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Save</button>
+        <button type="button" onClick={() => { setCreating(false); setNewName("") }} className="text-xs text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+    )
+  }
+
+  return (
+    <select
+      value={value || ""}
+      onChange={e => {
+        if (e.target.value === "__new__") { setCreating(true) }
+        else { onChange(e.target.value) }
+      }}
+      className="rounded border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+    >
+      <option value="">No factor</option>
+      {factorNames.map(f => <option key={f} value={f}>{f}</option>)}
+      <option value="__new__">+ New factor…</option>
+    </select>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Question card
 // ---------------------------------------------------------------------------
 
 interface CardProps {
   q: EditDraft
   index: number
   total: number
+  factorNames: string[]
   onChange: (localId: string, patch: Partial<EditDraft>) => void
   onDelete: (localId: string) => void
   onMoveUp: (localId: string) => void
   onMoveDown: (localId: string) => void
+  onCreateFactor: (name: string) => void
 }
 
-function QuestionCard({ q, index, total, onChange, onDelete, onMoveUp, onMoveDown }: CardProps) {
+function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMoveUp, onMoveDown, onCreateFactor }: CardProps) {
   const isChoice  = q.question_type === "single_choice" || q.question_type === "multiple_choice"
   const isFC      = q.question_type === "forced_choice"
   const isRanking = q.question_type === "ranking"
+  const isLikert  = LIKERT_TYPES.includes(q.question_type)
   const needsList = isChoice || isFC || isRanking
+  const hasScores = SCORED_OPTIONS.includes(q.question_type)
 
   function setOption(i: number, v: string) {
     const next = [...q.options]; next[i] = v; onChange(q.localId, { options: next })
   }
-  function addOption() { onChange(q.localId, { options: [...q.options, ""] }) }
+  function setOptionScore(i: number, v: string) {
+    const scores = [...q.option_scores]
+    scores[i] = parseFloat(v) || 0
+    onChange(q.localId, { option_scores: scores })
+  }
+  function addOption() {
+    onChange(q.localId, { options: [...q.options, ""], option_scores: [...q.option_scores, 0] })
+  }
   function removeOption(i: number) {
-    onChange(q.localId, { options: q.options.filter((_, idx) => idx !== i) })
+    onChange(q.localId, {
+      options: q.options.filter((_, idx) => idx !== i),
+      option_scores: q.option_scores.filter((_, idx) => idx !== i),
+    })
   }
   function setLabel(i: 0 | 1, v: string) {
     const next: [string, string] = [...q.forced_choice_labels] as [string, string]
@@ -108,10 +192,9 @@ function QuestionCard({ q, index, total, onChange, onDelete, onMoveUp, onMoveDow
   function handleTypeChange(type: QuestionType) {
     const willNeedList = NEEDS_OPTIONS.includes(type)
     const hadList = NEEDS_OPTIONS.includes(q.question_type)
-    onChange(q.localId, {
-      question_type: type,
-      options: willNeedList ? (hadList && q.options.length ? q.options : ["", ""]) : [],
-    })
+    const options = willNeedList ? (hadList && q.options.length ? q.options : ["", ""]) : []
+    const option_scores = willNeedList ? (hadList && q.option_scores.length ? q.option_scores : [0, 0]) : []
+    onChange(q.localId, { question_type: type, options, option_scores })
   }
 
   const itemLabel = isFC ? "Item" : "Option"
@@ -151,15 +234,59 @@ function QuestionCard({ q, index, total, onChange, onDelete, onMoveUp, onMoveDow
               </button>
             ))}
           </div>
-          {(q.question_type === "likert_5" || q.question_type === "likert_7") && (
+
+          {/* Psychometric metadata row */}
+          <div className="flex flex-wrap items-center gap-4 rounded-lg bg-slate-50 px-3 py-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-medium text-slate-400">Factor:</span>
+              <FactorSelect
+                value={q.factor}
+                factorNames={factorNames}
+                onChange={name => onChange(q.localId, { factor: name })}
+                onCreateFactor={onCreateFactor}
+              />
+            </div>
+            {isLikert && (
+              <>
+                <label className="flex cursor-pointer items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={q.reverse_scored}
+                    onChange={e => onChange(q.localId, { reverse_scored: e.target.checked })}
+                    className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600"
+                  />
+                  <span className="text-[11px] font-medium text-slate-500">Reverse scored</span>
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-medium text-slate-400">Weight:</span>
+                  <input
+                    type="number"
+                    value={q.score_weight}
+                    min="0"
+                    step="0.1"
+                    onChange={e => onChange(q.localId, { score_weight: parseFloat(e.target.value) || 1.0 })}
+                    className="w-16 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          {isLikert && (
             <div className="flex gap-1.5">
               {Array.from({ length: q.question_type === "likert_5" ? 5 : 7 }, (_, i) => (
-                <div key={i} className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-400">
-                  {i + 1}
+                <div key={i} className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
+                  q.reverse_scored ? "border-amber-200 bg-amber-50 text-amber-500" : "border-slate-200 bg-slate-50 text-slate-400"
+                }`}>
+                  {q.reverse_scored ? (q.question_type === "likert_5" ? 5 : 7) - i : i + 1}
                 </div>
               ))}
+              {q.reverse_scored && (
+                <span className="self-center text-[10px] text-amber-500 font-medium">reversed</span>
+              )}
             </div>
           )}
+
           {isFC && (
             <div className="grid grid-cols-2 gap-2 rounded-lg bg-indigo-50 p-3">
               <div>
@@ -169,7 +296,7 @@ function QuestionCard({ q, index, total, onChange, onDelete, onMoveUp, onMoveDow
                   className="w-full rounded border border-indigo-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300" />
               </div>
               <div>
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-indigo-500">Label B (forced)</label>
+                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-indigo-500">Label B</label>
                 <input value={q.forced_choice_labels[1]} onChange={e => setLabel(1, e.target.value)}
                   placeholder="e.g. Least like me"
                   className="w-full rounded border border-indigo-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300" />
@@ -181,6 +308,16 @@ function QuestionCard({ q, index, total, onChange, onDelete, onMoveUp, onMoveDow
           )}
           {needsList && (
             <div className="space-y-2">
+              {hasScores && (
+                <div className="flex items-center gap-2 px-0.5">
+                  <span className="flex-1 text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                    {isFC ? "Item" : "Option"}
+                  </span>
+                  <span className="w-16 text-right text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                    {isFC ? "Weight" : "Score"}
+                  </span>
+                </div>
+              )}
               {q.options.map((opt, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center text-xs text-slate-400 font-medium">
@@ -189,6 +326,17 @@ function QuestionCard({ q, index, total, onChange, onDelete, onMoveUp, onMoveDow
                   <input value={opt} onChange={e => setOption(i, e.target.value)}
                     placeholder={`${itemLabel} ${i + 1}`}
                     className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-100" />
+                  {hasScores && (
+                    <input
+                      type="number"
+                      value={q.option_scores[i] ?? 0}
+                      step="0.1"
+                      onChange={e => setOptionScore(i, e.target.value)}
+                      placeholder="0"
+                      title={isFC ? "Weight for this item" : "Score for this option"}
+                      className="w-16 rounded border border-slate-200 bg-slate-50 px-1.5 py-1 text-xs text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-100"
+                    />
+                  )}
                   {q.options.length > 2 && (
                     <button type="button" onClick={() => removeOption(i)}
                       className="text-slate-300 hover:text-red-400 transition-colors">
@@ -235,6 +383,66 @@ function QuestionCard({ q, index, total, onChange, onDelete, onMoveUp, onMoveDow
 }
 
 // ---------------------------------------------------------------------------
+// Factor row (in Factors tab)
+// ---------------------------------------------------------------------------
+
+interface FactorRowProps {
+  factor: SurveyFactor
+  onSave: (id: string, name: string, description: string) => Promise<void>
+  onDelete: (id: string) => Promise<void>
+}
+
+function FactorRow({ factor, onSave, onDelete }: FactorRowProps) {
+  const [name, setName] = useState(factor.name)
+  const [description, setDescription] = useState(factor.description ?? "")
+  const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const dirty = name !== factor.name || description !== (factor.description ?? "")
+
+  async function handleSave() {
+    if (!name.trim()) return
+    setSaving(true)
+    try { await onSave(factor.id, name.trim(), description.trim()) }
+    finally { setSaving(false) }
+  }
+
+  async function handleDelete() {
+    setDeleting(true)
+    try { await onDelete(factor.id) }
+    finally { setDeleting(false) }
+  }
+
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+      <div className="flex-1 space-y-2">
+        <input
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onBlur={() => { if (dirty && name.trim()) handleSave() }}
+          placeholder="Factor name"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
+        />
+        <input
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          onBlur={() => { if (dirty) handleSave() }}
+          placeholder="Description (optional)"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
+        />
+      </div>
+      {saving && <span className="mt-2 text-xs text-slate-400">Saving…</span>}
+      <button type="button" onClick={handleDelete} disabled={deleting}
+        className="mt-1 rounded p-1 text-slate-300 hover:text-red-500 disabled:opacity-40 transition-colors">
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </button>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -247,6 +455,8 @@ export default function EditSurveyPage() {
   const [status, setStatus] = useState<SurveyStatus>("draft")
   const [questions, setQuestions] = useState<EditDraft[]>([])
   const [originalServerIds, setOriginalServerIds] = useState<Set<string>>(new Set())
+  const [factors, setFactors] = useState<SurveyFactor[]>([])
+  const [activeTab, setActiveTab] = useState<"questions" | "factors">("questions")
 
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loadingData, setLoadingData] = useState(true)
@@ -257,20 +467,47 @@ export default function EditSurveyPage() {
   const dragId = useRef<string | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
 
-  // Load survey on mount
+  const factorNames = factors.map(f => f.name)
+
+  // Load survey + factors on mount
   useEffect(() => {
-    getSurvey(id)
-      .then(survey => {
+    Promise.all([getSurvey(id), getFactors(id)])
+      .then(([survey, loadedFactors]) => {
         setTitle(survey.name)
         setDescription(survey.description ?? "")
         setStatus(survey.status)
         const sorted = [...survey.questions].sort((a, b) => a.position - b.position)
         setQuestions(sorted.map((q, i) => questionOutToEditDraft(q, i + 1)))
         setOriginalServerIds(new Set(survey.questions.map(q => q.id)))
+        setFactors(loadedFactors)
       })
       .catch(e => setLoadError(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoadingData(false))
   }, [id])
+
+  // ── Factor operations (immediate API sync) ────────────────────────────────
+
+  async function handleAddFactor() {
+    const f = await createFactor(id, { name: "New factor", description: null })
+    setFactors(prev => [...prev, f])
+  }
+
+  async function handleSaveFactor(factorId: string, name: string, desc: string) {
+    const updated = await updateFactor(id, factorId, { name, description: desc || null })
+    setFactors(prev => prev.map(f => f.id === factorId ? updated : f))
+  }
+
+  async function handleDeleteFactor(factorId: string) {
+    await deleteFactor(id, factorId)
+    setFactors(prev => prev.filter(f => f.id !== factorId))
+  }
+
+  async function handleCreateFactorInline(name: string) {
+    const f = await createFactor(id, { name, description: null })
+    setFactors(prev => [...prev, f])
+  }
+
+  // ── Question operations ───────────────────────────────────────────────────
 
   function addNewQuestion(type: QuestionType) {
     setQuestions(prev => [...prev, newDraft(prev.length + 1, type)])
@@ -329,11 +566,27 @@ export default function EditSurveyPage() {
   }
   function handleDragEnd() { setDragOverId(null); dragId.current = null }
 
+  function buildOptionScores(q: EditDraft): Record<string, number> | null {
+    if (!SCORED_OPTIONS.includes(q.question_type)) return null
+    const hasNonZero = q.option_scores.some(s => s !== 0)
+    if (!hasNonZero) return null
+    const map: Record<string, number> = {}
+    q.options.forEach((opt, i) => {
+      const key = opt.trim()
+      if (key) map[key] = q.option_scores[i] ?? 0
+    })
+    return Object.keys(map).length ? map : null
+  }
+
   function buildQuestionPayload(q: EditDraft) {
     const base = {
       text: q.text.trim() || `Question ${q.position}`,
       question_type: q.question_type,
       position: q.position,
+      factor: q.factor || null,
+      reverse_scored: q.reverse_scored,
+      score_weight: q.score_weight,
+      option_scores: buildOptionScores(q),
     }
     if (q.question_type === "forced_choice") {
       return {
@@ -449,45 +702,99 @@ export default function EditSurveyPage() {
             </div>
           </div>
 
-          {/* Questions */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Questions ({questions.length})
-              </h2>
-              <p className="text-xs text-slate-400">Drag ⠿ to reorder</p>
-            </div>
-
-            {questions.map((q, index) => (
-              <div key={q.localId}
-                draggable
-                onDragStart={e => handleDragStart(e, q.localId)}
-                onDragOver={e => handleDragOver(e, q.localId)}
-                onDrop={e => handleDrop(e, q.localId)}
-                onDragEnd={handleDragEnd}
-                className={`rounded-xl transition-all ${
-                  dragOverId === q.localId && dragId.current !== q.localId
-                    ? "ring-2 ring-indigo-400 ring-offset-1" : ""
-                } ${dragId.current === q.localId ? "opacity-50" : ""}`}
+          {/* Tabs */}
+          <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+            {([["questions", `Questions (${questions.length})`], ["factors", `Factors (${factors.length})`]] as const).map(([tab, label]) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition-colors ${
+                  activeTab === tab
+                    ? "bg-white text-slate-800 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
               >
-                <QuestionCard q={q} index={index} total={questions.length}
-                  onChange={onChange} onDelete={onDelete} onMoveUp={onMoveUp} onMoveDown={onMoveDown} />
-              </div>
+                {label}
+              </button>
             ))}
+          </div>
 
-            {/* Add question palette */}
-            <div className="rounded-xl border-2 border-dashed border-slate-200 p-4">
-              <p className="mb-3 text-center text-xs font-medium text-slate-400">Add question</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {QUESTION_TYPES.map(t => (
-                  <button key={t.value} type="button" onClick={() => addNewQuestion(t.value)}
-                    className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700">
-                    <span>{t.icon}</span>{t.label}
-                  </button>
-                ))}
+          {/* Questions tab */}
+          {activeTab === "questions" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-slate-400">Drag ⠿ to reorder</p>
+              </div>
+
+              {questions.map((q, index) => (
+                <div key={q.localId}
+                  draggable
+                  onDragStart={e => handleDragStart(e, q.localId)}
+                  onDragOver={e => handleDragOver(e, q.localId)}
+                  onDrop={e => handleDrop(e, q.localId)}
+                  onDragEnd={handleDragEnd}
+                  className={`rounded-xl transition-all ${
+                    dragOverId === q.localId && dragId.current !== q.localId
+                      ? "ring-2 ring-indigo-400 ring-offset-1" : ""
+                  } ${dragId.current === q.localId ? "opacity-50" : ""}`}
+                >
+                  <QuestionCard
+                    q={q} index={index} total={questions.length}
+                    factorNames={factorNames}
+                    onChange={onChange} onDelete={onDelete} onMoveUp={onMoveUp} onMoveDown={onMoveDown}
+                    onCreateFactor={handleCreateFactorInline}
+                  />
+                </div>
+              ))}
+
+              {/* Add question palette */}
+              <div className="rounded-xl border-2 border-dashed border-slate-200 p-4">
+                <p className="mb-3 text-center text-xs font-medium text-slate-400">Add question</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {QUESTION_TYPES.map(t => (
+                    <button key={t.value} type="button" onClick={() => addNewQuestion(t.value)}
+                      className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700">
+                      <span>{t.icon}</span>{t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Factors tab */}
+          {activeTab === "factors" && (
+            <div className="space-y-3">
+              <p className="text-xs text-slate-500">
+                Define the factors (subscales) of your instrument. Changes are saved immediately.
+              </p>
+
+              {factors.length === 0 && (
+                <div className="rounded-xl border-2 border-dashed border-slate-200 px-5 py-8 text-center">
+                  <p className="text-sm text-slate-400">No factors defined yet.</p>
+                  <p className="mt-1 text-xs text-slate-400">Add a factor below, or create one inline from any question card.</p>
+                </div>
+              )}
+
+              {factors.map(f => (
+                <FactorRow
+                  key={f.id}
+                  factor={f}
+                  onSave={handleSaveFactor}
+                  onDelete={handleDeleteFactor}
+                />
+              ))}
+
+              <button type="button" onClick={handleAddFactor}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 py-3 text-xs font-medium text-slate-500 transition hover:border-indigo-300 hover:text-indigo-600">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Add factor
+              </button>
+            </div>
+          )}
 
           {saveError && (
             <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">{saveError}</p>

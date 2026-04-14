@@ -11,7 +11,7 @@ Schema:
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -48,6 +48,9 @@ class Survey(Base):
     responses: Mapped[list["Response"]] = relationship(
         "Response", back_populates="survey", cascade="all, delete-orphan"
     )
+    factors: Mapped[list["SurveyFactor"]] = relationship(
+        "SurveyFactor", back_populates="survey", cascade="all, delete-orphan"
+    )
 
     def __repr__(self) -> str:
         return f"<Survey id={self.id!r} name={self.name!r} status={self.status!r}>"
@@ -70,6 +73,13 @@ class Question(Base):
         Text, nullable=True
     )  # JSON-encoded list[str] for choice types; NULL for text/Likert
     position: Mapped[int] = mapped_column(Integer, nullable=False)  # 1-based
+    # v0.4 psychometric fields
+    factor: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reverse_scored: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    score_weight: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
+    option_scores: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+    )  # JSON dict[str, float]: option/item text → score or weight
 
     survey: Mapped["Survey"] = relationship("Survey", back_populates="questions")
     answers: Mapped[list["Answer"]] = relationship(
@@ -125,9 +135,31 @@ class Answer(Base):
     value: Mapped[str] = mapped_column(Text, nullable=False, default="")
     # score is populated only for Likert questions (convenience for analysis modules)
     score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # numeric_score is the computed psychometric score (all scorable types, v0.4)
+    numeric_score: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     response: Mapped["Response"] = relationship("Response", back_populates="answers")
     question: Mapped["Question"] = relationship("Question", back_populates="answers")
 
     def __repr__(self) -> str:
         return f"<Answer response={self.response_id!r} question={self.question_id!r} value={self.value!r}>"
+
+
+class SurveyFactor(Base):
+    """Named factor / subscale within a survey (e.g. 'Extraversion', 'Job Satisfaction')."""
+
+    __tablename__ = "survey_factors"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    survey_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("surveys.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    survey: Mapped["Survey"] = relationship("Survey", back_populates="factors")
+
+    def __repr__(self) -> str:
+        return f"<SurveyFactor id={self.id!r} name={self.name!r}>"

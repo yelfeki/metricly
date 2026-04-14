@@ -44,6 +44,19 @@ async def run_migrations() -> None:
         # v0.3 — per-user survey ownership (references auth.users via UUID stored as text)
         "ALTER TABLE surveys ADD COLUMN IF NOT EXISTS user_id VARCHAR(36)",
         "CREATE INDEX IF NOT EXISTS ix_surveys_user_id ON surveys (user_id)",
+        # v0.4 — psychometric scoring + factor structure
+        "ALTER TABLE questions ADD COLUMN IF NOT EXISTS factor TEXT",
+        "ALTER TABLE questions ADD COLUMN IF NOT EXISTS reverse_scored BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE questions ADD COLUMN IF NOT EXISTS score_weight FLOAT NOT NULL DEFAULT 1.0",
+        "ALTER TABLE questions ADD COLUMN IF NOT EXISTS option_scores TEXT",
+        "ALTER TABLE answers ADD COLUMN IF NOT EXISTS numeric_score FLOAT",
+        """CREATE TABLE IF NOT EXISTS survey_factors (
+            id VARCHAR(36) PRIMARY KEY,
+            survey_id VARCHAR(36) NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+            name VARCHAR(255) NOT NULL,
+            description TEXT
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_survey_factors_survey_id ON survey_factors (survey_id)",
     ]
     for stmt in migrations:
         try:

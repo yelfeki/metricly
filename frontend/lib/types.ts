@@ -52,6 +52,12 @@ export interface QuestionOut {
   // list for choice/ranking, ForcedChoiceConfig for forced_choice, null for text/likert
   options: string[] | ForcedChoiceConfig | null
   position: number
+  // v0.4 psychometric fields
+  factor: string | null
+  reverse_scored: boolean
+  score_weight: number
+  // option text → score (single/multiple) or item text → weight (forced_choice)
+  option_scores: Record<string, number> | null
 }
 
 export interface SurveyOut {
@@ -80,6 +86,13 @@ export interface ResponseOut {
   submitted_at: string
 }
 
+export interface SurveyFactor {
+  id: string
+  survey_id: string
+  name: string
+  description: string | null
+}
+
 export interface QuestionStat {
   question_id: string
   text: string
@@ -100,6 +113,27 @@ export interface SurveyResults {
 }
 
 // ---------------------------------------------------------------------------
+// Factor scores
+// ---------------------------------------------------------------------------
+
+export interface RespondentFactorScores {
+  respondent_id: string
+  scores: Record<string, number | null>
+}
+
+export interface FactorScoresSummary {
+  mean: Record<string, number | null>
+  sd: Record<string, number | null>
+}
+
+export interface FactorScoresResponse {
+  survey_id: string
+  factors: string[]
+  rows: RespondentFactorScores[]
+  summary: FactorScoresSummary
+}
+
+// ---------------------------------------------------------------------------
 // Local builder state (client-only, not persisted until save)
 // ---------------------------------------------------------------------------
 
@@ -110,4 +144,9 @@ export interface QuestionDraft {
   options: string[]                         // items for choice/ranking/forced_choice
   forced_choice_labels: [string, string]    // only used when question_type === "forced_choice"
   position: number
+  // v0.4 psychometric fields
+  factor: string                            // factor name, "" = none
+  reverse_scored: boolean                   // Likert only
+  score_weight: number                      // Likert only (default 1.0)
+  option_scores: number[]                   // parallel to options[]; 0 = not scored
 }

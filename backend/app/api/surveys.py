@@ -12,22 +12,29 @@ from sqlalchemy.orm import selectinload
 
 from ..core.auth import AuthUser, optional_user, require_user
 from ..core.database import get_db
-from ..models.survey import Answer, Question, Response, Survey
+from ..models.survey import Answer, Question, Response, Survey, SurveyFactor
 from ..schemas.reliability import CronbachAlphaRequest, CronbachAlphaResponse
 from ..schemas.survey import (
+    FactorScoresResponse,
+    FactorScoresSummary,
     QuestionCreate,
     QuestionOut,
     QuestionStat,
     QuestionUpdate,
+    RespondentFactorScores,
     ResponseOut,
     ResponseSubmit,
     SurveyCreate,
+    SurveyFactorCreate,
+    SurveyFactorOut,
+    SurveyFactorUpdate,
     SurveyListItem,
     SurveyOut,
     SurveyResults,
     SurveyUpdate,
 )
 from ..services.reliability import compute_cronbach_alpha
+from ..services.scoring import score_answer
 
 survey_router = APIRouter(prefix="/surveys", tags=["surveys"])
 question_router = APIRouter(prefix="/questions", tags=["questions"])
@@ -45,6 +52,13 @@ def _options_json(body: QuestionCreate | QuestionUpdate) -> str | None:
         cfg = body.forced_choice_config
         return json.dumps({"items": cfg.items, "labels": cfg.labels})
     return json.dumps(body.options) if body.options else None
+
+
+def _option_scores_json(body: QuestionCreate | QuestionUpdate) -> str | None:
+    """Serialize option_scores to the DB text column."""
+    if body.option_scores:
+        return json.dumps(body.option_scores)
+    return None
 
 
 async def _get_survey_or_404(survey_id: str, db: AsyncSession) -> Survey:
@@ -234,6 +248,10 @@ async def create_survey(
             question_type=q.question_type,
             options=_options_json(q),
             position=q.position,
+            factor=q.factor or None,
+            reverse_scored=q.reverse_scored,
+            score_weight=q.score_weight,
+            option_scores=_option_scores_json(q),
         ))
 
     await db.commit()
@@ -347,6 +365,10 @@ async def add_question(
         question_type=body.question_type,
         options=_options_json(body),
         position=body.position,
+        factor=body.factor or None,
+        reverse_scored=body.reverse_scored,
+        score_weight=body.score_weight,
+        option_scores=_option_scores_json(body),
     )
     db.add(q)
     await db.commit()
@@ -385,6 +407,14 @@ async def update_question(
         q.options = _options_json(body)
     if body.position is not None:
         q.position = body.position
+    if body.factor is not None:
+        q.factor = body.factor or None  # empty string → NULL
+    if body.reverse_scored is not None:
+        q.reverse_scored = body.reverse_scored
+    if body.score_weight is not None:
+        q.score_weight = body.score_weight
+    if body.option_scores is not None:
+        q.option_scores = json.dumps(body.option_scores) if body.option_scores else None
     await db.commit()
     await db.refresh(q)
     return QuestionOut.model_validate(q)
@@ -399,6 +429,96 @@ async def delete_question(
     q, survey = await _get_question_survey(question_id, db)
     _assert_owner(survey, current_user.user_id)
     await db.delete(q)
+    await db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Factor management  (owner only)
+# ---------------------------------------------------------------------------
+
+
+@survey_router.get("/{survey_id}/factors", response_model=list[SurveyFactorOut])
+async def list_factors(
+    survey_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> list[SurveyFactorOut]:
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+    stmt = (
+        select(SurveyFactor)
+        .where(SurveyFactor.survey_id == survey_id)
+        .order_by(SurveyFactor.name)
+    )
+    factors = list((await db.execute(stmt)).scalars().all())
+    return [SurveyFactorOut.model_validate(f) for f in factors]
+
+
+@survey_router.post("/{survey_id}/factors", response_model=SurveyFactorOut, status_code=201)
+async def create_factor(
+    survey_id: str,
+    body: SurveyFactorCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> SurveyFactorOut:
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+    factor = SurveyFactor(
+        survey_id=survey_id,
+        name=body.name,
+        description=body.description,
+    )
+    db.add(factor)
+    await db.commit()
+    await db.refresh(factor)
+    return SurveyFactorOut.model_validate(factor)
+
+
+@survey_router.patch("/{survey_id}/factors/{factor_id}", response_model=SurveyFactorOut)
+async def update_factor(
+    survey_id: str,
+    factor_id: str,
+    body: SurveyFactorUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> SurveyFactorOut:
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+    factor = (await db.execute(
+        select(SurveyFactor).where(
+            SurveyFactor.id == factor_id,
+            SurveyFactor.survey_id == survey_id,
+        )
+    )).scalar_one_or_none()
+    if factor is None:
+        raise HTTPException(status_code=404, detail="Factor not found")
+    if body.name is not None:
+        factor.name = body.name
+    if body.description is not None:
+        factor.description = body.description
+    await db.commit()
+    await db.refresh(factor)
+    return SurveyFactorOut.model_validate(factor)
+
+
+@survey_router.delete("/{survey_id}/factors/{factor_id}", status_code=204)
+async def delete_factor(
+    survey_id: str,
+    factor_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> None:
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+    factor = (await db.execute(
+        select(SurveyFactor).where(
+            SurveyFactor.id == factor_id,
+            SurveyFactor.survey_id == survey_id,
+        )
+    )).scalar_one_or_none()
+    if factor is None:
+        raise HTTPException(status_code=404, detail="Factor not found")
+    await db.delete(factor)
     await db.commit()
 
 
@@ -432,17 +552,21 @@ async def submit_response(
     question_map = {q.id: q for q in survey.questions}
     for ans in body.answers:
         q = question_map[ans.question_id]
-        score: float | None = None
+        # Legacy Likert score (raw value, kept for backward compat)
+        legacy_score: float | None = None
         if q.question_type in ("likert_5", "likert_7"):
             try:
-                score = float(ans.value)
+                legacy_score = float(ans.value)
             except ValueError:
                 pass
+        # Computed psychometric score (v0.4)
+        numeric = score_answer(q, ans.value)
         db.add(Answer(
             response_id=response.id,
             question_id=ans.question_id,
             value=ans.value,
-            score=score,
+            score=legacy_score,
+            numeric_score=numeric,
         ))
 
     await db.commit()
@@ -483,6 +607,106 @@ async def get_results(
         survey_name=survey.name,
         response_count=response_count,
         questions=[_compute_question_stat(q, all_answers) for q in survey.questions],
+    )
+
+
+# ---------------------------------------------------------------------------
+# Factor scores  (owner only)
+# ---------------------------------------------------------------------------
+
+
+@survey_router.get("/{survey_id}/factor-scores", response_model=FactorScoresResponse)
+async def get_factor_scores(
+    survey_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> FactorScoresResponse:
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+
+    # Questions that have a factor name assigned
+    factor_of: dict[str, str] = {q.id: q.factor for q in survey.questions if q.factor}
+    all_factors = sorted(set(factor_of.values()))
+
+    empty = FactorScoresResponse(
+        survey_id=survey_id,
+        factors=all_factors,
+        rows=[],
+        summary=FactorScoresSummary(
+            mean={f: None for f in all_factors},
+            sd={f: None for f in all_factors},
+        ),
+    )
+
+    if not all_factors:
+        return empty
+
+    # All responses in submission order
+    resp_rows = list((await db.execute(
+        select(Response.id, Response.respondent_ref)
+        .where(Response.survey_id == survey_id)
+        .order_by(Response.submitted_at)
+    )).all())
+
+    if not resp_rows:
+        return empty
+
+    # Answers with numeric_score for factored questions only
+    ans_stmt = (
+        select(Answer.response_id, Answer.question_id, Answer.numeric_score)
+        .join(Response, Response.id == Answer.response_id)
+        .where(Response.survey_id == survey_id)
+        .where(Answer.question_id.in_(factor_of.keys()))
+    )
+    raw_answers = list((await db.execute(ans_stmt)).all())
+
+    # Accumulate: resp_id → factor → [numeric_scores]
+    acc: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for resp_id, q_id, ns in raw_answers:
+        if ns is not None:
+            acc[resp_id][factor_of[q_id]].append(ns)
+
+    # Build per-respondent rows
+    rows: list[RespondentFactorScores] = []
+    for resp_id, resp_ref in resp_rows:
+        factor_data = acc.get(resp_id, {})
+        scores: dict[str, float | None] = {}
+        for f in all_factors:
+            vals = factor_data.get(f, [])
+            scores[f] = round(sum(vals) / len(vals), 4) if vals else None
+        rows.append(RespondentFactorScores(
+            respondent_id=resp_ref or resp_id[:8],
+            scores=scores,
+        ))
+
+    # Summary: mean ± SD per factor across all respondents
+    factor_vals: dict[str, list[float]] = defaultdict(list)
+    for row in rows:
+        for f, s in row.scores.items():
+            if s is not None:
+                factor_vals[f].append(s)
+
+    mean_d: dict[str, float | None] = {}
+    sd_d: dict[str, float | None] = {}
+    for f in all_factors:
+        vals = factor_vals[f]
+        if vals:
+            m = sum(vals) / len(vals)
+            mean_d[f] = round(m, 4)
+            if len(vals) > 1:
+                variance = sum((v - m) ** 2 for v in vals) / (len(vals) - 1)
+                sd_d[f] = round(math.sqrt(variance), 4)
+            else:
+                sd_d[f] = 0.0
+        else:
+            mean_d[f] = None
+            sd_d[f] = None
+
+    return FactorScoresResponse(
+        survey_id=survey_id,
+        factors=all_factors,
+        rows=rows,
+        summary=FactorScoresSummary(mean=mean_d, sd=sd_d),
     )
 
 

@@ -46,6 +46,12 @@ class QuestionCreate(BaseModel):
     # For forced_choice only:
     forced_choice_config: ForcedChoiceConfig | None = None
     position: int
+    # v0.4 psychometric fields
+    factor: str | None = None
+    reverse_scored: bool = False
+    score_weight: float = 1.0
+    # option text → numeric score (single/multiple choice) or item → weight (forced choice)
+    option_scores: dict[str, float] | None = None
 
     @model_validator(mode="after")
     def validate_by_type(self) -> "QuestionCreate":
@@ -83,6 +89,11 @@ class QuestionUpdate(BaseModel):
     options: list[str] | None = None
     forced_choice_config: ForcedChoiceConfig | None = None
     position: int | None = None
+    # v0.4 psychometric fields — None means "don't touch"
+    factor: str | None = None
+    reverse_scored: bool | None = None
+    score_weight: float | None = None
+    option_scores: dict[str, float] | None = None
 
 
 class AnswerSubmit(BaseModel):
@@ -102,6 +113,30 @@ class ResponseSubmit(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Factor schemas
+# ---------------------------------------------------------------------------
+
+
+class SurveyFactorCreate(BaseModel):
+    name: str
+    description: str | None = None
+
+
+class SurveyFactorUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+
+
+class SurveyFactorOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    survey_id: str
+    name: str
+    description: str | None
+
+
+# ---------------------------------------------------------------------------
 # Response schemas
 # ---------------------------------------------------------------------------
 
@@ -110,6 +145,16 @@ def _parse_options(v: Any) -> Any:
     """Parse the DB text field into list[str] or dict (for forced_choice)."""
     if isinstance(v, str):
         return json.loads(v)
+    return v
+
+
+def _parse_option_scores(v: Any) -> Any:
+    """Parse the DB text field into dict[str, float] or None."""
+    if isinstance(v, str):
+        try:
+            return json.loads(v)
+        except json.JSONDecodeError:
+            return None
     return v
 
 
@@ -123,11 +168,21 @@ class QuestionOut(BaseModel):
     # list[str] for choice/ranking, {"items":[...],"labels":[...]} for forced_choice
     options: Any
     position: int
+    # v0.4 psychometric fields
+    factor: str | None = None
+    reverse_scored: bool = False
+    score_weight: float = 1.0
+    option_scores: Any = None  # dict[str, float] | None
 
     @field_validator("options", mode="before")
     @classmethod
     def parse_options_json(cls, v: Any) -> Any:
         return _parse_options(v)
+
+    @field_validator("option_scores", mode="before")
+    @classmethod
+    def parse_option_scores_json(cls, v: Any) -> Any:
+        return _parse_option_scores(v)
 
 
 class SurveyOut(BaseModel):
@@ -180,3 +235,25 @@ class SurveyResults(BaseModel):
     survey_name: str
     response_count: int
     questions: list[QuestionStat]
+
+
+# ---------------------------------------------------------------------------
+# Factor scores schemas
+# ---------------------------------------------------------------------------
+
+
+class RespondentFactorScores(BaseModel):
+    respondent_id: str
+    scores: dict[str, float | None]  # factor name → mean numeric score
+
+
+class FactorScoresSummary(BaseModel):
+    mean: dict[str, float | None]
+    sd: dict[str, float | None]
+
+
+class FactorScoresResponse(BaseModel):
+    survey_id: str
+    factors: list[str]
+    rows: list[RespondentFactorScores]
+    summary: FactorScoresSummary

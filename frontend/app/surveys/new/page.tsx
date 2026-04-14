@@ -3,7 +3,7 @@
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Header from "@/components/Header"
-import { createSurvey } from "@/lib/api"
+import { createSurvey, createFactor } from "@/lib/api"
 import type { QuestionDraft, QuestionType } from "@/lib/types"
 
 // ---------------------------------------------------------------------------
@@ -20,20 +20,90 @@ const QUESTION_TYPES: { value: QuestionType; label: string; icon: string }[] = [
   { value: "text",           label: "Open Text",       icon: "¶" },
 ]
 
-// Types that need an option/item list
 const NEEDS_OPTIONS: QuestionType[] = [
   "single_choice", "multiple_choice", "ranking", "forced_choice",
 ]
+const SCORED_OPTIONS: QuestionType[] = ["single_choice", "multiple_choice", "forced_choice"]
+const LIKERT_TYPES: QuestionType[] = ["likert_5", "likert_7"]
+
+// ---------------------------------------------------------------------------
+// Local factor type (pre-save, no server ID yet)
+// ---------------------------------------------------------------------------
+
+interface LocalFactor { localId: string; name: string; description: string }
+
+function newFactor(): LocalFactor {
+  return { localId: crypto.randomUUID(), name: "", description: "" }
+}
 
 function newQuestion(position: number, type: QuestionType = "likert_5"): QuestionDraft {
+  const needsList = NEEDS_OPTIONS.includes(type)
   return {
     localId: crypto.randomUUID(),
     text: "",
     question_type: type,
-    options: NEEDS_OPTIONS.includes(type) ? ["", ""] : [],
+    options: needsList ? ["", ""] : [],
     forced_choice_labels: ["Most like me", "Least like me"],
+    option_scores: needsList ? [0, 0] : [],
+    factor: "",
+    reverse_scored: false,
+    score_weight: 1.0,
     position,
   }
+}
+
+// ---------------------------------------------------------------------------
+// Factor dropdown (shown inside each question card)
+// ---------------------------------------------------------------------------
+
+interface FactorSelectProps {
+  value: string
+  factorNames: string[]
+  onChange: (name: string) => void
+  onCreateFactor: (name: string) => void
+}
+
+function FactorSelect({ value, factorNames, onChange, onCreateFactor }: FactorSelectProps) {
+  const [creating, setCreating] = useState(false)
+  const [newName, setNewName] = useState("")
+
+  function saveNew() {
+    const trimmed = newName.trim()
+    if (trimmed) { onCreateFactor(trimmed); onChange(trimmed) }
+    setCreating(false); setNewName("")
+  }
+
+  if (creating) {
+    return (
+      <div className="flex items-center gap-1">
+        <input
+          autoFocus
+          value={newName}
+          onChange={e => setNewName(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") saveNew(); if (e.key === "Escape") { setCreating(false); setNewName("") } }}
+          placeholder="Factor name"
+          className="w-28 rounded border border-indigo-300 bg-white px-2 py-0.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+        />
+        <button type="button" onClick={saveNew} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Save</button>
+        <button type="button" onClick={() => { setCreating(false); setNewName("") }} className="text-xs text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+    )
+  }
+
+  return (
+    <select
+      value={value || ""}
+      onChange={e => {
+        if (e.target.value === "__new__") { setCreating(true) }
+        else { onChange(e.target.value) }
+      }}
+      className="rounded border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+    >
+      <option value="">No factor</option>
+      {factorNames.map(f => <option key={f} value={f}>{f}</option>)}
+      <option value="__new__">+ New factor…</option>
+    </select>
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -44,24 +114,38 @@ interface CardProps {
   q: QuestionDraft
   index: number
   total: number
+  factorNames: string[]
   onChange: (localId: string, patch: Partial<QuestionDraft>) => void
   onDelete: (localId: string) => void
   onMoveUp: (localId: string) => void
   onMoveDown: (localId: string) => void
+  onCreateFactor: (name: string) => void
 }
 
-function QuestionCard({ q, index, total, onChange, onDelete, onMoveUp, onMoveDown }: CardProps) {
+function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMoveUp, onMoveDown, onCreateFactor }: CardProps) {
   const isChoice  = q.question_type === "single_choice" || q.question_type === "multiple_choice"
   const isFC      = q.question_type === "forced_choice"
   const isRanking = q.question_type === "ranking"
+  const isLikert  = LIKERT_TYPES.includes(q.question_type)
   const needsList = isChoice || isFC || isRanking
+  const hasScores = SCORED_OPTIONS.includes(q.question_type)
 
   function setOption(i: number, v: string) {
     const next = [...q.options]; next[i] = v; onChange(q.localId, { options: next })
   }
-  function addOption() { onChange(q.localId, { options: [...q.options, ""] }) }
+  function setOptionScore(i: number, v: string) {
+    const scores = [...q.option_scores]
+    scores[i] = parseFloat(v) || 0
+    onChange(q.localId, { option_scores: scores })
+  }
+  function addOption() {
+    onChange(q.localId, { options: [...q.options, ""], option_scores: [...q.option_scores, 0] })
+  }
   function removeOption(i: number) {
-    onChange(q.localId, { options: q.options.filter((_, idx) => idx !== i) })
+    onChange(q.localId, {
+      options: q.options.filter((_, idx) => idx !== i),
+      option_scores: q.option_scores.filter((_, idx) => idx !== i),
+    })
   }
   function setLabel(i: 0 | 1, v: string) {
     const next: [string, string] = [...q.forced_choice_labels] as [string, string]
@@ -72,10 +156,9 @@ function QuestionCard({ q, index, total, onChange, onDelete, onMoveUp, onMoveDow
   function handleTypeChange(type: QuestionType) {
     const willNeedList = NEEDS_OPTIONS.includes(type)
     const hadList = NEEDS_OPTIONS.includes(q.question_type)
-    onChange(q.localId, {
-      question_type: type,
-      options: willNeedList ? (hadList && q.options.length ? q.options : ["", ""]) : [],
-    })
+    const options = willNeedList ? (hadList && q.options.length ? q.options : ["", ""]) : []
+    const option_scores = willNeedList ? (hadList && q.option_scores.length ? q.option_scores : [0, 0]) : []
+    onChange(q.localId, { question_type: type, options, option_scores })
   }
 
   const itemLabel = isFC ? "Item" : "Option"
@@ -83,7 +166,7 @@ function QuestionCard({ q, index, total, onChange, onDelete, onMoveUp, onMoveDow
   return (
     <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
       <div className="flex items-start gap-3 px-4 py-3">
-        {/* Grip dots (drag handle visual) */}
+        {/* Grip dots */}
         <div className="mt-1.5 flex cursor-grab flex-col gap-0.5 text-slate-300 hover:text-slate-500 active:cursor-grabbing">
           {[0,1,2].map(r => (
             <div key={r} className="flex gap-0.5">
@@ -123,14 +206,58 @@ function QuestionCard({ q, index, total, onChange, onDelete, onMoveUp, onMoveDow
             ))}
           </div>
 
+          {/* Psychometric metadata row */}
+          <div className="flex flex-wrap items-center gap-4 rounded-lg bg-slate-50 px-3 py-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-medium text-slate-400">Factor:</span>
+              <FactorSelect
+                value={q.factor}
+                factorNames={factorNames}
+                onChange={name => onChange(q.localId, { factor: name })}
+                onCreateFactor={onCreateFactor}
+              />
+            </div>
+            {isLikert && (
+              <>
+                <label className="flex cursor-pointer items-center gap-1.5">
+                  <input
+                    type="checkbox"
+                    checked={q.reverse_scored}
+                    onChange={e => onChange(q.localId, { reverse_scored: e.target.checked })}
+                    className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600"
+                  />
+                  <span className="text-[11px] font-medium text-slate-500">Reverse scored</span>
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-medium text-slate-400">Weight:</span>
+                  <input
+                    type="number"
+                    value={q.score_weight}
+                    min="0"
+                    step="0.1"
+                    onChange={e => onChange(q.localId, { score_weight: parseFloat(e.target.value) || 1.0 })}
+                    className="w-16 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
           {/* Likert preview */}
-          {(q.question_type === "likert_5" || q.question_type === "likert_7") && (
+          {isLikert && (
             <div className="flex gap-1.5">
               {Array.from({ length: q.question_type === "likert_5" ? 5 : 7 }, (_, i) => (
-                <div key={i} className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-400">
-                  {i + 1}
+                <div key={i} className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
+                  q.reverse_scored ? "border-amber-200 bg-amber-50 text-amber-500" : "border-slate-200 bg-slate-50 text-slate-400"
+                }`}>
+                  {q.reverse_scored
+                    ? (q.question_type === "likert_5" ? 5 : 7) - i
+                    : i + 1}
                 </div>
               ))}
+              {q.reverse_scored && (
+                <span className="self-center text-[10px] text-amber-500 font-medium">reversed</span>
+              )}
             </div>
           )}
 
@@ -144,7 +271,7 @@ function QuestionCard({ q, index, total, onChange, onDelete, onMoveUp, onMoveDow
                   className="w-full rounded border border-indigo-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300" />
               </div>
               <div>
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-indigo-500">Label B (forced)</label>
+                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-indigo-500">Label B</label>
                 <input value={q.forced_choice_labels[1]} onChange={e => setLabel(1, e.target.value)}
                   placeholder="e.g. Least like me"
                   className="w-full rounded border border-indigo-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300" />
@@ -152,25 +279,43 @@ function QuestionCard({ q, index, total, onChange, onDelete, onMoveUp, onMoveDow
             </div>
           )}
 
-          {/* Ranking preview badge */}
+          {/* Ranking hint */}
           {isRanking && (
-            <p className="text-[11px] text-slate-400">
-              Respondents will drag these items into their preferred order.
-            </p>
+            <p className="text-[11px] text-slate-400">Respondents will drag these items into their preferred order.</p>
           )}
 
           {/* Options / Items list */}
           {needsList && (
             <div className="space-y-2">
+              {hasScores && (
+                <div className="flex items-center gap-2 px-0.5">
+                  <span className="flex-1 text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                    {isFC ? "Item" : "Option"}
+                  </span>
+                  <span className="w-16 text-right text-[10px] font-medium uppercase tracking-wider text-slate-400">
+                    {isFC ? "Weight" : "Score"}
+                  </span>
+                </div>
+              )}
               {q.options.map((opt, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  {/* Indicator icon */}
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center text-xs text-slate-400 font-medium">
                     {isRanking ? i + 1 : isFC ? "·" : q.question_type === "multiple_choice" ? "☐" : "○"}
                   </span>
                   <input value={opt} onChange={e => setOption(i, e.target.value)}
                     placeholder={`${itemLabel} ${i + 1}`}
                     className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-100" />
+                  {hasScores && (
+                    <input
+                      type="number"
+                      value={q.option_scores[i] ?? 0}
+                      step="0.1"
+                      onChange={e => setOptionScore(i, e.target.value)}
+                      placeholder="0"
+                      title={isFC ? "Weight for this item" : "Score for this option"}
+                      className="w-16 rounded border border-slate-200 bg-slate-50 px-1.5 py-1 text-xs text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-100"
+                    />
+                  )}
                   {q.options.length > 2 && (
                     <button type="button" onClick={() => removeOption(i)}
                       className="text-slate-300 hover:text-red-400 transition-colors">
@@ -227,12 +372,35 @@ export default function NewSurveyPage() {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [questions, setQuestions] = useState<QuestionDraft[]>([newQuestion(1, "likert_5")])
+  const [localFactors, setLocalFactors] = useState<LocalFactor[]>([])
+  const [activeTab, setActiveTab] = useState<"questions" | "factors">("questions")
   const [saving, setSaving] = useState<"draft" | "published" | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   // Drag-and-drop state
   const dragId = useRef<string | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
+
+  const factorNames = localFactors.map(f => f.name).filter(Boolean)
+
+  // ── Factor management ────────────────────────────────────────────────────
+
+  function addLocalFactor() {
+    setLocalFactors(prev => [...prev, newFactor()])
+  }
+  function updateLocalFactor(localId: string, patch: Partial<LocalFactor>) {
+    setLocalFactors(prev => prev.map(f => f.localId === localId ? { ...f, ...patch } : f))
+  }
+  function removeLocalFactor(localId: string) {
+    setLocalFactors(prev => prev.filter(f => f.localId !== localId))
+  }
+  function createFactorInline(name: string) {
+    if (!localFactors.some(f => f.name === name)) {
+      setLocalFactors(prev => [...prev, { localId: crypto.randomUUID(), name, description: "" }])
+    }
+  }
+
+  // ── Question management ──────────────────────────────────────────────────
 
   function addQuestion(type: QuestionType) {
     setQuestions(prev => [...prev, newQuestion(prev.length + 1, type)])
@@ -291,16 +459,38 @@ export default function NewSurveyPage() {
   }
   function handleDragEnd() { setDragOverId(null); dragId.current = null }
 
+  // ── Build payload helpers ─────────────────────────────────────────────────
+
+  function buildOptionScores(q: QuestionDraft): Record<string, number> | null {
+    if (!SCORED_OPTIONS.includes(q.question_type)) return null
+    const hasNonZero = q.option_scores.some(s => s !== 0)
+    if (!hasNonZero) return null
+    const map: Record<string, number> = {}
+    q.options.forEach((opt, i) => {
+      const key = opt.trim()
+      if (key) map[key] = q.option_scores[i] ?? 0
+    })
+    return Object.keys(map).length ? map : null
+  }
+
   async function handleSave(status: "draft" | "published") {
     if (!title.trim()) { setError("Survey title is required."); return }
     setError(null); setSaving(status)
     try {
-      await createSurvey({
+      const survey = await createSurvey({
         name: title.trim(),
         description: description.trim() || null,
         status,
         questions: questions.map(q => {
-          const base = { text: q.text || `Question ${q.position}`, question_type: q.question_type, position: q.position }
+          const base = {
+            text: q.text || `Question ${q.position}`,
+            question_type: q.question_type,
+            position: q.position,
+            factor: q.factor || null,
+            reverse_scored: q.reverse_scored,
+            score_weight: q.score_weight,
+            option_scores: buildOptionScores(q),
+          }
           if (q.question_type === "forced_choice") {
             return {
               ...base,
@@ -318,6 +508,15 @@ export default function NewSurveyPage() {
           }
         }),
       })
+      // Create factors now that we have a survey ID
+      for (const f of localFactors) {
+        if (f.name.trim()) {
+          await createFactor(survey.id, {
+            name: f.name.trim(),
+            description: f.description.trim() || null,
+          })
+        }
+      }
       router.push("/surveys")
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -357,45 +556,115 @@ export default function NewSurveyPage() {
             </div>
           </div>
 
-          {/* Questions */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Questions ({questions.length})
-              </h2>
-              <p className="text-xs text-slate-400">Drag ⠿ to reorder</p>
-            </div>
-
-            {questions.map((q, index) => (
-              <div key={q.localId}
-                draggable
-                onDragStart={e => handleDragStart(e, q.localId)}
-                onDragOver={e => handleDragOver(e, q.localId)}
-                onDrop={e => handleDrop(e, q.localId)}
-                onDragEnd={handleDragEnd}
-                className={`rounded-xl transition-all ${
-                  dragOverId === q.localId && dragId.current !== q.localId
-                    ? "ring-2 ring-indigo-400 ring-offset-1" : ""
-                } ${dragId.current === q.localId ? "opacity-50" : ""}`}
+          {/* Tabs */}
+          <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+            {([["questions", `Questions (${questions.length})`], ["factors", `Factors (${localFactors.length})`]] as const).map(([tab, label]) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition-colors ${
+                  activeTab === tab
+                    ? "bg-white text-slate-800 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
               >
-                <QuestionCard q={q} index={index} total={questions.length}
-                  onChange={onChange} onDelete={onDelete} onMoveUp={onMoveUp} onMoveDown={onMoveDown} />
-              </div>
+                {label}
+              </button>
             ))}
+          </div>
 
-            {/* Add question palette */}
-            <div className="rounded-xl border-2 border-dashed border-slate-200 p-4">
-              <p className="mb-3 text-center text-xs font-medium text-slate-400">Add question</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {QUESTION_TYPES.map(t => (
-                  <button key={t.value} type="button" onClick={() => addQuestion(t.value)}
-                    className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700">
-                    <span>{t.icon}</span>{t.label}
-                  </button>
-                ))}
+          {/* Questions tab */}
+          {activeTab === "questions" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-slate-400">Drag ⠿ to reorder</p>
+              </div>
+
+              {questions.map((q, index) => (
+                <div key={q.localId}
+                  draggable
+                  onDragStart={e => handleDragStart(e, q.localId)}
+                  onDragOver={e => handleDragOver(e, q.localId)}
+                  onDrop={e => handleDrop(e, q.localId)}
+                  onDragEnd={handleDragEnd}
+                  className={`rounded-xl transition-all ${
+                    dragOverId === q.localId && dragId.current !== q.localId
+                      ? "ring-2 ring-indigo-400 ring-offset-1" : ""
+                  } ${dragId.current === q.localId ? "opacity-50" : ""}`}
+                >
+                  <QuestionCard
+                    q={q} index={index} total={questions.length}
+                    factorNames={factorNames}
+                    onChange={onChange} onDelete={onDelete} onMoveUp={onMoveUp} onMoveDown={onMoveDown}
+                    onCreateFactor={createFactorInline}
+                  />
+                </div>
+              ))}
+
+              {/* Add question palette */}
+              <div className="rounded-xl border-2 border-dashed border-slate-200 p-4">
+                <p className="mb-3 text-center text-xs font-medium text-slate-400">Add question</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {QUESTION_TYPES.map(t => (
+                    <button key={t.value} type="button" onClick={() => addQuestion(t.value)}
+                      className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700">
+                      <span>{t.icon}</span>{t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Factors tab */}
+          {activeTab === "factors" && (
+            <div className="space-y-3">
+              <p className="text-xs text-slate-500">
+                Define the factors (subscales) of your instrument. Assign questions to a factor using the Factor field in each question card.
+              </p>
+
+              {localFactors.length === 0 && (
+                <div className="rounded-xl border-2 border-dashed border-slate-200 px-5 py-8 text-center">
+                  <p className="text-sm text-slate-400">No factors defined yet.</p>
+                  <p className="mt-1 text-xs text-slate-400">Add a factor below, or create one inline from any question card.</p>
+                </div>
+              )}
+
+              {localFactors.map(f => (
+                <div key={f.localId} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                  <div className="flex-1 space-y-2">
+                    <input
+                      value={f.name}
+                      onChange={e => updateLocalFactor(f.localId, { name: e.target.value })}
+                      placeholder="Factor name (e.g. Extraversion)"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
+                    />
+                    <input
+                      value={f.description}
+                      onChange={e => updateLocalFactor(f.localId, { description: e.target.value })}
+                      placeholder="Description (optional)"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
+                    />
+                  </div>
+                  <button type="button" onClick={() => removeLocalFactor(f.localId)}
+                    className="mt-1 rounded p-1 text-slate-300 hover:text-red-500 transition-colors">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+
+              <button type="button" onClick={addLocalFactor}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 py-3 text-xs font-medium text-slate-500 transition hover:border-indigo-300 hover:text-indigo-600">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Add factor
+              </button>
+            </div>
+          )}
 
           {error && (
             <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">{error}</p>

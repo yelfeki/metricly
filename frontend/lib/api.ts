@@ -1,7 +1,9 @@
 import type {
   CronbachAlphaResponse,
+  FactorScoresResponse,
   QuestionOut,
   ResponseOut,
+  SurveyFactor,
   SurveyListItem,
   SurveyOut,
   SurveyResults,
@@ -123,6 +125,10 @@ export interface QuestionCreatePayload {
   options?: string[] | null
   forced_choice_config?: ForcedChoiceConfigPayload | null
   position: number
+  factor?: string | null
+  reverse_scored?: boolean
+  score_weight?: number
+  option_scores?: Record<string, number> | null
 }
 
 export interface SurveyCreatePayload {
@@ -161,7 +167,12 @@ export interface QuestionUpdatePayload {
   text?: string
   question_type?: string
   options?: string[] | null
+  forced_choice_config?: ForcedChoiceConfigPayload | null
   position?: number
+  factor?: string | null
+  reverse_scored?: boolean
+  score_weight?: number
+  option_scores?: Record<string, number> | null
 }
 
 export const addQuestion = (surveyId: string, body: QuestionCreatePayload): Promise<QuestionOut> =>
@@ -172,6 +183,31 @@ export const updateQuestion = (id: string, body: QuestionUpdatePayload): Promise
 
 export const deleteQuestion = (id: string): Promise<void> =>
   del(`/api/v1/questions/${id}`)
+
+// ---------------------------------------------------------------------------
+// Factors
+// ---------------------------------------------------------------------------
+
+export interface SurveyFactorPayload {
+  name: string
+  description?: string | null
+}
+
+export const getFactors = (surveyId: string): Promise<SurveyFactor[]> =>
+  get(`/api/v1/surveys/${surveyId}/factors`)
+
+export const createFactor = (surveyId: string, body: SurveyFactorPayload): Promise<SurveyFactor> =>
+  post(`/api/v1/surveys/${surveyId}/factors`, body)
+
+export const updateFactor = (
+  surveyId: string,
+  factorId: string,
+  body: Partial<SurveyFactorPayload>
+): Promise<SurveyFactor> =>
+  patch(`/api/v1/surveys/${surveyId}/factors/${factorId}`, body)
+
+export const deleteFactor = (surveyId: string, factorId: string): Promise<void> =>
+  del(`/api/v1/surveys/${surveyId}/factors/${factorId}`)
 
 // ---------------------------------------------------------------------------
 // Responses  (public — no auth header)
@@ -199,3 +235,6 @@ export const getSurveyResults = (surveyId: string): Promise<SurveyResults> =>
 
 export const getSurveyReliability = (surveyId: string): Promise<CronbachAlphaResponse> =>
   get(`/api/v1/surveys/${surveyId}/analyse/reliability`)
+
+export const getFactorScores = (surveyId: string): Promise<FactorScoresResponse> =>
+  get(`/api/v1/surveys/${surveyId}/factor-scores`)

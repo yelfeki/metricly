@@ -58,6 +58,9 @@ export interface QuestionOut {
   score_weight: number
   // option text → score (single/multiple) or item text → weight (forced_choice)
   option_scores: Record<string, number> | null
+  // v0.6 demographic fields
+  is_demographic: boolean
+  demographic_key: string | null
 }
 
 export interface SurveyOut {
@@ -207,6 +210,85 @@ export interface ParticipantReport {
 }
 
 // ---------------------------------------------------------------------------
+// Dashboard / cohort analytics
+// ---------------------------------------------------------------------------
+
+export interface HistogramBin {
+  start: number
+  end: number
+  count: number
+}
+
+export interface FactorDistribution {
+  factor_name: string
+  mean: number | null
+  sd: number | null
+  min: number | null
+  max: number | null
+  n: number
+  histogram: HistogramBin[]
+  label: string | null
+  color: string | null
+}
+
+export interface DashboardData {
+  survey_id: string
+  response_count: number
+  date_range_start: string | null
+  date_range_end: string | null
+  average_composite: number | null
+  composite_label: string | null
+  composite_color: string | null
+  factor_distributions: FactorDistribution[]
+  composite_histogram: HistogramBin[]
+  demographic_keys: string[]
+}
+
+export interface GroupStats {
+  group_value: string
+  n: number
+  mean: number | null
+  sd: number | null
+}
+
+export interface FactorGroupComparison {
+  factor_name: string
+  groups: GroupStats[]
+  test_type: string | null
+  p_value: number | null
+  significant: boolean
+  effect_size: number | null
+  effect_size_type: string | null
+  interpretation: string
+}
+
+export interface GroupComparisonData {
+  survey_id: string
+  demographic_key: string
+  group_values: string[]
+  factors: FactorGroupComparison[]
+}
+
+export interface RespondentRow {
+  response_id: string
+  respondent_ref: string | null
+  submitted_at: string
+  composite_score: number | null
+  composite_label: string | null
+  composite_color: string | null
+  factor_scores: Record<string, FactorScoreEntry>
+  demographics: Record<string, string>
+}
+
+export interface RespondentsData {
+  survey_id: string
+  total: number
+  page: number
+  page_size: number
+  rows: RespondentRow[]
+}
+
+// ---------------------------------------------------------------------------
 // Local builder state (client-only, not persisted until save)
 // ---------------------------------------------------------------------------
 
@@ -222,4 +304,7 @@ export interface QuestionDraft {
   reverse_scored: boolean                   // Likert only
   score_weight: number                      // Likert only (default 1.0)
   option_scores: number[]                   // parallel to options[]; 0 = not scored
+  // v0.6 demographic fields
+  is_demographic: boolean
+  demographic_key: string                   // "" = none
 }

@@ -71,6 +71,10 @@ async def run_migrations() -> None:
         )""",
         "CREATE INDEX IF NOT EXISTS ix_scoring_algorithms_survey_id ON scoring_algorithms (survey_id)",
         "CREATE INDEX IF NOT EXISTS ix_scoring_algorithms_factor_id ON scoring_algorithms (factor_id)",
+        # v0.6 — demographic questions + answers
+        "ALTER TABLE questions ADD COLUMN IF NOT EXISTS is_demographic BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE questions ADD COLUMN IF NOT EXISTS demographic_key TEXT",
+        "ALTER TABLE answers ADD COLUMN IF NOT EXISTS demographic_value TEXT",
     ]
     for stmt in migrations:
         try:

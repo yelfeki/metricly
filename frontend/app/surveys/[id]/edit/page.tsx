@@ -67,6 +67,8 @@ function newDraft(position: number, type: QuestionType = "likert_5"): EditDraft 
     reverse_scored: false,
     score_weight: 1.0,
     position,
+    is_demographic: false,
+    demographic_key: "",
   }
 }
 
@@ -97,6 +99,8 @@ function questionOutToEditDraft(q: QuestionOut, position: number): EditDraft {
     reverse_scored: q.reverse_scored ?? false,
     score_weight: q.score_weight ?? 1.0,
     position,
+    is_demographic: q.is_demographic ?? false,
+    demographic_key: q.demographic_key ?? "",
   }
 }
 
@@ -280,6 +284,26 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
                   />
                 </div>
               </>
+            )}
+            <label className="flex cursor-pointer items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={q.is_demographic}
+                onChange={e => onChange(q.localId, { is_demographic: e.target.checked, demographic_key: e.target.checked ? q.demographic_key : "" })}
+                className="h-3.5 w-3.5 rounded border-slate-300 text-emerald-600"
+              />
+              <span className="text-[11px] font-medium text-slate-500">Demographic</span>
+            </label>
+            {q.is_demographic && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-medium text-slate-400">Key:</span>
+                <input
+                  value={q.demographic_key}
+                  onChange={e => onChange(q.localId, { demographic_key: e.target.value })}
+                  placeholder="e.g. department"
+                  className="w-32 rounded border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-300"
+                />
+              </div>
             )}
           </div>
 
@@ -846,6 +870,8 @@ export default function EditSurveyPage() {
       reverse_scored: q.reverse_scored,
       score_weight: q.score_weight,
       option_scores: buildOptionScores(q),
+      is_demographic: q.is_demographic,
+      demographic_key: q.is_demographic ? (q.demographic_key.trim() || null) : null,
     }
     if (q.question_type === "forced_choice") {
       return {

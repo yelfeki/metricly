@@ -1,9 +1,12 @@
 import type {
   CronbachAlphaResponse,
+  DashboardData,
   FactorScoresResponse,
+  GroupComparisonData,
   LabelThreshold,
   ParticipantReport,
   QuestionOut,
+  RespondentsData,
   ResponseOut,
   ScoringAlgorithm,
   SurveyFactor,
@@ -132,6 +135,8 @@ export interface QuestionCreatePayload {
   reverse_scored?: boolean
   score_weight?: number
   option_scores?: Record<string, number> | null
+  is_demographic?: boolean
+  demographic_key?: string | null
 }
 
 export interface SurveyCreatePayload {
@@ -176,6 +181,8 @@ export interface QuestionUpdatePayload {
   reverse_scored?: boolean
   score_weight?: number
   option_scores?: Record<string, number> | null
+  is_demographic?: boolean
+  demographic_key?: string | null
 }
 
 export const addQuestion = (surveyId: string, body: QuestionCreatePayload): Promise<QuestionOut> =>
@@ -287,3 +294,24 @@ export const getParticipantReport = (
   responseId: string
 ): Promise<ParticipantReport> =>
   get(`/api/v1/surveys/${surveyId}/responses/${responseId}/report`)
+
+// ---------------------------------------------------------------------------
+// Dashboard / cohort analytics
+// ---------------------------------------------------------------------------
+
+export const getDashboard = (surveyId: string): Promise<DashboardData> =>
+  get(`/api/v1/surveys/${surveyId}/dashboard`)
+
+export const getGroupComparison = (
+  surveyId: string,
+  demographicKey: string
+): Promise<GroupComparisonData> =>
+  get(`/api/v1/surveys/${surveyId}/group-comparison?demographic_key=${encodeURIComponent(demographicKey)}`)
+
+export const getRespondents = (
+  surveyId: string,
+  page = 1,
+  pageSize = 20,
+  sortDir: "asc" | "desc" = "desc"
+): Promise<RespondentsData> =>
+  get(`/api/v1/surveys/${surveyId}/respondents?page=${page}&page_size=${pageSize}&sort_dir=${sortDir}`)

@@ -17,16 +17,24 @@ from ..schemas.reliability import CronbachAlphaRequest, CronbachAlphaResponse
 from ..schemas.survey import (
     AnswerReport,
     CompositeReport,
+    DashboardResponse,
+    FactorDistribution,
+    FactorGroupComparison,
     FactorReport,
     FactorScoreEntry,
     FactorScoresResponse,
     FactorScoresSummary,
+    GroupComparisonResponse,
+    GroupStats,
+    HistogramBin,
     ParticipantReport,
     QuestionCreate,
     QuestionOut,
     QuestionStat,
     QuestionUpdate,
     RespondentFactorScores,
+    RespondentRow,
+    RespondentsResponse,
     ResponseOut,
     ResponseSubmit,
     ScoringAlgorithmCreate,
@@ -41,6 +49,7 @@ from ..schemas.survey import (
     SurveyResults,
     SurveyUpdate,
 )
+from ..services.cohort_analytics import cohort_summary, group_comparison
 from ..services.reliability import compute_cronbach_alpha
 from ..services.score_normalizer import get_label, normalize
 from ..services.scoring import score_answer
@@ -261,6 +270,8 @@ async def create_survey(
             reverse_scored=q.reverse_scored,
             score_weight=q.score_weight,
             option_scores=_option_scores_json(q),
+            is_demographic=q.is_demographic,
+            demographic_key=q.demographic_key or None,
         ))
 
     await db.commit()
@@ -378,6 +389,8 @@ async def add_question(
         reverse_scored=body.reverse_scored,
         score_weight=body.score_weight,
         option_scores=_option_scores_json(body),
+        is_demographic=body.is_demographic,
+        demographic_key=body.demographic_key or None,
     )
     db.add(q)
     await db.commit()
@@ -424,6 +437,10 @@ async def update_question(
         q.score_weight = body.score_weight
     if body.option_scores is not None:
         q.option_scores = json.dumps(body.option_scores) if body.option_scores else None
+    if body.is_demographic is not None:
+        q.is_demographic = body.is_demographic
+    if body.demographic_key is not None:
+        q.demographic_key = body.demographic_key or None
     await db.commit()
     await db.refresh(q)
     return QuestionOut.model_validate(q)
@@ -696,6 +713,7 @@ async def submit_response(
             value=ans.value,
             score=legacy_score,
             numeric_score=numeric,
+            demographic_value=ans.value if q.is_demographic else None,
         ))
 
     await db.commit()
@@ -1044,6 +1062,391 @@ async def get_participant_report(
             label=comp_lbl,
             color=comp_clr,
         ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Dashboard  (owner only)
+# ---------------------------------------------------------------------------
+
+
+async def _load_algo_helpers(
+    survey_id: str, db: AsyncSession
+) -> tuple[
+    dict[str, str],                          # factor_name → factor_id
+    dict[str | None, ScoringAlgorithm],      # factor_id | None → algo
+]:
+    """Shared loader for factor-name→id map and algo lookup."""
+    sf_rows = list((await db.execute(
+        select(SurveyFactor).where(SurveyFactor.survey_id == survey_id).order_by(SurveyFactor.name)
+    )).scalars().all())
+    algo_rows = list((await db.execute(
+        select(ScoringAlgorithm).where(ScoringAlgorithm.survey_id == survey_id)
+    )).scalars().all())
+    return (
+        {sf.name: sf.id for sf in sf_rows},
+        {a.factor_id: a for a in algo_rows},
+    )
+
+
+def _algo_apply(
+    raw_score: float,
+    factor_name: str | None,
+    name_to_fid: dict[str, str],
+    algo_by_fid: dict[str | None, ScoringAlgorithm],
+) -> tuple[float | None, str | None, str | None]:
+    """Return (normalized, label, color)."""
+    fid = name_to_fid.get(factor_name) if factor_name else None
+    algo = algo_by_fid.get(fid) if fid else None
+    if algo is None:
+        return None, None, None
+    norm = round(normalize(raw_score, algo.min_possible, algo.max_possible,
+                           algo.normalized_min, algo.normalized_max), 2)
+    li: dict | None = None
+    if algo.labels:
+        try:
+            li = get_label(norm, json.loads(algo.labels))
+        except (json.JSONDecodeError, TypeError):
+            pass
+    return norm, (li or {}).get("label"), (li or {}).get("color")
+
+
+def _composite_apply(
+    factor_norm_scores: list[float],
+    algo_by_fid: dict[str | None, ScoringAlgorithm],
+) -> tuple[float | None, str | None, str | None]:
+    if not factor_norm_scores:
+        return None, None, None
+    comp = round(sum(factor_norm_scores) / len(factor_norm_scores), 2)
+    comp_algo = algo_by_fid.get(None)
+    if comp_algo and comp_algo.labels:
+        try:
+            li = get_label(comp, json.loads(comp_algo.labels))
+            if li:
+                return comp, li["label"], li["color"]
+        except (json.JSONDecodeError, TypeError):
+            pass
+    return comp, None, None
+
+
+@survey_router.get("/{survey_id}/dashboard", response_model=DashboardResponse)
+async def get_dashboard(
+    survey_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> DashboardResponse:
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+
+    name_to_fid, algo_by_fid = await _load_algo_helpers(survey_id, db)
+    question_map = {q.id: q for q in survey.questions}
+
+    # All responses
+    resp_rows = list((await db.execute(
+        select(Response.id, Response.submitted_at)
+        .where(Response.survey_id == survey_id)
+        .order_by(Response.submitted_at)
+    )).all())
+
+    response_count = len(resp_rows)
+    date_start = resp_rows[0].submitted_at if resp_rows else None
+    date_end = resp_rows[-1].submitted_at if resp_rows else None
+
+    # All answers for this survey
+    all_answers = list((await db.execute(
+        select(Answer.response_id, Answer.question_id, Answer.numeric_score)
+        .join(Response, Response.id == Answer.response_id)
+        .where(Response.survey_id == survey_id)
+    )).all())
+
+    # Demographic keys (distinct) from questions marked as demographic
+    demo_keys = sorted({
+        q.demographic_key
+        for q in survey.questions
+        if q.is_demographic and q.demographic_key
+    })
+
+    # Accumulate factor raw means per respondent
+    acc: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for resp_id, q_id, ns in all_answers:
+        q = question_map.get(q_id)
+        if q and q.factor and ns is not None:
+            acc[resp_id][q.factor].append(ns)
+
+    # Factor scores: resp_id → factor → normalized
+    factor_norm_by_resp: dict[str, dict[str, float]] = {}
+    for resp_id, _ in resp_rows:
+        fdata = acc.get(resp_id, {})
+        norm_scores: dict[str, float] = {}
+        for fname in name_to_fid:
+            vals = fdata.get(fname, [])
+            if vals:
+                raw_mean = sum(vals) / len(vals)
+                norm, _, _ = _algo_apply(raw_mean, fname, name_to_fid, algo_by_fid)
+                if norm is not None:
+                    norm_scores[fname] = norm
+        factor_norm_by_resp[resp_id] = norm_scores
+
+    # Composite per respondent
+    composite_scores: list[float] = []
+    for resp_id, _ in resp_rows:
+        fn = factor_norm_by_resp.get(resp_id, {})
+        if fn:
+            comp, _, _ = _composite_apply(list(fn.values()), algo_by_fid)
+            if comp is not None:
+                composite_scores.append(comp)
+
+    avg_comp: float | None = None
+    comp_lbl, comp_clr = None, None
+    if composite_scores:
+        avg_comp = round(sum(composite_scores) / len(composite_scores), 2)
+        _, comp_lbl, comp_clr = _composite_apply([avg_comp], algo_by_fid)
+
+    # Factor distributions via cohort_summary
+    factor_scores_flat: dict[str, list[float]] = defaultdict(list)
+    for resp_id, fn in factor_norm_by_resp.items():
+        for fname, score in fn.items():
+            factor_scores_flat[fname].append(score)
+
+    summary = cohort_summary(dict(factor_scores_flat))
+
+    factor_distributions: list[FactorDistribution] = []
+    for fname in sorted(summary.keys()):
+        s = summary[fname]
+        lbl, clr = None, None
+        if s["mean"] is not None:
+            _, lbl, clr = _algo_apply(s["mean"], fname, name_to_fid, algo_by_fid)
+        factor_distributions.append(FactorDistribution(
+            factor_name=fname,
+            mean=s["mean"],
+            sd=s["sd"],
+            min=s["min"],
+            max=s["max"],
+            n=s["n"],
+            histogram=[HistogramBin(**b) for b in s["histogram"]],
+            label=lbl,
+            color=clr,
+        ))
+
+    # Sort by mean desc (factors with None mean last)
+    factor_distributions.sort(
+        key=lambda fd: fd.mean if fd.mean is not None else -1,
+        reverse=True,
+    )
+
+    from app.services.cohort_analytics import _histogram
+    comp_hist = [HistogramBin(**b) for b in _histogram(composite_scores)]
+
+    return DashboardResponse(
+        survey_id=survey_id,
+        response_count=response_count,
+        date_range_start=date_start,
+        date_range_end=date_end,
+        average_composite=avg_comp,
+        composite_label=comp_lbl,
+        composite_color=comp_clr,
+        factor_distributions=factor_distributions,
+        composite_histogram=comp_hist,
+        demographic_keys=demo_keys,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Group comparison  (owner only)
+# ---------------------------------------------------------------------------
+
+
+@survey_router.get("/{survey_id}/group-comparison", response_model=GroupComparisonResponse)
+async def get_group_comparison(
+    survey_id: str,
+    demographic_key: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> GroupComparisonResponse:
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+
+    name_to_fid, algo_by_fid = await _load_algo_helpers(survey_id, db)
+    question_map = {q.id: q for q in survey.questions}
+
+    # Find the demographic question IDs for this key
+    demo_q_ids = {
+        q.id for q in survey.questions
+        if q.is_demographic and q.demographic_key == demographic_key
+    }
+    if not demo_q_ids:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No demographic question found with key '{demographic_key}'"
+        )
+
+    # Load all answers in one query
+    all_ans = list((await db.execute(
+        select(Answer.response_id, Answer.question_id, Answer.numeric_score, Answer.demographic_value)
+        .join(Response, Response.id == Answer.response_id)
+        .where(Response.survey_id == survey_id)
+    )).all())
+
+    # Map response → demographic value for this key
+    resp_demo: dict[str, str] = {}
+    for resp_id, q_id, _, demo_val in all_ans:
+        if q_id in demo_q_ids and demo_val:
+            resp_demo[resp_id] = demo_val
+
+    # Accumulate raw factor scores per respondent
+    acc: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for resp_id, q_id, ns, _ in all_ans:
+        q = question_map.get(q_id)
+        if q and q.factor and ns is not None and not q.is_demographic:
+            acc[resp_id][q.factor].append(ns)
+
+    # Build: factor → group_value → [normalized scores]
+    factor_group: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    for resp_id, fdata in acc.items():
+        gval = resp_demo.get(resp_id)
+        if not gval:
+            continue
+        for fname, vals in fdata.items():
+            if vals:
+                raw_mean = sum(vals) / len(vals)
+                norm, _, _ = _algo_apply(raw_mean, fname, name_to_fid, algo_by_fid)
+                if norm is not None:
+                    factor_group[fname][gval].append(norm)
+
+    comparison = group_comparison(dict(factor_group))
+    all_group_values = sorted({g for fg in factor_group.values() for g in fg})
+
+    factors_out: list[FactorGroupComparison] = []
+    for fname, res in comparison.items():
+        factors_out.append(FactorGroupComparison(
+            factor_name=fname,
+            groups=[GroupStats(**g) for g in res["groups"]],
+            test_type=res["test_type"],
+            p_value=res["p_value"],
+            significant=res["significant"],
+            effect_size=res["effect_size"],
+            effect_size_type=res["effect_size_type"],
+            interpretation=res["interpretation"],
+        ))
+
+    return GroupComparisonResponse(
+        survey_id=survey_id,
+        demographic_key=demographic_key,
+        group_values=all_group_values,
+        factors=factors_out,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Respondents table  (owner only, paginated)
+# ---------------------------------------------------------------------------
+
+
+@survey_router.get("/{survey_id}/respondents", response_model=RespondentsResponse)
+async def get_respondents(
+    survey_id: str,
+    page: int = 1,
+    page_size: int = 20,
+    sort_dir: str = "desc",
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> RespondentsResponse:
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+
+    name_to_fid, algo_by_fid = await _load_algo_helpers(survey_id, db)
+    question_map = {q.id: q for q in survey.questions}
+
+    # All responses ordered by submission time
+    all_resps = list((await db.execute(
+        select(Response.id, Response.respondent_ref, Response.submitted_at)
+        .where(Response.survey_id == survey_id)
+        .order_by(Response.submitted_at.desc())
+    )).all())
+
+    # All answers for this survey
+    all_ans = list((await db.execute(
+        select(Answer.response_id, Answer.question_id, Answer.numeric_score, Answer.demographic_value)
+        .join(Response, Response.id == Answer.response_id)
+        .where(Response.survey_id == survey_id)
+    )).all())
+
+    # Build per-response data
+    factor_acc: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
+    demo_acc: dict[str, dict[str, str]] = defaultdict(dict)
+
+    for resp_id, q_id, ns, demo_val in all_ans:
+        q = question_map.get(q_id)
+        if not q:
+            continue
+        if q.is_demographic and q.demographic_key and demo_val:
+            demo_acc[resp_id][q.demographic_key] = demo_val
+        elif q.factor and ns is not None:
+            factor_acc[resp_id][q.factor].append(ns)
+
+    # Compute composite + factor scores per respondent
+    rows_data: list[tuple[float | None, str, str | None, str]] = []
+    # (composite_score_for_sort, resp_id, resp_ref, submitted_at)
+    resp_detail: dict[str, tuple[float | None, str | None, str | None, dict, dict]] = {}
+    # resp_id → (comp_score, comp_label, comp_color, factor_scores_dict, demographics_dict)
+
+    for resp_id, resp_ref, submitted_at in all_resps:
+        fdata = factor_acc.get(resp_id, {})
+        factor_scores: dict[str, FactorScoreEntry] = {}
+        fn_scores: list[float] = []
+
+        for fname in name_to_fid:
+            vals = fdata.get(fname, [])
+            if vals:
+                raw_mean = sum(vals) / len(vals)
+                norm, lbl, clr = _algo_apply(raw_mean, fname, name_to_fid, algo_by_fid)
+                factor_scores[fname] = FactorScoreEntry(
+                    raw_mean=round(raw_mean, 4),
+                    normalized=norm,
+                    label=lbl,
+                    color=clr,
+                )
+                if norm is not None:
+                    fn_scores.append(norm)
+            else:
+                factor_scores[fname] = FactorScoreEntry(raw_mean=None)
+
+        comp, comp_lbl, comp_clr = _composite_apply(fn_scores, algo_by_fid)
+        resp_detail[resp_id] = (comp, comp_lbl, comp_clr, factor_scores, demo_acc.get(resp_id, {}))
+
+    # Sort by composite score
+    reverse = sort_dir.lower() != "asc"
+    sorted_resps = sorted(
+        all_resps,
+        key=lambda r: (resp_detail[r[0]][0] is not None, resp_detail[r[0]][0] or 0.0),
+        reverse=reverse,
+    )
+
+    total = len(sorted_resps)
+    page = max(1, page)
+    start = (page - 1) * page_size
+    paged = sorted_resps[start: start + page_size]
+
+    rows: list[RespondentRow] = []
+    for resp_id, resp_ref, submitted_at in paged:
+        comp, comp_lbl, comp_clr, factor_scores, demographics = resp_detail[resp_id]
+        rows.append(RespondentRow(
+            response_id=resp_id,
+            respondent_ref=resp_ref,
+            submitted_at=submitted_at,
+            composite_score=comp,
+            composite_label=comp_lbl,
+            composite_color=comp_clr,
+            factor_scores=factor_scores,
+            demographics=demographics,
+        ))
+
+    return RespondentsResponse(
+        survey_id=survey_id,
+        total=total,
+        page=page,
+        page_size=page_size,
+        rows=rows,
     )
 
 

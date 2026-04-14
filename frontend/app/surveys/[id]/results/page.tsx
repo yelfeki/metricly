@@ -542,6 +542,10 @@ export default function ResultsPage() {
                     className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50">
                     Edit
                   </Link>
+                  <Link href={`/surveys/${id}/dashboard`}
+                    className="rounded-lg bg-indigo-50 border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-100">
+                    Dashboard
+                  </Link>
                   <button onClick={handlePublish} disabled={publishing}
                     className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50">
                     {publishing ? "…" : "Publish"}

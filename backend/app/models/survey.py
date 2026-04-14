@@ -80,6 +80,11 @@ class Question(Base):
     option_scores: Mapped[str | None] = mapped_column(
         Text, nullable=True
     )  # JSON dict[str, float]: option/item text → score or weight
+    # v0.6 demographic fields
+    is_demographic: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    demographic_key: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+    )  # e.g. "gender", "department", "age_group"
 
     survey: Mapped["Survey"] = relationship("Survey", back_populates="questions")
     answers: Mapped[list["Answer"]] = relationship(
@@ -137,6 +142,8 @@ class Answer(Base):
     score: Mapped[float | None] = mapped_column(Float, nullable=True)
     # numeric_score is the computed psychometric score (all scorable types, v0.4)
     numeric_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # demographic_value mirrors value for demographic questions (v0.6)
+    demographic_value: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     response: Mapped["Response"] = relationship("Response", back_populates="answers")
     question: Mapped["Question"] = relationship("Question", back_populates="answers")

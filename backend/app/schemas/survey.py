@@ -52,6 +52,9 @@ class QuestionCreate(BaseModel):
     score_weight: float = 1.0
     # option text → numeric score (single/multiple choice) or item → weight (forced choice)
     option_scores: dict[str, float] | None = None
+    # v0.6 demographic fields
+    is_demographic: bool = False
+    demographic_key: str | None = None
 
     @model_validator(mode="after")
     def validate_by_type(self) -> "QuestionCreate":
@@ -94,6 +97,9 @@ class QuestionUpdate(BaseModel):
     reverse_scored: bool | None = None
     score_weight: float | None = None
     option_scores: dict[str, float] | None = None
+    # v0.6 demographic fields
+    is_demographic: bool | None = None
+    demographic_key: str | None = None
 
 
 class AnswerSubmit(BaseModel):
@@ -173,6 +179,9 @@ class QuestionOut(BaseModel):
     reverse_scored: bool = False
     score_weight: float = 1.0
     option_scores: Any = None  # dict[str, float] | None
+    # v0.6 demographic fields
+    is_demographic: bool = False
+    demographic_key: str | None = None
 
     @field_validator("options", mode="before")
     @classmethod
@@ -361,3 +370,93 @@ class ParticipantReport(BaseModel):
     answers: list[AnswerReport]
     factors: list[FactorReport]
     composite: CompositeReport
+
+
+# ---------------------------------------------------------------------------
+# Dashboard / cohort analytics schemas
+# ---------------------------------------------------------------------------
+
+
+class HistogramBin(BaseModel):
+    start: float
+    end: float
+    count: int
+
+
+class FactorDistribution(BaseModel):
+    factor_name: str
+    mean: float | None
+    sd: float | None
+    min: float | None
+    max: float | None
+    n: int
+    histogram: list[HistogramBin]
+    label: str | None
+    color: str | None
+
+
+class DashboardResponse(BaseModel):
+    survey_id: str
+    response_count: int
+    date_range_start: datetime | None
+    date_range_end: datetime | None
+    average_composite: float | None
+    composite_label: str | None
+    composite_color: str | None
+    factor_distributions: list[FactorDistribution]   # sorted by mean desc
+    composite_histogram: list[HistogramBin]
+    demographic_keys: list[str]
+
+
+# ---------------------------------------------------------------------------
+# Group comparison schemas
+# ---------------------------------------------------------------------------
+
+
+class GroupStats(BaseModel):
+    group_value: str
+    n: int
+    mean: float | None
+    sd: float | None
+
+
+class FactorGroupComparison(BaseModel):
+    factor_name: str
+    groups: list[GroupStats]
+    test_type: str | None
+    p_value: float | None
+    significant: bool
+    effect_size: float | None
+    effect_size_type: str | None
+    interpretation: str
+
+
+class GroupComparisonResponse(BaseModel):
+    survey_id: str
+    demographic_key: str
+    group_values: list[str]
+    factors: list[FactorGroupComparison]
+
+
+# ---------------------------------------------------------------------------
+# Respondents table schemas
+# ---------------------------------------------------------------------------
+
+
+class RespondentRow(BaseModel):
+    response_id: str
+    respondent_ref: str | None
+    submitted_at: datetime
+    composite_score: float | None
+    composite_label: str | None
+    composite_color: str | None
+    factor_scores: dict[str, FactorScoreEntry]
+    demographics: dict[str, str]
+
+
+class RespondentsResponse(BaseModel):
+    survey_id: str
+    total: int
+    page: int
+    page_size: int
+    rows: list[RespondentRow]

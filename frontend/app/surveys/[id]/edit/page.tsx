@@ -13,8 +13,19 @@ import {
   createFactor,
   updateFactor,
   deleteFactor,
+  getAlgorithms,
+  createAlgorithm,
+  updateAlgorithm,
 } from "@/lib/api"
-import type { QuestionDraft, QuestionOut, QuestionType, SurveyFactor, SurveyStatus } from "@/lib/types"
+import type {
+  LabelThreshold,
+  QuestionDraft,
+  QuestionOut,
+  QuestionType,
+  ScoringAlgorithm,
+  SurveyFactor,
+  SurveyStatus,
+} from "@/lib/types"
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -443,6 +454,252 @@ function FactorRow({ factor, onSave, onDelete }: FactorRowProps) {
 }
 
 // ---------------------------------------------------------------------------
+// Scoring algorithm form (one per factor)
+// ---------------------------------------------------------------------------
+
+interface ScoringFormProps {
+  surveyId: string
+  factor: SurveyFactor
+  existing: ScoringAlgorithm | null
+  onSaved: (algo: ScoringAlgorithm) => void
+}
+
+const DEFAULT_COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
+
+function ScoringAlgorithmForm({ surveyId, factor, existing, onSaved }: ScoringFormProps) {
+  const [minPossible, setMinPossible] = useState(existing?.min_possible ?? 1)
+  const [maxPossible, setMaxPossible] = useState(existing?.max_possible ?? 5)
+  const [normMin, setNormMin] = useState(existing?.normalized_min ?? 0)
+  const [normMax, setNormMax] = useState(existing?.normalized_max ?? 100)
+  const [labels, setLabels] = useState<LabelThreshold[]>(existing?.labels ?? [])
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  function addLabel() {
+    const color = DEFAULT_COLORS[labels.length % DEFAULT_COLORS.length]
+    setLabels(prev => [...prev, { threshold: 0, label: "", color }])
+  }
+  function removeLabel(i: number) {
+    setLabels(prev => prev.filter((_, idx) => idx !== i))
+  }
+  function updateLabel(i: number, patch: Partial<LabelThreshold>) {
+    setLabels(prev => prev.map((l, idx) => idx === i ? { ...l, ...patch } : l))
+  }
+
+  async function handleSave() {
+    if (maxPossible <= minPossible) { setErr("Max must be greater than min."); return }
+    setErr(null); setSaving(true)
+    try {
+      const payload = {
+        factor_id: factor.id,
+        min_possible: minPossible,
+        max_possible: maxPossible,
+        normalized_min: normMin,
+        normalized_max: normMax,
+        labels: labels.length > 0 ? labels : null,
+      }
+      const algo = existing
+        ? await updateAlgorithm(surveyId, existing.id, payload)
+        : await createAlgorithm(surveyId, payload)
+      onSaved(algo)
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Live preview: normalize 0% to 100% of raw range and show label segments
+  const sortedLabels = [...labels].sort((a, b) => a.threshold - b.threshold)
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+      <h3 className="text-sm font-semibold text-slate-700">{factor.name}</h3>
+
+      {/* Raw score range */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Min possible score
+          </label>
+          <input
+            type="number"
+            value={minPossible}
+            step="0.1"
+            onChange={e => setMinPossible(parseFloat(e.target.value) || 0)}
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Max possible score
+          </label>
+          <input
+            type="number"
+            value={maxPossible}
+            step="0.1"
+            onChange={e => setMaxPossible(parseFloat(e.target.value) || 0)}
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
+          />
+        </div>
+      </div>
+
+      {/* Normalized scale */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Normalized min
+          </label>
+          <input
+            type="number"
+            value={normMin}
+            step="1"
+            onChange={e => setNormMin(parseFloat(e.target.value) || 0)}
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
+          />
+        </div>
+        <div>
+          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Normalized max
+          </label>
+          <input
+            type="number"
+            value={normMax}
+            step="1"
+            onChange={e => setNormMax(parseFloat(e.target.value) || 0)}
+            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
+          />
+        </div>
+      </div>
+
+      {/* Label thresholds */}
+      <div>
+        <label className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+          Label thresholds (on normalized scale)
+        </label>
+        {labels.length === 0 && (
+          <p className="text-xs text-slate-400 mb-2">No labels defined. Scores will be shown as numbers only.</p>
+        )}
+        <div className="space-y-2">
+          {labels.map((l, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] text-slate-400 w-14">Threshold</span>
+                <input
+                  type="number"
+                  value={l.threshold}
+                  min={normMin}
+                  max={normMax}
+                  step="1"
+                  onChange={e => updateLabel(i, { threshold: parseFloat(e.target.value) || 0 })}
+                  className="w-16 rounded border border-slate-200 bg-slate-50 px-1.5 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                />
+              </div>
+              <input
+                value={l.label}
+                onChange={e => updateLabel(i, { label: e.target.value })}
+                placeholder="Label"
+                className="flex-1 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+              />
+              <div className="flex items-center gap-1">
+                <input
+                  type="color"
+                  value={l.color}
+                  onChange={e => updateLabel(i, { color: e.target.value })}
+                  className="h-6 w-8 cursor-pointer rounded border border-slate-200 p-0.5"
+                  title="Label color"
+                />
+              </div>
+              <button type="button" onClick={() => removeLabel(i)}
+                className="text-slate-300 hover:text-red-400 transition-colors">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+        <button type="button" onClick={addLabel}
+          className="mt-2 flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 transition-colors">
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Add threshold
+        </button>
+      </div>
+
+      {/* Live preview */}
+      {labels.length > 0 && (
+        <div>
+          <label className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            Preview
+          </label>
+          <div className="relative h-8 w-full overflow-hidden rounded-lg bg-slate-100">
+            {sortedLabels.map((l, i) => {
+              const next = sortedLabels[i + 1]
+              const start = ((l.threshold - normMin) / (normMax - normMin)) * 100
+              const end = next ? ((next.threshold - normMin) / (normMax - normMin)) * 100 : 100
+              const width = Math.max(0, end - start)
+              return (
+                <div
+                  key={i}
+                  style={{
+                    position: "absolute",
+                    left: `${start}%`,
+                    width: `${width}%`,
+                    height: "100%",
+                    backgroundColor: l.color,
+                    opacity: 0.85,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <span className="text-[10px] font-semibold text-white drop-shadow truncate px-1">{l.label}</span>
+                </div>
+              )
+            })}
+            {/* Below-all-thresholds zone */}
+            {sortedLabels.length > 0 && sortedLabels[0].threshold > normMin && (
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  width: `${((sortedLabels[0].threshold - normMin) / (normMax - normMin)) * 100}%`,
+                  height: "100%",
+                  backgroundColor: "#e2e8f0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <span className="text-[10px] text-slate-400 truncate px-1">—</span>
+              </div>
+            )}
+          </div>
+          <div className="mt-1 flex justify-between text-[10px] text-slate-400">
+            <span>{normMin}</span>
+            <span>{normMax}</span>
+          </div>
+        </div>
+      )}
+
+      {err && <p className="text-xs text-red-600">{err}</p>}
+
+      <button type="button" onClick={handleSave} disabled={saving}
+        className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50">
+        {saving ? "Saving…" : existing ? "Update algorithm" : "Save algorithm"}
+        {!saving && (
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </button>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -456,7 +713,8 @@ export default function EditSurveyPage() {
   const [questions, setQuestions] = useState<EditDraft[]>([])
   const [originalServerIds, setOriginalServerIds] = useState<Set<string>>(new Set())
   const [factors, setFactors] = useState<SurveyFactor[]>([])
-  const [activeTab, setActiveTab] = useState<"questions" | "factors">("questions")
+  const [algorithms, setAlgorithms] = useState<ScoringAlgorithm[]>([])
+  const [activeTab, setActiveTab] = useState<"questions" | "factors" | "scoring">("questions")
 
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loadingData, setLoadingData] = useState(true)
@@ -469,10 +727,10 @@ export default function EditSurveyPage() {
 
   const factorNames = factors.map(f => f.name)
 
-  // Load survey + factors on mount
+  // Load survey + factors + algorithms on mount
   useEffect(() => {
-    Promise.all([getSurvey(id), getFactors(id)])
-      .then(([survey, loadedFactors]) => {
+    Promise.all([getSurvey(id), getFactors(id), getAlgorithms(id)])
+      .then(([survey, loadedFactors, loadedAlgos]) => {
         setTitle(survey.name)
         setDescription(survey.description ?? "")
         setStatus(survey.status)
@@ -480,6 +738,7 @@ export default function EditSurveyPage() {
         setQuestions(sorted.map((q, i) => questionOutToEditDraft(q, i + 1)))
         setOriginalServerIds(new Set(survey.questions.map(q => q.id)))
         setFactors(loadedFactors)
+        setAlgorithms(loadedAlgos)
       })
       .catch(e => setLoadError(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoadingData(false))
@@ -704,7 +963,11 @@ export default function EditSurveyPage() {
 
           {/* Tabs */}
           <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
-            {([["questions", `Questions (${questions.length})`], ["factors", `Factors (${factors.length})`]] as const).map(([tab, label]) => (
+            {([
+              ["questions", `Questions (${questions.length})`],
+              ["factors", `Factors (${factors.length})`],
+              ["scoring", "Scoring"],
+            ] as const).map(([tab, label]) => (
               <button
                 key={tab}
                 type="button"
@@ -793,6 +1056,41 @@ export default function EditSurveyPage() {
                 </svg>
                 Add factor
               </button>
+            </div>
+          )}
+
+          {/* Scoring tab */}
+          {activeTab === "scoring" && (
+            <div className="space-y-4">
+              <p className="text-xs text-slate-500">
+                Configure how each factor&apos;s raw mean score is normalized and mapped to interpretable labels.
+              </p>
+              {factors.length === 0 ? (
+                <div className="rounded-xl border-2 border-dashed border-slate-200 px-5 py-8 text-center">
+                  <p className="text-sm text-slate-400">No factors defined yet.</p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Add factors in the Factors tab first, then configure scoring here.
+                  </p>
+                </div>
+              ) : (
+                factors.map(factor => {
+                  const existing = algorithms.find(a => a.factor_id === factor.id) ?? null
+                  return (
+                    <ScoringAlgorithmForm
+                      key={factor.id}
+                      surveyId={id}
+                      factor={factor}
+                      existing={existing}
+                      onSaved={algo =>
+                        setAlgorithms(prev => {
+                          const without = prev.filter(a => a.id !== algo.id)
+                          return [...without, algo]
+                        })
+                      }
+                    />
+                  )
+                })
+              )}
             </div>
           )}
 

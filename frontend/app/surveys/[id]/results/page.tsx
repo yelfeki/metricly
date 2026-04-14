@@ -6,7 +6,7 @@ import Link from "next/link"
 import Header from "@/components/Header"
 import { getSurveyResults, getSurveyReliability, getFactorScores, updateSurvey } from "@/lib/api"
 import type { CronbachAlphaResponse } from "@/lib/api"
-import type { FactorScoresResponse, ForcedChoiceConfig, QuestionOut, QuestionStat, SurveyResults } from "@/lib/types"
+import type { FactorScoreEntry, FactorScoresResponse, ForcedChoiceConfig, QuestionOut, QuestionStat, SurveyResults } from "@/lib/types"
 
 function round2(n: number) { return Math.round(n * 100) / 100 }
 
@@ -280,6 +280,29 @@ function ReliabilityPanel({ surveyId }: { surveyId: string }) {
 // Factor scores panel
 // ---------------------------------------------------------------------------
 
+function ScoreCell({ entry }: { entry: FactorScoreEntry | undefined }) {
+  if (!entry || entry.raw_mean === null) {
+    return <span className="text-slate-300">—</span>
+  }
+  const hasNorm = entry.normalized !== null
+  return (
+    <div className="flex flex-col items-end gap-0.5">
+      <span className="tabular-nums text-slate-700">{entry.raw_mean.toFixed(2)}</span>
+      {hasNorm && (
+        <span className="tabular-nums text-[10px] text-slate-400">{entry.normalized!.toFixed(1)}</span>
+      )}
+      {entry.label && (
+        <span
+          className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white"
+          style={{ backgroundColor: entry.color ?? "#64748b" }}
+        >
+          {entry.label}
+        </span>
+      )}
+    </div>
+  )
+}
+
 function FactorScoresPanel({ surveyId }: { surveyId: string }) {
   const [data, setData] = useState<FactorScoresResponse | null>(null)
   const [loading, setLoading] = useState(false)
@@ -301,12 +324,27 @@ function FactorScoresPanel({ surveyId }: { surveyId: string }) {
 
   function downloadCSV() {
     if (!data || data.rows.length === 0) return
-    const headers = ["Respondent", ...data.factors]
-    const summaryMean = ["Mean", ...data.factors.map(f => data.summary.mean[f]?.toFixed(4) ?? "")]
-    const summarySd   = ["SD",   ...data.factors.map(f => data.summary.sd[f]?.toFixed(4)   ?? "")]
+    const headers = ["Respondent", ...data.factors.flatMap(f => [`${f} (raw)`, `${f} (norm)`, `${f} label`])]
+    const summaryMean = [
+      "Mean",
+      ...data.factors.flatMap(f => {
+        const e = data.summary.mean[f]
+        return [e?.raw_mean?.toFixed(4) ?? "", e?.normalized?.toFixed(2) ?? "", e?.label ?? ""]
+      }),
+    ]
+    const summarySd = [
+      "SD",
+      ...data.factors.flatMap(f => {
+        const sd = data.summary.sd[f]
+        return [sd !== null && sd !== undefined ? sd.toFixed(4) : "", "", ""]
+      }),
+    ]
     const rows = data.rows.map(row => [
       row.respondent_id,
-      ...data.factors.map(f => row.scores[f]?.toFixed(4) ?? ""),
+      ...data.factors.flatMap(f => {
+        const e = row.scores[f]
+        return [e?.raw_mean?.toFixed(4) ?? "", e?.normalized?.toFixed(2) ?? "", e?.label ?? ""]
+      }),
     ])
     const csv = [headers, ...rows, [], summaryMean, summarySd]
       .map(r => r.join(","))
@@ -326,7 +364,7 @@ function FactorScoresPanel({ surveyId }: { surveyId: string }) {
       >
         <div>
           <p className="text-sm font-semibold text-slate-800">Factor Scores</p>
-          <p className="text-xs text-slate-400">Mean score per respondent × factor</p>
+          <p className="text-xs text-slate-400">Mean score per respondent × factor, with normalization</p>
         </div>
         <svg
           className={`h-4 w-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
@@ -367,10 +405,8 @@ function FactorScoresPanel({ surveyId }: { surveyId: string }) {
                           <tr key={i} className="hover:bg-slate-50">
                             <td className="px-3 py-2 text-slate-600 font-mono">{row.respondent_id}</td>
                             {data.factors.map(f => (
-                              <td key={f} className="px-3 py-2 text-right tabular-nums text-slate-700">
-                                {row.scores[f] !== null && row.scores[f] !== undefined
-                                  ? (row.scores[f] as number).toFixed(2)
-                                  : <span className="text-slate-300">—</span>}
+                              <td key={f} className="px-3 py-2 text-right">
+                                <ScoreCell entry={row.scores[f]} />
                               </td>
                             ))}
                           </tr>
@@ -380,8 +416,8 @@ function FactorScoresPanel({ surveyId }: { surveyId: string }) {
                         <tr className="border-t-2 border-slate-200 bg-slate-50">
                           <td className="px-3 py-2 font-semibold text-slate-500">Mean</td>
                           {data.factors.map(f => (
-                            <td key={f} className="px-3 py-2 text-right tabular-nums font-semibold text-indigo-600">
-                              {data.summary.mean[f] !== null ? (data.summary.mean[f] as number).toFixed(2) : "—"}
+                            <td key={f} className="px-3 py-2 text-right font-semibold text-indigo-600">
+                              <ScoreCell entry={data.summary.mean[f]} />
                             </td>
                           ))}
                         </tr>
@@ -389,7 +425,9 @@ function FactorScoresPanel({ surveyId }: { surveyId: string }) {
                           <td className="px-3 py-2 font-semibold text-slate-500">SD</td>
                           {data.factors.map(f => (
                             <td key={f} className="px-3 py-2 text-right tabular-nums text-slate-500">
-                              {data.summary.sd[f] !== null ? (data.summary.sd[f] as number).toFixed(2) : "—"}
+                              {data.summary.sd[f] !== null && data.summary.sd[f] !== undefined
+                                ? (data.summary.sd[f] as number).toFixed(2)
+                                : <span className="text-slate-300">—</span>}
                             </td>
                           ))}
                         </tr>

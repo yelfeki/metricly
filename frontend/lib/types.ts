@@ -113,16 +113,45 @@ export interface SurveyResults {
 }
 
 // ---------------------------------------------------------------------------
+// Scoring algorithms
+// ---------------------------------------------------------------------------
+
+export interface LabelThreshold {
+  threshold: number  // 0–100 on the normalized scale
+  label: string
+  color: string      // CSS color string, e.g. "#22c55e"
+}
+
+export interface ScoringAlgorithm {
+  id: string
+  survey_id: string
+  factor_id: string | null
+  min_possible: number
+  max_possible: number
+  normalized_min: number
+  normalized_max: number
+  labels: LabelThreshold[] | null
+  created_at: string
+}
+
+// ---------------------------------------------------------------------------
 // Factor scores
 // ---------------------------------------------------------------------------
 
+export interface FactorScoreEntry {
+  raw_mean: number | null
+  normalized: number | null
+  label: string | null
+  color: string | null
+}
+
 export interface RespondentFactorScores {
   respondent_id: string
-  scores: Record<string, number | null>
+  scores: Record<string, FactorScoreEntry>
 }
 
 export interface FactorScoresSummary {
-  mean: Record<string, number | null>
+  mean: Record<string, FactorScoreEntry>
   sd: Record<string, number | null>
 }
 

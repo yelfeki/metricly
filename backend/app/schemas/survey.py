@@ -238,17 +238,76 @@ class SurveyResults(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Scoring algorithm schemas
+# ---------------------------------------------------------------------------
+
+
+class LabelThreshold(BaseModel):
+    threshold: float  # 0–100 on the normalized scale
+    label: str
+    color: str        # CSS color string, e.g. "#22c55e"
+
+
+class ScoringAlgorithmCreate(BaseModel):
+    factor_id: str | None = None  # NULL = composite/whole-survey score
+    min_possible: float
+    max_possible: float
+    normalized_min: float = 0.0
+    normalized_max: float = 100.0
+    labels: list[LabelThreshold] | None = None
+
+
+class ScoringAlgorithmUpdate(BaseModel):
+    min_possible: float | None = None
+    max_possible: float | None = None
+    normalized_min: float | None = None
+    normalized_max: float | None = None
+    labels: list[LabelThreshold] | None = None
+
+
+class ScoringAlgorithmOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    survey_id: str
+    factor_id: str | None
+    min_possible: float
+    max_possible: float
+    normalized_min: float
+    normalized_max: float
+    labels: list[LabelThreshold] | None = None
+    created_at: datetime
+
+    @field_validator("labels", mode="before")
+    @classmethod
+    def parse_labels_json(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return None
+        return v
+
+
+# ---------------------------------------------------------------------------
 # Factor scores schemas
 # ---------------------------------------------------------------------------
 
 
+class FactorScoreEntry(BaseModel):
+    raw_mean: float | None
+    normalized: float | None = None
+    label: str | None = None
+    color: str | None = None
+
+
 class RespondentFactorScores(BaseModel):
     respondent_id: str
-    scores: dict[str, float | None]  # factor name → mean numeric score
+    scores: dict[str, FactorScoreEntry]  # factor name → score entry
 
 
 class FactorScoresSummary(BaseModel):
-    mean: dict[str, float | None]
+    mean: dict[str, FactorScoreEntry]
     sd: dict[str, float | None]
 
 

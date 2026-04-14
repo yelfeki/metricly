@@ -57,6 +57,20 @@ async def run_migrations() -> None:
             description TEXT
         )""",
         "CREATE INDEX IF NOT EXISTS ix_survey_factors_survey_id ON survey_factors (survey_id)",
+        # v0.5 — scoring algorithm builder
+        """CREATE TABLE IF NOT EXISTS scoring_algorithms (
+            id VARCHAR(36) PRIMARY KEY,
+            survey_id VARCHAR(36) NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+            factor_id VARCHAR(36) REFERENCES survey_factors(id) ON DELETE CASCADE,
+            min_possible FLOAT NOT NULL,
+            max_possible FLOAT NOT NULL,
+            normalized_min FLOAT NOT NULL DEFAULT 0,
+            normalized_max FLOAT NOT NULL DEFAULT 100,
+            labels TEXT,
+            created_at TIMESTAMP WITH TIME ZONE NOT NULL
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_scoring_algorithms_survey_id ON scoring_algorithms (survey_id)",
+        "CREATE INDEX IF NOT EXISTS ix_scoring_algorithms_factor_id ON scoring_algorithms (factor_id)",
     ]
     for stmt in migrations:
         try:

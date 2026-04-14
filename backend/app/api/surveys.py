@@ -12,9 +12,10 @@ from sqlalchemy.orm import selectinload
 
 from ..core.auth import AuthUser, optional_user, require_user
 from ..core.database import get_db
-from ..models.survey import Answer, Question, Response, Survey, SurveyFactor
+from ..models.survey import Answer, Question, Response, Survey, SurveyFactor, ScoringAlgorithm
 from ..schemas.reliability import CronbachAlphaRequest, CronbachAlphaResponse
 from ..schemas.survey import (
+    FactorScoreEntry,
     FactorScoresResponse,
     FactorScoresSummary,
     QuestionCreate,
@@ -24,6 +25,9 @@ from ..schemas.survey import (
     RespondentFactorScores,
     ResponseOut,
     ResponseSubmit,
+    ScoringAlgorithmCreate,
+    ScoringAlgorithmOut,
+    ScoringAlgorithmUpdate,
     SurveyCreate,
     SurveyFactorCreate,
     SurveyFactorOut,
@@ -34,6 +38,7 @@ from ..schemas.survey import (
     SurveyUpdate,
 )
 from ..services.reliability import compute_cronbach_alpha
+from ..services.score_normalizer import get_label, normalize
 from ..services.scoring import score_answer
 
 survey_router = APIRouter(prefix="/surveys", tags=["surveys"])
@@ -523,6 +528,126 @@ async def delete_factor(
 
 
 # ---------------------------------------------------------------------------
+# Scoring algorithm management  (owner only)
+# ---------------------------------------------------------------------------
+
+
+@survey_router.get("/{survey_id}/scoring-algorithms", response_model=list[ScoringAlgorithmOut])
+async def list_scoring_algorithms(
+    survey_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> list[ScoringAlgorithmOut]:
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+    stmt = (
+        select(ScoringAlgorithm)
+        .where(ScoringAlgorithm.survey_id == survey_id)
+        .order_by(ScoringAlgorithm.created_at)
+    )
+    algos = list((await db.execute(stmt)).scalars().all())
+    return [ScoringAlgorithmOut.model_validate(a) for a in algos]
+
+
+@survey_router.post(
+    "/{survey_id}/scoring-algorithms",
+    response_model=ScoringAlgorithmOut,
+    status_code=201,
+)
+async def create_scoring_algorithm(
+    survey_id: str,
+    body: ScoringAlgorithmCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> ScoringAlgorithmOut:
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+
+    # Validate factor_id belongs to this survey (if provided)
+    if body.factor_id is not None:
+        factor = (await db.execute(
+            select(SurveyFactor).where(
+                SurveyFactor.id == body.factor_id,
+                SurveyFactor.survey_id == survey_id,
+            )
+        )).scalar_one_or_none()
+        if factor is None:
+            raise HTTPException(status_code=404, detail="Factor not found")
+
+    algo = ScoringAlgorithm(
+        survey_id=survey_id,
+        factor_id=body.factor_id,
+        min_possible=body.min_possible,
+        max_possible=body.max_possible,
+        normalized_min=body.normalized_min,
+        normalized_max=body.normalized_max,
+        labels=json.dumps([lt.model_dump() for lt in body.labels]) if body.labels else None,
+    )
+    db.add(algo)
+    await db.commit()
+    await db.refresh(algo)
+    return ScoringAlgorithmOut.model_validate(algo)
+
+
+@survey_router.patch(
+    "/{survey_id}/scoring-algorithms/{algo_id}",
+    response_model=ScoringAlgorithmOut,
+)
+async def update_scoring_algorithm(
+    survey_id: str,
+    algo_id: str,
+    body: ScoringAlgorithmUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> ScoringAlgorithmOut:
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+    algo = (await db.execute(
+        select(ScoringAlgorithm).where(
+            ScoringAlgorithm.id == algo_id,
+            ScoringAlgorithm.survey_id == survey_id,
+        )
+    )).scalar_one_or_none()
+    if algo is None:
+        raise HTTPException(status_code=404, detail="Scoring algorithm not found")
+
+    if body.min_possible is not None:
+        algo.min_possible = body.min_possible
+    if body.max_possible is not None:
+        algo.max_possible = body.max_possible
+    if body.normalized_min is not None:
+        algo.normalized_min = body.normalized_min
+    if body.normalized_max is not None:
+        algo.normalized_max = body.normalized_max
+    if body.labels is not None:
+        algo.labels = json.dumps([lt.model_dump() for lt in body.labels])
+    await db.commit()
+    await db.refresh(algo)
+    return ScoringAlgorithmOut.model_validate(algo)
+
+
+@survey_router.delete("/{survey_id}/scoring-algorithms/{algo_id}", status_code=204)
+async def delete_scoring_algorithm(
+    survey_id: str,
+    algo_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> None:
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+    algo = (await db.execute(
+        select(ScoringAlgorithm).where(
+            ScoringAlgorithm.id == algo_id,
+            ScoringAlgorithm.survey_id == survey_id,
+        )
+    )).scalar_one_or_none()
+    if algo is None:
+        raise HTTPException(status_code=404, detail="Scoring algorithm not found")
+    await db.delete(algo)
+    await db.commit()
+
+
+# ---------------------------------------------------------------------------
 # Response submission  (public — survey must be published)
 # ---------------------------------------------------------------------------
 
@@ -628,18 +753,61 @@ async def get_factor_scores(
     factor_of: dict[str, str] = {q.id: q.factor for q in survey.questions if q.factor}
     all_factors = sorted(set(factor_of.values()))
 
+    def _empty_entry() -> FactorScoreEntry:
+        return FactorScoreEntry(raw_mean=None)
+
     empty = FactorScoresResponse(
         survey_id=survey_id,
         factors=all_factors,
         rows=[],
         summary=FactorScoresSummary(
-            mean={f: None for f in all_factors},
+            mean={f: _empty_entry() for f in all_factors},
             sd={f: None for f in all_factors},
         ),
     )
 
     if not all_factors:
         return empty
+
+    # Load survey factors to build name → factor_id mapping
+    sf_rows = list((await db.execute(
+        select(SurveyFactor).where(SurveyFactor.survey_id == survey_id)
+    )).scalars().all())
+    name_to_factor_id: dict[str, str] = {sf.name: sf.id for sf in sf_rows}
+
+    # Load scoring algorithms keyed by factor_id (None = composite)
+    algo_rows = list((await db.execute(
+        select(ScoringAlgorithm).where(ScoringAlgorithm.survey_id == survey_id)
+    )).scalars().all())
+    algo_by_factor_id: dict[str | None, ScoringAlgorithm] = {a.factor_id: a for a in algo_rows}
+
+    def _apply_algo(raw_mean: float, factor_name: str) -> FactorScoreEntry:
+        """Normalize and label a raw mean score using the factor's algorithm."""
+        factor_id = name_to_factor_id.get(factor_name)
+        algo = algo_by_factor_id.get(factor_id) if factor_id else None
+        if algo is None:
+            return FactorScoreEntry(raw_mean=round(raw_mean, 4))
+        norm = normalize(
+            raw_mean,
+            algo.min_possible,
+            algo.max_possible,
+            algo.normalized_min,
+            algo.normalized_max,
+        )
+        norm = round(norm, 2)
+        label_info: dict | None = None
+        if algo.labels:
+            try:
+                label_list = json.loads(algo.labels)
+                label_info = get_label(norm, label_list)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return FactorScoreEntry(
+            raw_mean=round(raw_mean, 4),
+            normalized=norm,
+            label=label_info["label"] if label_info else None,
+            color=label_info["color"] if label_info else None,
+        )
 
     # All responses in submission order
     resp_rows = list((await db.execute(
@@ -668,38 +836,39 @@ async def get_factor_scores(
 
     # Build per-respondent rows
     rows: list[RespondentFactorScores] = []
+    # Track raw means per factor for summary computation
+    factor_raw_vals: dict[str, list[float]] = defaultdict(list)
     for resp_id, resp_ref in resp_rows:
         factor_data = acc.get(resp_id, {})
-        scores: dict[str, float | None] = {}
+        scores: dict[str, FactorScoreEntry] = {}
         for f in all_factors:
             vals = factor_data.get(f, [])
-            scores[f] = round(sum(vals) / len(vals), 4) if vals else None
+            if vals:
+                raw_mean = sum(vals) / len(vals)
+                factor_raw_vals[f].append(raw_mean)
+                scores[f] = _apply_algo(raw_mean, f)
+            else:
+                scores[f] = _empty_entry()
         rows.append(RespondentFactorScores(
             respondent_id=resp_ref or resp_id[:8],
             scores=scores,
         ))
 
-    # Summary: mean ± SD per factor across all respondents
-    factor_vals: dict[str, list[float]] = defaultdict(list)
-    for row in rows:
-        for f, s in row.scores.items():
-            if s is not None:
-                factor_vals[f].append(s)
-
-    mean_d: dict[str, float | None] = {}
+    # Summary: mean ± SD of raw means per factor
+    mean_d: dict[str, FactorScoreEntry] = {}
     sd_d: dict[str, float | None] = {}
     for f in all_factors:
-        vals = factor_vals[f]
+        vals = factor_raw_vals[f]
         if vals:
             m = sum(vals) / len(vals)
-            mean_d[f] = round(m, 4)
+            mean_d[f] = _apply_algo(m, f)
             if len(vals) > 1:
                 variance = sum((v - m) ** 2 for v in vals) / (len(vals) - 1)
                 sd_d[f] = round(math.sqrt(variance), 4)
             else:
                 sd_d[f] = 0.0
         else:
-            mean_d[f] = None
+            mean_d[f] = _empty_entry()
             sd_d[f] = None
 
     return FactorScoresResponse(

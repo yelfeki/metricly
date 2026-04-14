@@ -160,6 +160,52 @@ class SurveyFactor(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     survey: Mapped["Survey"] = relationship("Survey", back_populates="factors")
+    algorithm: Mapped["ScoringAlgorithm | None"] = relationship(
+        "ScoringAlgorithm",
+        back_populates="factor",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<SurveyFactor id={self.id!r} name={self.name!r}>"
+
+
+class ScoringAlgorithm(Base):
+    """
+    Defines how a factor's raw mean score is normalized to an interpretable scale
+    and mapped to qualitative labels (e.g. Developing / Proficient / Advanced).
+
+    factor_id = NULL means the algorithm applies to the whole-survey composite score.
+    """
+
+    __tablename__ = "scoring_algorithms"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    survey_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("surveys.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    factor_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("survey_factors.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    min_possible: Mapped[float] = mapped_column(Float, nullable=False)
+    max_possible: Mapped[float] = mapped_column(Float, nullable=False)
+    normalized_min: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    normalized_max: Mapped[float] = mapped_column(Float, nullable=False, default=100.0)
+    # JSON array of {threshold: float, label: str, color: str}, sorted ascending by threshold
+    labels: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+
+    factor: Mapped["SurveyFactor | None"] = relationship(
+        "SurveyFactor", back_populates="algorithm"
+    )
+
+    def __repr__(self) -> str:
+        return f"<ScoringAlgorithm id={self.id!r} factor_id={self.factor_id!r}>"

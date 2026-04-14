@@ -1,8 +1,10 @@
 import type {
   CronbachAlphaResponse,
   FactorScoresResponse,
+  LabelThreshold,
   QuestionOut,
   ResponseOut,
+  ScoringAlgorithm,
   SurveyFactor,
   SurveyListItem,
   SurveyOut,
@@ -208,6 +210,46 @@ export const updateFactor = (
 
 export const deleteFactor = (surveyId: string, factorId: string): Promise<void> =>
   del(`/api/v1/surveys/${surveyId}/factors/${factorId}`)
+
+// ---------------------------------------------------------------------------
+// Scoring algorithms
+// ---------------------------------------------------------------------------
+
+export interface ScoringAlgorithmPayload {
+  factor_id?: string | null
+  min_possible: number
+  max_possible: number
+  normalized_min?: number
+  normalized_max?: number
+  labels?: LabelThreshold[] | null
+}
+
+export interface ScoringAlgorithmUpdatePayload {
+  min_possible?: number
+  max_possible?: number
+  normalized_min?: number
+  normalized_max?: number
+  labels?: LabelThreshold[] | null
+}
+
+export const getAlgorithms = (surveyId: string): Promise<ScoringAlgorithm[]> =>
+  get(`/api/v1/surveys/${surveyId}/scoring-algorithms`)
+
+export const createAlgorithm = (
+  surveyId: string,
+  body: ScoringAlgorithmPayload
+): Promise<ScoringAlgorithm> =>
+  post(`/api/v1/surveys/${surveyId}/scoring-algorithms`, body)
+
+export const updateAlgorithm = (
+  surveyId: string,
+  algoId: string,
+  body: ScoringAlgorithmUpdatePayload
+): Promise<ScoringAlgorithm> =>
+  patch(`/api/v1/surveys/${surveyId}/scoring-algorithms/${algoId}`, body)
+
+export const deleteAlgorithm = (surveyId: string, algoId: string): Promise<void> =>
+  del(`/api/v1/surveys/${surveyId}/scoring-algorithms/${algoId}`)
 
 // ---------------------------------------------------------------------------
 // Responses  (public — no auth header)

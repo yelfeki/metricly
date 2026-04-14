@@ -10,9 +10,12 @@ import type {
   ResponseOut,
   ScoringAlgorithm,
   SurveyFactor,
+  SurveyInvite,
   SurveyListItem,
   SurveyOut,
   SurveyResults,
+  SurveyStats,
+  UserRole,
 } from "./types"
 
 export type { CronbachAlphaResponse }
@@ -149,7 +152,7 @@ export interface SurveyCreatePayload {
 export interface SurveyUpdatePayload {
   name?: string
   description?: string | null
-  status?: "draft" | "published"
+  status?: "draft" | "published" | "closed"
 }
 
 export const getSurveys = (): Promise<SurveyListItem[]> =>
@@ -315,3 +318,27 @@ export const getRespondents = (
   sortDir: "asc" | "desc" = "desc"
 ): Promise<RespondentsData> =>
   get(`/api/v1/surveys/${surveyId}/respondents?page=${page}&page_size=${pageSize}&sort_dir=${sortDir}`)
+
+// ---------------------------------------------------------------------------
+// Stats (response rate)
+// ---------------------------------------------------------------------------
+
+export const getSurveyStats = (surveyId: string): Promise<SurveyStats> =>
+  get(`/api/v1/surveys/${surveyId}/stats`)
+
+// ---------------------------------------------------------------------------
+// Invites
+// ---------------------------------------------------------------------------
+
+export const createInvites = (surveyId: string, emails: string[]): Promise<SurveyInvite[]> =>
+  post(`/api/v1/surveys/${surveyId}/invites`, { emails })
+
+export const listInvites = (surveyId: string): Promise<SurveyInvite[]> =>
+  get(`/api/v1/surveys/${surveyId}/invites`)
+
+// ---------------------------------------------------------------------------
+// Roles
+// ---------------------------------------------------------------------------
+
+export const getMyRole = (): Promise<UserRole> =>
+  get("/api/v1/users/me/role")

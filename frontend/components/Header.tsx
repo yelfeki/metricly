@@ -13,8 +13,9 @@ interface HeaderProps {
 }
 
 export default function Header({ backHref, backLabel, pageTitle }: HeaderProps) {
-  const { user } = useAuth()
+  const { user, role } = useAuth()
   const router = useRouter()
+  const isAdmin = role === "admin"
 
   async function handleLogout() {
     const supabase = createClient()
@@ -64,6 +65,34 @@ export default function Header({ backHref, backLabel, pageTitle }: HeaderProps) 
 
         {/* Spacer */}
         <div className="flex-1" />
+
+        {/* Role-based nav links */}
+        {user && (
+          <nav className="hidden items-center gap-1 sm:flex">
+            {/* All authenticated users */}
+            <Link
+              href="/surveys"
+              className="rounded-full px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+            >
+              Assessments
+            </Link>
+
+            {/* Admin-only links */}
+            {isAdmin && (
+              <>
+                <Link
+                  href="/alpha"
+                  className="rounded-full px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  Psychometrics
+                </Link>
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200">
+                  Admin
+                </span>
+              </>
+            )}
+          </nav>
+        )}
 
         {/* Right side */}
         <div className="flex items-center gap-3">

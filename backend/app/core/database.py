@@ -75,6 +75,24 @@ async def run_migrations() -> None:
         "ALTER TABLE questions ADD COLUMN IF NOT EXISTS is_demographic BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE questions ADD COLUMN IF NOT EXISTS demographic_key TEXT",
         "ALTER TABLE answers ADD COLUMN IF NOT EXISTS demographic_value TEXT",
+        # v0.7 — invite tracking + role-based access
+        """CREATE TABLE IF NOT EXISTS survey_invites (
+            id VARCHAR(36) PRIMARY KEY,
+            survey_id VARCHAR(36) NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+            email VARCHAR(255) NOT NULL,
+            token VARCHAR(36) NOT NULL UNIQUE,
+            invited_at TIMESTAMP WITH TIME ZONE NOT NULL,
+            responded_at TIMESTAMP WITH TIME ZONE
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_survey_invites_survey_id ON survey_invites (survey_id)",
+        "CREATE INDEX IF NOT EXISTS ix_survey_invites_token ON survey_invites (token)",
+        """CREATE TABLE IF NOT EXISTS user_roles (
+            id VARCHAR(36) PRIMARY KEY,
+            user_id VARCHAR(36) NOT NULL UNIQUE,
+            role VARCHAR(20) NOT NULL DEFAULT 'client',
+            created_at TIMESTAMP WITH TIME ZONE NOT NULL
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_user_roles_user_id ON user_roles (user_id)",
     ]
     for stmt in migrations:
         try:

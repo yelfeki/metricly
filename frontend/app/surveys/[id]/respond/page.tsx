@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { Suspense, useEffect, useRef, useState } from "react"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import Header from "@/components/Header"
 import { getSurvey, submitResponse } from "@/lib/api"
 import type { ForcedChoiceConfig, QuestionOut, SurveyOut } from "@/lib/types"
@@ -282,11 +282,14 @@ function TextQuestion({ question, value, onChange }: {
 
 type AnswerState = string | string[] | Record<string, string>
 
-export default function RespondPage() {
+function RespondPageInner() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const inviteToken = searchParams.get("token")
 
   const [survey, setSurvey] = useState<SurveyOut | null>(null)
+  const [isClosed, setIsClosed] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError]   = useState<string | null>(null)
   const [answers, setAnswers] = useState<Record<string, AnswerState>>({})
@@ -296,7 +299,9 @@ export default function RespondPage() {
   useEffect(() => {
     getSurvey(id)
       .then(s => {
-        if (s.status !== "published") {
+        if (s.status === "closed") {
+          setIsClosed(true)
+        } else if (s.status !== "published") {
           setError("This survey is not currently accepting responses.")
         } else {
           setSurvey(s)
@@ -337,7 +342,7 @@ export default function RespondPage() {
         }
         return { question_id: q.id, value }
       })
-      await submitResponse(id, { answers: payload })
+      await submitResponse(id, { answers: payload, respondent_ref: inviteToken ?? null })
       setSubmitted(true)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -348,14 +353,29 @@ export default function RespondPage() {
 
   if (loading) return (
     <div className="flex min-h-screen flex-col">
-      <Header backHref="/surveys" backLabel="Surveys" />
-      <main className="flex flex-1 items-center justify-center text-sm text-slate-400">Loading survey…</main>
+      <Header />
+      <main className="flex flex-1 items-center justify-center text-sm text-slate-400">Loading…</main>
+    </div>
+  )
+
+  if (isClosed) return (
+    <div className="flex min-h-screen flex-col">
+      <Header />
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 text-center px-6">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+          <svg className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold text-slate-900">Assessment closed</h1>
+        <p className="text-sm text-slate-500">This assessment is no longer accepting responses.</p>
+      </main>
     </div>
   )
 
   if (submitted) return (
     <div className="flex min-h-screen flex-col">
-      <Header backHref="/surveys" backLabel="Surveys" />
+      <Header />
       <main className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
           <svg className="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -363,18 +383,14 @@ export default function RespondPage() {
           </svg>
         </div>
         <h1 className="text-2xl font-bold text-slate-900">Response submitted</h1>
-        <p className="text-sm text-slate-500">Thank you for completing the survey.</p>
-        <button onClick={() => router.push("/surveys")}
-          className="mt-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700">
-          Back to Surveys
-        </button>
+        <p className="text-sm text-slate-500">Thank you for completing this assessment.</p>
       </main>
     </div>
   )
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header backHref="/surveys" backLabel="Surveys" />
+      <Header />
       <main className="flex-1 px-6 py-10">
         <div className="mx-auto max-w-xl">
           {error && !survey && (
@@ -442,5 +458,18 @@ export default function RespondPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function RespondPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen flex-col">
+        <Header />
+        <main className="flex flex-1 items-center justify-center text-sm text-slate-400">Loading…</main>
+      </div>
+    }>
+      <RespondPageInner />
+    </Suspense>
   )
 }

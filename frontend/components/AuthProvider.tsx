@@ -3,18 +3,21 @@
 import { createContext, useContext, useEffect, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
-import { setTokenProvider } from "@/lib/api"
+import { setTokenProvider, getMyRole } from "@/lib/api"
+import type { UserRoleValue } from "@/lib/types"
 
 interface AuthContextValue {
   user: User | null
   loading: boolean
+  role: UserRoleValue | null
 }
 
-const AuthContext = createContext<AuthContextValue>({ user: null, loading: true })
+const AuthContext = createContext<AuthContextValue>({ user: null, loading: true, role: null })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [role, setRole] = useState<UserRoleValue | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -42,8 +45,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  // Fetch role whenever user changes
+  useEffect(() => {
+    if (!user) {
+      setRole(null)
+      return
+    }
+    getMyRole()
+      .then(r => setRole(r.role as UserRoleValue))
+      .catch(() => setRole("client"))
+  }, [user?.id])
+
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, role }}>
       {children}
     </AuthContext.Provider>
   )

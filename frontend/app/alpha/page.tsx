@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react"
 import Header from "@/components/Header"
+import AdminGuard from "@/components/AdminGuard"
 import InterpretationBadge from "@/components/InterpretationBadge"
 import { runCronbachAlpha } from "@/lib/api"
 import { parseCSV, SAMPLE_CSV } from "@/lib/parseCSV"
@@ -71,6 +72,7 @@ export default function AlphaPage() {
       : "text-red-600"
 
   return (
+    <AdminGuard>
     <div className="flex min-h-screen flex-col">
       <Header backHref="/" backLabel={en.nav.backToDashboard} />
 
@@ -364,5 +366,6 @@ export default function AlphaPage() {
         </div>
       </main>
     </div>
+    </AdminGuard>
   )
 }

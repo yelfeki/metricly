@@ -2,10 +2,12 @@
 ORM models for the survey domain.
 
 Schema:
-    Survey      — a named set of questions (e.g. "Job Satisfaction Scale")
-    Question    — one item within a survey, with type + ordinal position
-    Response    — one participant's submission of a survey
-    Answer      — the value a participant gave for one question
+    Survey        — a named set of questions (e.g. "Job Satisfaction Scale")
+    Question      — one item within a survey, with type + ordinal position
+    Response      — one participant's submission of a survey
+    Answer        — the value a participant gave for one question
+    SurveyInvite  — an email invitation to participate in a survey
+    UserRole      — platform role for an authenticated user (admin | client)
 """
 
 import uuid
@@ -31,7 +33,7 @@ class Survey(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="draft"
-    )  # 'draft' | 'published'
+    )  # 'draft' | 'published' | 'closed'
     user_id: Mapped[str | None] = mapped_column(
         String(36), nullable=True, index=True
     )  # Supabase auth.users UUID; NULL on legacy rows
@@ -216,3 +218,56 @@ class ScoringAlgorithm(Base):
 
     def __repr__(self) -> str:
         return f"<ScoringAlgorithm id={self.id!r} factor_id={self.factor_id!r}>"
+
+
+class SurveyInvite(Base):
+    """
+    An email invitation for a specific survey.
+
+    Each invite gets a unique token that is embedded in the respond URL so we
+    can track which invitees have responded without requiring them to log in.
+    """
+
+    __tablename__ = "survey_invites"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    survey_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("surveys.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    token: Mapped[str] = mapped_column(
+        String(36), nullable=False, unique=True, default=lambda: str(uuid.uuid4())
+    )
+    invited_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+    responded_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    def __repr__(self) -> str:
+        return f"<SurveyInvite id={self.id!r} email={self.email!r} responded={self.responded_at is not None}>"
+
+
+class UserRole(Base):
+    """Platform-level role for a Supabase-authenticated user."""
+
+    __tablename__ = "user_roles"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    user_id: Mapped[str] = mapped_column(
+        String(36), nullable=False, unique=True, index=True
+    )  # Supabase auth.users UUID
+    role: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="client"
+    )  # 'admin' | 'client'
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return f"<UserRole user_id={self.user_id!r} role={self.role!r}>"

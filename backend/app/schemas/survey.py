@@ -19,7 +19,7 @@ QuestionType = Literal[
     "forced_choice",
     "ranking",
 ]
-SurveyStatus = Literal["draft", "published"]
+SurveyStatus = Literal["draft", "published", "closed"]
 
 # ---------------------------------------------------------------------------
 # Forced-choice sub-config
@@ -460,3 +460,48 @@ class RespondentsResponse(BaseModel):
     page: int
     page_size: int
     rows: list[RespondentRow]
+
+
+# ---------------------------------------------------------------------------
+# Survey stats (response rate tracking)
+# ---------------------------------------------------------------------------
+
+
+class SurveyStats(BaseModel):
+    survey_id: str
+    total_invited: int
+    total_responded: int
+    response_rate: float  # 0.0–100.0
+    last_response_at: datetime | None
+    avg_completion_time_seconds: float | None  # not yet tracked — always None
+
+
+# ---------------------------------------------------------------------------
+# Invite schemas
+# ---------------------------------------------------------------------------
+
+
+class InviteCreate(BaseModel):
+    emails: list[str]
+
+
+class InviteOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    survey_id: str
+    email: str
+    token: str
+    invited_at: datetime
+    responded_at: datetime | None
+    respond_url: str  # computed, not stored
+
+
+# ---------------------------------------------------------------------------
+# Role schemas
+# ---------------------------------------------------------------------------
+
+
+class RoleOut(BaseModel):
+    user_id: str
+    role: str  # 'admin' | 'client'

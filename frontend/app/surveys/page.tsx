@@ -14,12 +14,23 @@ function copyRespondLink(id: string) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  return status === "published" ? (
-    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
-      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-      Published
-    </span>
-  ) : (
+  if (status === "published") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        Live
+      </span>
+    )
+  }
+  if (status === "closed") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-600 ring-1 ring-red-200">
+        <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+        Closed
+      </span>
+    )
+  }
+  return (
     <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500 ring-1 ring-slate-200">
       <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
       Draft
@@ -154,7 +165,7 @@ export default function SurveysPage() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-2">
-                          {s.status === "published" && (
+                          {(s.status === "published" || s.status === "closed") && (
                             <button
                               onClick={() => copyRespondLink(s.id)}
                               title="Copy respond link"

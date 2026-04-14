@@ -4,9 +4,9 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import Header from "@/components/Header"
-import { getSurveyResults, getSurveyReliability, getFactorScores, updateSurvey } from "@/lib/api"
+import { getSurveyResults, getSurveyReliability, getFactorScores, updateSurvey, getSurveyStats, createInvites, listInvites, getSurvey } from "@/lib/api"
 import type { CronbachAlphaResponse } from "@/lib/api"
-import type { FactorScoreEntry, FactorScoresResponse, ForcedChoiceConfig, QuestionOut, QuestionStat, SurveyResults } from "@/lib/types"
+import type { FactorScoreEntry, FactorScoresResponse, ForcedChoiceConfig, QuestionOut, QuestionStat, SurveyResults, SurveyStats, SurveyInvite } from "@/lib/types"
 
 function round2(n: number) { return Math.round(n * 100) / 100 }
 
@@ -467,6 +467,215 @@ function FactorScoresPanel({ surveyId }: { surveyId: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// Status badge
+// ---------------------------------------------------------------------------
+
+function StatusBadge({ status }: { status: string }) {
+  if (status === "published") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        Live
+      </span>
+    )
+  }
+  if (status === "closed") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600 ring-1 ring-red-200">
+        <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+        Closed
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500 ring-1 ring-slate-200">
+      <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+      Draft
+    </span>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Response rate stats panel
+// ---------------------------------------------------------------------------
+
+function StatsPanel({ surveyId }: { surveyId: string }) {
+  const [data, setData] = useState<SurveyStats | null>(null)
+
+  useEffect(() => {
+    getSurveyStats(surveyId).then(setData).catch(() => null)
+  }, [surveyId])
+
+  if (!data) return null
+
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <p className="text-2xl font-bold tabular-nums text-indigo-600">{data.total_responded}</p>
+        <p className="mt-0.5 text-xs text-slate-400">Responses</p>
+      </div>
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <p className="text-2xl font-bold tabular-nums text-slate-700">{data.total_invited}</p>
+        <p className="mt-0.5 text-xs text-slate-400">Invited</p>
+      </div>
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <p className="text-2xl font-bold tabular-nums text-emerald-600">{data.response_rate.toFixed(1)}%</p>
+        <p className="mt-0.5 text-xs text-slate-400">Response rate</p>
+      </div>
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <p className="text-sm font-semibold tabular-nums text-slate-700">
+          {data.last_response_at
+            ? new Date(data.last_response_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+            : "—"}
+        </p>
+        <p className="mt-0.5 text-xs text-slate-400">Last response</p>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Invite panel
+// ---------------------------------------------------------------------------
+
+function InvitePanel({ surveyId }: { surveyId: string }) {
+  const [open, setOpen] = useState(false)
+  const [emailText, setEmailText] = useState("")
+  const [invites, setInvites] = useState<SurveyInvite[]>([])
+  const [sending, setSending] = useState(false)
+  const [loadingList, setLoadingList] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [copied, setCopied] = useState<string | null>(null)
+
+  async function loadInvites() {
+    setLoadingList(true)
+    try {
+      setInvites(await listInvites(surveyId))
+    } catch {
+      // ignore
+    } finally {
+      setLoadingList(false)
+    }
+  }
+
+  function handleOpen() {
+    setOpen(true)
+    if (invites.length === 0) loadInvites()
+  }
+
+  async function handleSend() {
+    const emails = emailText
+      .split(/[\n,;]+/)
+      .map(e => e.trim())
+      .filter(Boolean)
+    if (emails.length === 0) return
+    setSending(true); setError(null)
+    try {
+      const created = await createInvites(surveyId, emails)
+      setInvites(prev => [...created, ...prev])
+      setEmailText("")
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSending(false)
+    }
+  }
+
+  function copyLink(url: string) {
+    navigator.clipboard.writeText(url).catch(() => {})
+    setCopied(url)
+    setTimeout(() => setCopied(null), 1500)
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <button
+        onClick={open ? () => setOpen(false) : handleOpen}
+        className="flex w-full items-center justify-between px-5 py-4 text-left"
+      >
+        <div>
+          <p className="text-sm font-semibold text-slate-800">Invite participants</p>
+          <p className="text-xs text-slate-400">Add emails to generate unique respond links</p>
+        </div>
+        <svg
+          className={`h-4 w-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="border-t border-slate-100 px-5 py-4 space-y-4">
+          {/* Email input */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-slate-600">
+              Emails — one per line, or comma/semicolon separated
+            </label>
+            <textarea
+              value={emailText}
+              onChange={e => setEmailText(e.target.value)}
+              rows={3}
+              placeholder={"alice@company.com\nbob@company.com"}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 resize-none"
+            />
+          </div>
+          {error && <p className="text-xs text-red-600">{error}</p>}
+          <button
+            onClick={handleSend}
+            disabled={sending || !emailText.trim()}
+            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {sending ? "Creating…" : "Create invite links"}
+          </button>
+
+          {/* Invite list */}
+          {loadingList && <p className="text-xs text-slate-400">Loading…</p>}
+          {invites.length > 0 && (
+            <div className="overflow-hidden rounded-lg border border-slate-100">
+              <table className="min-w-full text-xs">
+                <thead>
+                  <tr className="bg-slate-50 text-left">
+                    <th className="px-3 py-2 font-semibold text-slate-500">Email</th>
+                    <th className="px-3 py-2 font-semibold text-slate-500">Status</th>
+                    <th className="px-3 py-2 font-semibold text-slate-500">Link</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {invites.map(inv => (
+                    <tr key={inv.id} className="hover:bg-slate-50">
+                      <td className="px-3 py-2 text-slate-700">{inv.email}</td>
+                      <td className="px-3 py-2">
+                        {inv.responded_at ? (
+                          <span className="text-emerald-600 font-medium">Responded</span>
+                        ) : (
+                          <span className="text-slate-400">Pending</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        <button
+                          onClick={() => copyLink(inv.respond_url)}
+                          className="rounded px-2 py-0.5 text-indigo-600 hover:bg-indigo-50 transition-colors font-medium"
+                        >
+                          {copied === inv.respond_url ? "Copied!" : "Copy link"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {!loadingList && invites.length === 0 && (
+            <p className="text-xs text-slate-400">No invites yet.</p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -474,20 +683,21 @@ export default function ResultsPage() {
   const { id } = useParams<{ id: string }>()
   const [results, setResults] = useState<SurveyResults | null>(null)
   const [questions, setQuestions] = useState<QuestionOut[]>([])
+  const [surveyStatus, setSurveyStatus] = useState<string>("draft")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [publishing, setPublishing] = useState(false)
+  const [statusChanging, setStatusChanging] = useState(false)
 
   async function load() {
     setLoading(true); setError(null)
     try {
-      const [res, { getSurvey }] = await Promise.all([
-        import("@/lib/api").then(m => m.getSurveyResults(id)),
-        import("@/lib/api"),
+      const [res, survey] = await Promise.all([
+        getSurveyResults(id),
+        getSurvey(id),
       ])
-      const survey = await getSurvey(id)
       setResults(res)
       setQuestions(survey.questions)
+      setSurveyStatus(survey.status)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
@@ -497,11 +707,16 @@ export default function ResultsPage() {
 
   useEffect(() => { load() }, [id])
 
-  async function handlePublish() {
-    setPublishing(true)
-    try { await updateSurvey(id, { status: "published" }); await load() }
-    catch (e) { alert(e instanceof Error ? e.message : String(e)) }
-    finally { setPublishing(false) }
+  async function handleStatusChange(newStatus: "draft" | "published" | "closed") {
+    setStatusChanging(true)
+    try {
+      await updateSurvey(id, { status: newStatus })
+      setSurveyStatus(newStatus)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : String(e))
+    } finally {
+      setStatusChanging(false)
+    }
   }
 
   return (
@@ -517,26 +732,31 @@ export default function ResultsPage() {
               {/* Header */}
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-slate-900">{results.survey_name}</h1>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">{results.survey_name}</h1>
+                    <StatusBadge status={surveyStatus} />
+                  </div>
                   <p className="mt-1 text-sm text-slate-500">
                     {results.response_count} response{results.response_count !== 1 ? "s" : ""}
                     {" · "}{results.questions.length} question{results.questions.length !== 1 ? "s" : ""}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <button
-                    onClick={() => {
-                      const url = `${window.location.origin}/surveys/${id}/respond`
-                      navigator.clipboard.writeText(url).catch(() => prompt("Copy this link:", url))
-                    }}
-                    className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"
-                    title="Copy respond link"
-                  >
-                    Copy link
-                  </button>
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
+                  {/* Copy respond link — only when live or closed */}
+                  {(surveyStatus === "published" || surveyStatus === "closed") && (
+                    <button
+                      onClick={() => {
+                        const url = `${window.location.origin}/surveys/${id}/respond`
+                        navigator.clipboard.writeText(url).catch(() => prompt("Copy this link:", url))
+                      }}
+                      className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"
+                    >
+                      Copy link
+                    </button>
+                  )}
                   <Link href={`/surveys/${id}/respond`}
                     className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50">
-                    Fill out
+                    Preview
                   </Link>
                   <Link href={`/surveys/${id}/edit`}
                     className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50">
@@ -546,10 +766,36 @@ export default function ResultsPage() {
                     className="rounded-lg bg-indigo-50 border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-100">
                     Dashboard
                   </Link>
-                  <button onClick={handlePublish} disabled={publishing}
-                    className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50">
-                    {publishing ? "…" : "Publish"}
-                  </button>
+
+                  {/* Status action buttons */}
+                  {surveyStatus === "draft" && (
+                    <button
+                      onClick={() => handleStatusChange("published")}
+                      disabled={statusChanging}
+                      className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                      {statusChanging ? "…" : "Go Live"}
+                    </button>
+                  )}
+                  {surveyStatus === "published" && (
+                    <button
+                      onClick={() => handleStatusChange("closed")}
+                      disabled={statusChanging}
+                      className="rounded-lg bg-red-500 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-red-600 disabled:opacity-50"
+                    >
+                      {statusChanging ? "…" : "Close"}
+                    </button>
+                  )}
+                  {surveyStatus === "closed" && (
+                    <button
+                      onClick={() => handleStatusChange("published")}
+                      disabled={statusChanging}
+                      className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                      {statusChanging ? "…" : "Reopen"}
+                    </button>
+                  )}
+
                   <button onClick={load}
                     className="rounded-lg border border-slate-200 p-2 text-slate-400 shadow-sm transition hover:text-slate-600" title="Refresh">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -559,13 +805,19 @@ export default function ResultsPage() {
                 </div>
               </div>
 
+              {/* Response rate stats */}
+              <StatsPanel surveyId={id} />
+
               {results.response_count === 0 && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700">
                   No responses yet. Share the{" "}
                   <Link href={`/surveys/${id}/respond`} className="font-semibold underline underline-offset-2">survey link</Link>
-                  {" "}to start collecting data.
+                  {" "}or use the invite panel below to start collecting data.
                 </div>
               )}
+
+              {/* Invite panel */}
+              <InvitePanel surveyId={id} />
 
               <ReliabilityPanel surveyId={id} />
               <FactorScoresPanel surveyId={id} />

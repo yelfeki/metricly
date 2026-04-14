@@ -3,16 +3,17 @@
 import json
 import math
 from collections import defaultdict
+from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..core.auth import AuthUser, optional_user, require_user
 from ..core.database import get_db
-from ..models.survey import Answer, Question, Response, Survey, SurveyFactor, ScoringAlgorithm
+from ..models.survey import Answer, Question, Response, Survey, SurveyFactor, ScoringAlgorithm, SurveyInvite
 from ..schemas.reliability import CronbachAlphaRequest, CronbachAlphaResponse
 from ..schemas.survey import (
     AnswerReport,
@@ -27,6 +28,8 @@ from ..schemas.survey import (
     GroupComparisonResponse,
     GroupStats,
     HistogramBin,
+    InviteCreate,
+    InviteOut,
     ParticipantReport,
     QuestionCreate,
     QuestionOut,
@@ -47,6 +50,7 @@ from ..schemas.survey import (
     SurveyListItem,
     SurveyOut,
     SurveyResults,
+    SurveyStats,
     SurveyUpdate,
 )
 from ..services.cohort_analytics import cohort_summary, group_comparison
@@ -680,6 +684,8 @@ async def submit_response(
     db: AsyncSession = Depends(get_db),
 ) -> ResponseOut:
     survey = await _get_survey_or_404(survey_id, db)
+    if survey.status == "closed":
+        raise HTTPException(status_code=403, detail="This assessment is closed.")
     if survey.status != "published":
         raise HTTPException(status_code=400, detail="Survey is not published.")
 
@@ -718,6 +724,18 @@ async def submit_response(
 
     await db.commit()
     await db.refresh(response)
+
+    # If a valid invite token was passed as respondent_ref, mark the invite responded
+    if body.respondent_ref:
+        inv_stmt = select(SurveyInvite).where(
+            SurveyInvite.token == body.respondent_ref,
+            SurveyInvite.survey_id == survey_id,
+        )
+        invite = (await db.execute(inv_stmt)).scalar_one_or_none()
+        if invite and invite.responded_at is None:
+            invite.responded_at = datetime.now(timezone.utc)
+            await db.commit()
+
     return ResponseOut(
         id=response.id,
         survey_id=response.survey_id,
@@ -1510,3 +1528,135 @@ async def analyse_reliability(
 
     request = CronbachAlphaRequest(items=matrix, scale_name=survey.name)
     return compute_cronbach_alpha(request)
+
+
+# ---------------------------------------------------------------------------
+# Response rate stats  (owner only)
+# ---------------------------------------------------------------------------
+
+
+@survey_router.get("/{survey_id}/stats", response_model=SurveyStats)
+async def get_survey_stats(
+    survey_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> SurveyStats:
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+
+    total_invited = (
+        await db.execute(
+            select(func.count(SurveyInvite.id)).where(SurveyInvite.survey_id == survey_id)
+        )
+    ).scalar_one()
+
+    total_responded_invites = (
+        await db.execute(
+            select(func.count(SurveyInvite.id)).where(
+                SurveyInvite.survey_id == survey_id,
+                SurveyInvite.responded_at.isnot(None),
+            )
+        )
+    ).scalar_one()
+
+    total_responses = await _response_count(survey_id, db)
+
+    last_response_at = (
+        await db.execute(
+            select(func.max(Response.submitted_at)).where(Response.survey_id == survey_id)
+        )
+    ).scalar_one()
+
+    response_rate = (
+        round(total_responded_invites / total_invited * 100, 1)
+        if total_invited > 0
+        else 0.0
+    )
+
+    return SurveyStats(
+        survey_id=survey_id,
+        total_invited=total_invited,
+        total_responded=total_responses,
+        response_rate=response_rate,
+        last_response_at=last_response_at,
+        avg_completion_time_seconds=None,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Invite management  (owner only)
+# ---------------------------------------------------------------------------
+
+
+@survey_router.post("/{survey_id}/invites", response_model=list[InviteOut], status_code=201)
+async def create_invites(
+    survey_id: str,
+    body: InviteCreate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> list[InviteOut]:
+    """Create invite records for a list of emails and return unique respond links."""
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+
+    if not body.emails:
+        raise HTTPException(status_code=422, detail="No emails provided.")
+
+    # Deduplicate while preserving order
+    seen: set[str] = set()
+    unique_emails = [e.strip().lower() for e in body.emails if e.strip() and e.strip().lower() not in seen and not seen.add(e.strip().lower())]  # type: ignore[func-returns-value]
+
+    created: list[InviteOut] = []
+    for email in unique_emails:
+        invite = SurveyInvite(survey_id=survey_id, email=email)
+        db.add(invite)
+        await db.flush()
+
+        base_url = str(request.base_url).rstrip("/")
+        respond_url = f"{base_url}/surveys/{survey_id}/respond?token={invite.token}"
+        created.append(InviteOut(
+            id=invite.id,
+            survey_id=invite.survey_id,
+            email=invite.email,
+            token=invite.token,
+            invited_at=invite.invited_at,
+            responded_at=invite.responded_at,
+            respond_url=respond_url,
+        ))
+
+    await db.commit()
+    return created
+
+
+@survey_router.get("/{survey_id}/invites", response_model=list[InviteOut])
+async def list_invites(
+    survey_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> list[InviteOut]:
+    """List all invites for a survey."""
+    survey = await _get_survey_or_404(survey_id, db)
+    _assert_owner(survey, current_user.user_id)
+
+    stmt = (
+        select(SurveyInvite)
+        .where(SurveyInvite.survey_id == survey_id)
+        .order_by(SurveyInvite.invited_at.desc())
+    )
+    invites = list((await db.execute(stmt)).scalars().all())
+
+    base_url = str(request.base_url).rstrip("/")
+    return [
+        InviteOut(
+            id=inv.id,
+            survey_id=inv.survey_id,
+            email=inv.email,
+            token=inv.token,
+            invited_at=inv.invited_at,
+            responded_at=inv.responded_at,
+            respond_url=f"{base_url}/surveys/{survey_id}/respond?token={inv.token}",
+        )
+        for inv in invites
+    ]

@@ -8,6 +8,7 @@ from .api.omega import router as omega_router
 from .api.efa import router as efa_router
 from .api.dif import router as dif_router
 from .api.surveys import survey_router, question_router
+from .api.users import users_router
 from .core.auth import _fetch_jwks
 from .core.database import Base, engine, run_migrations
 from .models import survey as _survey_models  # noqa: F401 — registers ORM metadata
@@ -51,6 +52,7 @@ app.include_router(efa_router, prefix="/api/v1")
 app.include_router(dif_router, prefix="/api/v1")
 app.include_router(survey_router, prefix="/api/v1")
 app.include_router(question_router, prefix="/api/v1")
+app.include_router(users_router, prefix="/api/v1")
 
 
 @app.get("/health")

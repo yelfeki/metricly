@@ -42,7 +42,7 @@ export interface ForcedChoiceConfig {
   labels: [string, string]
 }
 
-export type SurveyStatus = "draft" | "published"
+export type SurveyStatus = "draft" | "published" | "closed"
 
 export interface QuestionOut {
   id: string
@@ -286,6 +286,44 @@ export interface RespondentsData {
   page: number
   page_size: number
   rows: RespondentRow[]
+}
+
+// ---------------------------------------------------------------------------
+// Response rate stats
+// ---------------------------------------------------------------------------
+
+export interface SurveyStats {
+  survey_id: string
+  total_invited: number
+  total_responded: number
+  response_rate: number  // 0–100
+  last_response_at: string | null
+  avg_completion_time_seconds: number | null
+}
+
+// ---------------------------------------------------------------------------
+// Invites
+// ---------------------------------------------------------------------------
+
+export interface SurveyInvite {
+  id: string
+  survey_id: string
+  email: string
+  token: string
+  invited_at: string
+  responded_at: string | null
+  respond_url: string
+}
+
+// ---------------------------------------------------------------------------
+// Roles
+// ---------------------------------------------------------------------------
+
+export type UserRoleValue = "admin" | "client"
+
+export interface UserRole {
+  user_id: string
+  role: UserRoleValue
 }
 
 // ---------------------------------------------------------------------------

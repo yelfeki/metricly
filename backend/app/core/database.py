@@ -151,6 +151,27 @@ async def run_migrations() -> None:
         )""",
         "CREATE INDEX IF NOT EXISTS ix_competency_scores_employee_id ON competency_scores (employee_profile_id)",
         "CREATE INDEX IF NOT EXISTS ix_competency_scores_competency_id ON competency_scores (competency_id)",
+        # v1.1 — pulse schedules + benchmarks
+        """CREATE TABLE IF NOT EXISTS pulse_schedules (
+            id VARCHAR(36) PRIMARY KEY,
+            framework_id VARCHAR(36) NOT NULL REFERENCES frameworks(id) ON DELETE CASCADE,
+            survey_id VARCHAR(36) NOT NULL,
+            frequency VARCHAR(20) NOT NULL,
+            start_date DATE NOT NULL,
+            end_date DATE,
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at TIMESTAMP WITH TIME ZONE NOT NULL
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_pulse_schedules_framework_id ON pulse_schedules (framework_id)",
+        """CREATE TABLE IF NOT EXISTS benchmarks (
+            id VARCHAR(36) PRIMARY KEY,
+            framework_id VARCHAR(36) NOT NULL REFERENCES frameworks(id) ON DELETE CASCADE,
+            competency_id VARCHAR(36) NOT NULL REFERENCES competencies(id) ON DELETE CASCADE,
+            required_score FLOAT NOT NULL,
+            required_level INTEGER NOT NULL
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_benchmarks_framework_id ON benchmarks (framework_id)",
+        "CREATE INDEX IF NOT EXISTS ix_benchmarks_competency_id ON benchmarks (competency_id)",
     ]
     for stmt in migrations:
         try:

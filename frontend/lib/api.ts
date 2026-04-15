@@ -1,10 +1,15 @@
 import type {
+  BenchmarkComparison,
+  BenchmarkOut,
   CronbachAlphaResponse,
   DashboardData,
   FactorScoresResponse,
+  GrowthProfile,
   GroupComparisonData,
   LabelThreshold,
   ParticipantReport,
+  PulseFrequency,
+  PulseScheduleOut,
   QuestionOut,
   RespondentsData,
   ResponseOut,
@@ -15,6 +20,7 @@ import type {
   SurveyOut,
   SurveyResults,
   SurveyStats,
+  TeamBenchmarkSummary,
   UserRole,
 } from "./types"
 
@@ -359,6 +365,10 @@ import type {
   TeamGapReport,
 } from "./types"
 
+// Sprint 2 types (re-exported from the top-level import above)
+// BenchmarkComparison, BenchmarkOut, GrowthProfile, PulseFrequency, PulseScheduleOut, TeamBenchmarkSummary
+// are already imported at the top of this file.
+
 // Framework CRUD
 export const listFrameworks = (): Promise<FrameworkListItem[]> =>
   get("/api/v1/frameworks")
@@ -448,3 +458,46 @@ export const getGapReport = (frameworkId: string, employeeId: string): Promise<G
 
 export const getTeamGapReport = (frameworkId: string): Promise<TeamGapReport> =>
   get(`/api/v1/frameworks/${frameworkId}/team-gap-report`)
+
+// Pulse schedules
+export const listPulseSchedules = (frameworkId: string): Promise<PulseScheduleOut[]> =>
+  get(`/api/v1/frameworks/${frameworkId}/pulse-schedules`)
+
+export const createPulseSchedule = (
+  frameworkId: string,
+  body: { survey_id: string; frequency: PulseFrequency; start_date: string; end_date: string | null; is_active: boolean }
+): Promise<PulseScheduleOut> =>
+  post(`/api/v1/frameworks/${frameworkId}/pulse-schedules`, body)
+
+export const updatePulseSchedule = (
+  frameworkId: string,
+  scheduleId: string,
+  body: Partial<{ frequency: PulseFrequency; start_date: string; end_date: string | null; is_active: boolean }>
+): Promise<PulseScheduleOut> =>
+  patch(`/api/v1/frameworks/${frameworkId}/pulse-schedules/${scheduleId}`, body)
+
+export const deletePulseSchedule = (frameworkId: string, scheduleId: string): Promise<void> =>
+  del(`/api/v1/frameworks/${frameworkId}/pulse-schedules/${scheduleId}`)
+
+// Benchmarks
+export const listBenchmarks = (frameworkId: string): Promise<BenchmarkOut[]> =>
+  get(`/api/v1/frameworks/${frameworkId}/benchmarks`)
+
+export const upsertBenchmark = (
+  frameworkId: string,
+  body: { competency_id: string; required_score: number; required_level: number }
+): Promise<BenchmarkOut> =>
+  post(`/api/v1/frameworks/${frameworkId}/benchmarks`, body)
+
+export const getBenchmarkReport = (frameworkId: string, employeeId: string): Promise<BenchmarkComparison> =>
+  get(`/api/v1/frameworks/${frameworkId}/benchmark-report?employee_id=${encodeURIComponent(employeeId)}`)
+
+export const getTeamBenchmarkReport = (frameworkId: string): Promise<TeamBenchmarkSummary> =>
+  get(`/api/v1/frameworks/${frameworkId}/team-benchmark-report`)
+
+// Employee growth
+export const getMyProfiles = (): Promise<EmployeeProfileOut[]> =>
+  get("/api/v1/employees/me")
+
+export const getEmployeeGrowth = (employeeId: string): Promise<GrowthProfile> =>
+  get(`/api/v1/employees/${employeeId}/growth`)

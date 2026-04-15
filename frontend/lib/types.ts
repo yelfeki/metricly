@@ -462,3 +462,100 @@ export interface TeamGapReport {
   heatmap: TeamHeatmapRow[]
   critical_gaps: CompetencyTeamStats[]
 }
+
+// ---------------------------------------------------------------------------
+// Pulse Schedules
+// ---------------------------------------------------------------------------
+
+export type PulseFrequency = "weekly" | "biweekly" | "monthly"
+
+export interface PulseScheduleOut {
+  id: string
+  framework_id: string
+  survey_id: string
+  frequency: PulseFrequency
+  start_date: string
+  end_date: string | null
+  is_active: boolean
+  created_at: string
+  next_assessment_date: string | null
+}
+
+// ---------------------------------------------------------------------------
+// Benchmarks
+// ---------------------------------------------------------------------------
+
+export interface BenchmarkOut {
+  id: string
+  framework_id: string
+  competency_id: string
+  required_score: number
+  required_level: number
+}
+
+export type BenchmarkStatus = "below" | "meeting" | "exceeding" | "unassessed" | "no_benchmark"
+
+export interface CompetencyComparison {
+  competency_id: string
+  competency_name: string
+  benchmark_score: number | null
+  actual_score: number | null
+  gap: number | null
+  pct_of_benchmark: number | null
+  status: BenchmarkStatus
+}
+
+export interface BenchmarkComparison {
+  employee_id: string
+  employee_name: string
+  framework_id: string
+  framework_title: string
+  overall_pct_of_benchmark: number
+  comparisons: CompetencyComparison[]
+}
+
+export interface CompetencyReadiness {
+  competency_id: string
+  competency_name: string
+  benchmark_score: number | null
+  pct_meeting: number | null
+  mean_score: number | null
+}
+
+export interface TeamBenchmarkSummary {
+  framework_id: string
+  framework_title: string
+  employee_count: number
+  overall_team_readiness: number
+  competency_readiness: CompetencyReadiness[]
+}
+
+// ---------------------------------------------------------------------------
+// Growth
+// ---------------------------------------------------------------------------
+
+export interface ScorePoint {
+  assessed_at: string
+  normalized_score: number
+  proficiency_level: number | null
+}
+
+export interface CompetencyTrend {
+  competency_id: string
+  competency_name: string
+  scores: ScorePoint[]
+  trend: "improving" | "stable" | "declining" | "insufficient_data"
+  current_score: number | null
+  benchmark_score: number | null
+  benchmark_status: "below" | "meeting" | "exceeding" | null
+}
+
+export interface GrowthProfile {
+  employee_id: string
+  employee_name: string
+  framework_id: string
+  framework_title: string
+  role_title: string | null
+  department: string | null
+  competency_trends: CompetencyTrend[]
+}

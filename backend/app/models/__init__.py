@@ -6,4 +6,6 @@ from .framework import (  # noqa: F401
     FrameworkSurvey,
     EmployeeProfile,
     CompetencyScore,
+    PulseSchedule,
+    Benchmark,
 )

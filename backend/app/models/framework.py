@@ -11,9 +11,9 @@ Schema:
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -54,6 +54,12 @@ class Framework(Base):
     )
     employee_profiles: Mapped[list["EmployeeProfile"]] = relationship(
         "EmployeeProfile", back_populates="framework", cascade="all, delete-orphan"
+    )
+    pulse_schedules: Mapped[list["PulseSchedule"]] = relationship(
+        "PulseSchedule", back_populates="framework", cascade="all, delete-orphan"
+    )
+    benchmarks: Mapped[list["Benchmark"]] = relationship(
+        "Benchmark", back_populates="framework", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
@@ -195,3 +201,53 @@ class CompetencyScore(Base):
             f"<CompetencyScore employee={self.employee_profile_id!r} "
             f"competency={self.competency_id!r} score={self.normalized_score}>"
         )
+
+
+class PulseSchedule(Base):
+    """Recurring assessment schedule for a framework."""
+
+    __tablename__ = "pulse_schedules"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    framework_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("frameworks.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    survey_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    frequency: Mapped[str] = mapped_column(String(20), nullable=False)  # weekly/biweekly/monthly
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+
+    framework: Mapped["Framework"] = relationship("Framework", back_populates="pulse_schedules")
+
+    def __repr__(self) -> str:
+        return f"<PulseSchedule id={self.id!r} framework={self.framework_id!r} freq={self.frequency!r}>"
+
+
+class Benchmark(Base):
+    """Target score per competency for a role — one row per competency per framework."""
+
+    __tablename__ = "benchmarks"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    framework_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("frameworks.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    competency_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("competencies.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    required_score: Mapped[float] = mapped_column(Float, nullable=False)  # 0–100
+    required_level: Mapped[int] = mapped_column(Integer, nullable=False)  # 1-based
+
+    framework: Mapped["Framework"] = relationship("Framework", back_populates="benchmarks")
+    competency: Mapped["Competency"] = relationship("Competency")
+
+    def __repr__(self) -> str:
+        return f"<Benchmark competency={self.competency_id!r} score={self.required_score}>"

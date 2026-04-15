@@ -135,23 +135,35 @@ export default function FrameworksPage() {
                         </span>
                       </td>
                       <td>
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1.5">
                           <Link
                             href={`/frameworks/${fw.id}/gap-report`}
-                            className="btn-ghost text-xs px-3 py-1.5"
+                            className="btn-ghost text-xs px-2.5 py-1.5"
                           >
                             Gap Report
                           </Link>
                           <Link
                             href={`/frameworks/${fw.id}/team-report`}
-                            className="btn-ghost text-xs px-3 py-1.5"
+                            className="btn-ghost text-xs px-2.5 py-1.5"
                           >
                             Team
+                          </Link>
+                          <Link
+                            href={`/frameworks/${fw.id}/benchmarks`}
+                            className="btn-ghost text-xs px-2.5 py-1.5"
+                          >
+                            Benchmarks
+                          </Link>
+                          <Link
+                            href={`/frameworks/${fw.id}/pulse`}
+                            className="btn-ghost text-xs px-2.5 py-1.5"
+                          >
+                            Pulse
                           </Link>
                           <button
                             onClick={() => handleDelete(fw.id, fw.title)}
                             disabled={deleting === fw.id}
-                            className="btn-danger text-xs px-3 py-1.5"
+                            className="btn-danger text-xs px-2.5 py-1.5"
                           >
                             {deleting === fw.id ? "…" : "Delete"}
                           </button>

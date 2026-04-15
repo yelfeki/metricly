@@ -1,4 +1,7 @@
-"""Competency framework CRUD, employee profiles, and gap analysis routes."""
+"""Competency framework CRUD, employee profiles, gap analysis, benchmarks, and pulse schedules."""
+
+import calendar
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
@@ -8,14 +11,20 @@ from sqlalchemy.orm import selectinload
 from ..core.auth import AuthUser, require_user
 from ..core.database import get_db
 from ..models.framework import (
+    Benchmark,
     Competency,
     CompetencyScore,
     EmployeeProfile,
     Framework,
     FrameworkSurvey,
     ProficiencyLevel,
+    PulseSchedule,
 )
 from ..schemas.framework import (
+    BenchmarkComparison,
+    BenchmarkCreate,
+    BenchmarkOut,
+    BenchmarkUpdate,
     CompetencyCreate,
     CompetencyOut,
     CompetencyScoreCreate,
@@ -33,8 +42,13 @@ from ..schemas.framework import (
     ProficiencyLevelCreate,
     ProficiencyLevelOut,
     ProficiencyLevelUpdate,
+    PulseScheduleCreate,
+    PulseScheduleOut,
+    PulseScheduleUpdate,
+    TeamBenchmarkSummary,
     TeamGapReport,
 )
+from ..services.benchmarking import compare_to_benchmark, team_benchmark_summary
 from ..services.gap_analysis import _level_for_score, compute_gap, team_gap_summary
 
 framework_router = APIRouter(prefix="/frameworks", tags=["frameworks"])
@@ -550,6 +564,340 @@ async def get_gap_report(
         scores=latest_scores,
         employee_name=emp.name,
         framework_title=fw.title,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Pulse Schedules
+# ---------------------------------------------------------------------------
+
+
+def _next_assessment_date(ps: PulseSchedule) -> date | None:
+    """Compute the next scheduled assessment date from today."""
+    today = date.today()
+    if not ps.is_active:
+        return None
+    start = ps.start_date
+    if ps.end_date and ps.end_date < today:
+        return None  # schedule has ended
+    if start >= today:
+        return start
+    current = start
+    if ps.frequency == "weekly":
+        while current < today:
+            current += timedelta(weeks=1)
+    elif ps.frequency == "biweekly":
+        while current < today:
+            current += timedelta(weeks=2)
+    else:  # monthly
+        while current < today:
+            month = current.month + 1
+            year = current.year
+            if month > 12:
+                month = 1
+                year += 1
+            day = min(current.day, calendar.monthrange(year, month)[1])
+            current = date(year, month, day)
+    if ps.end_date and current > ps.end_date:
+        return None
+    return current
+
+
+def _pulse_out(ps: PulseSchedule) -> dict:
+    return {
+        "id": ps.id,
+        "framework_id": ps.framework_id,
+        "survey_id": ps.survey_id,
+        "frequency": ps.frequency,
+        "start_date": ps.start_date,
+        "end_date": ps.end_date,
+        "is_active": ps.is_active,
+        "created_at": ps.created_at,
+        "next_assessment_date": _next_assessment_date(ps),
+    }
+
+
+@framework_router.get(
+    "/{framework_id}/pulse-schedules", response_model=list[PulseScheduleOut]
+)
+async def list_pulse_schedules(
+    framework_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> list[dict]:
+    fw = await _get_framework_or_404(framework_id, db)
+    _assert_owner(fw, current_user.user_id)
+    stmt = (
+        select(PulseSchedule)
+        .where(PulseSchedule.framework_id == framework_id)
+        .order_by(PulseSchedule.created_at.desc())
+    )
+    schedules = (await db.execute(stmt)).scalars().all()
+    return [_pulse_out(ps) for ps in schedules]
+
+
+@framework_router.post(
+    "/{framework_id}/pulse-schedules", response_model=PulseScheduleOut, status_code=201
+)
+async def create_pulse_schedule(
+    framework_id: str,
+    body: PulseScheduleCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> dict:
+    fw = await _get_framework_or_404(framework_id, db)
+    _assert_owner(fw, current_user.user_id)
+    ps = PulseSchedule(
+        framework_id=framework_id,
+        survey_id=body.survey_id,
+        frequency=body.frequency,
+        start_date=body.start_date,
+        end_date=body.end_date,
+        is_active=body.is_active,
+    )
+    db.add(ps)
+    await db.commit()
+    await db.refresh(ps)
+    return _pulse_out(ps)
+
+
+@framework_router.patch(
+    "/{framework_id}/pulse-schedules/{schedule_id}", response_model=PulseScheduleOut
+)
+async def update_pulse_schedule(
+    framework_id: str,
+    schedule_id: str,
+    body: PulseScheduleUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> dict:
+    fw = await _get_framework_or_404(framework_id, db)
+    _assert_owner(fw, current_user.user_id)
+    stmt = select(PulseSchedule).where(
+        PulseSchedule.id == schedule_id, PulseSchedule.framework_id == framework_id
+    )
+    ps = (await db.execute(stmt)).scalar_one_or_none()
+    if ps is None:
+        raise HTTPException(status_code=404, detail="Pulse schedule not found")
+    if body.frequency is not None:
+        ps.frequency = body.frequency
+    if body.start_date is not None:
+        ps.start_date = body.start_date
+    if body.end_date is not None:
+        ps.end_date = body.end_date
+    if body.is_active is not None:
+        ps.is_active = body.is_active
+    await db.commit()
+    await db.refresh(ps)
+    return _pulse_out(ps)
+
+
+@framework_router.delete(
+    "/{framework_id}/pulse-schedules/{schedule_id}", status_code=204
+)
+async def delete_pulse_schedule(
+    framework_id: str,
+    schedule_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> None:
+    fw = await _get_framework_or_404(framework_id, db)
+    _assert_owner(fw, current_user.user_id)
+    stmt = select(PulseSchedule).where(
+        PulseSchedule.id == schedule_id, PulseSchedule.framework_id == framework_id
+    )
+    ps = (await db.execute(stmt)).scalar_one_or_none()
+    if ps is None:
+        raise HTTPException(status_code=404, detail="Pulse schedule not found")
+    await db.delete(ps)
+    await db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Benchmarks
+# ---------------------------------------------------------------------------
+
+
+@framework_router.get("/{framework_id}/benchmarks", response_model=list[BenchmarkOut])
+async def list_benchmarks(
+    framework_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> list[BenchmarkOut]:
+    fw = await _get_framework_or_404(framework_id, db)
+    _assert_owner(fw, current_user.user_id)
+    stmt = select(Benchmark).where(Benchmark.framework_id == framework_id)
+    return list((await db.execute(stmt)).scalars().all())
+
+
+@framework_router.post(
+    "/{framework_id}/benchmarks", response_model=BenchmarkOut, status_code=201
+)
+async def upsert_benchmark(
+    framework_id: str,
+    body: BenchmarkCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> BenchmarkOut:
+    """Create or replace the benchmark for a competency (upsert by competency_id)."""
+    fw = await _get_framework_or_404(framework_id, db)
+    _assert_owner(fw, current_user.user_id)
+
+    existing_stmt = select(Benchmark).where(
+        Benchmark.framework_id == framework_id,
+        Benchmark.competency_id == body.competency_id,
+    )
+    existing = (await db.execute(existing_stmt)).scalar_one_or_none()
+    if existing:
+        existing.required_score = body.required_score
+        existing.required_level = body.required_level
+        await db.commit()
+        await db.refresh(existing)
+        return existing
+
+    bm = Benchmark(
+        framework_id=framework_id,
+        competency_id=body.competency_id,
+        required_score=body.required_score,
+        required_level=body.required_level,
+    )
+    db.add(bm)
+    await db.commit()
+    await db.refresh(bm)
+    return bm
+
+
+@framework_router.patch(
+    "/{framework_id}/benchmarks/{benchmark_id}", response_model=BenchmarkOut
+)
+async def update_benchmark(
+    framework_id: str,
+    benchmark_id: str,
+    body: BenchmarkUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> BenchmarkOut:
+    fw = await _get_framework_or_404(framework_id, db)
+    _assert_owner(fw, current_user.user_id)
+    stmt = select(Benchmark).where(
+        Benchmark.id == benchmark_id, Benchmark.framework_id == framework_id
+    )
+    bm = (await db.execute(stmt)).scalar_one_or_none()
+    if bm is None:
+        raise HTTPException(status_code=404, detail="Benchmark not found")
+    if body.required_score is not None:
+        bm.required_score = body.required_score
+    if body.required_level is not None:
+        bm.required_level = body.required_level
+    await db.commit()
+    await db.refresh(bm)
+    return bm
+
+
+# ---------------------------------------------------------------------------
+# Benchmark reports
+# ---------------------------------------------------------------------------
+
+
+@framework_router.get("/{framework_id}/benchmark-report", response_model=BenchmarkComparison)
+async def get_benchmark_report(
+    framework_id: str,
+    employee_id: str = Query(..., description="Employee profile ID"),
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> BenchmarkComparison:
+    fw = await _get_framework_or_404(framework_id, db)
+    _assert_owner(fw, current_user.user_id)
+
+    emp_stmt = select(EmployeeProfile).where(
+        EmployeeProfile.id == employee_id, EmployeeProfile.framework_id == framework_id
+    )
+    emp = (await db.execute(emp_stmt)).scalar_one_or_none()
+    if emp is None:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    scores_stmt = select(CompetencyScore).where(
+        CompetencyScore.employee_profile_id == employee_id
+    )
+    all_scores = (await db.execute(scores_stmt)).scalars().all()
+    latest_scores: dict[str, float | None] = {}
+    for comp in fw.competencies:
+        comp_scores = [s for s in all_scores if s.competency_id == comp.id]
+        latest_scores[comp.id] = (
+            max(comp_scores, key=lambda s: s.assessed_at).normalized_score
+            if comp_scores else None
+        )
+
+    bench_stmt = select(Benchmark).where(Benchmark.framework_id == framework_id)
+    bench_map = {
+        b.competency_id: b.required_score
+        for b in (await db.execute(bench_stmt)).scalars().all()
+    }
+
+    return compare_to_benchmark(
+        employee_profile_id=employee_id,
+        framework_id=framework_id,
+        competency_names={c.id: c.name for c in fw.competencies},
+        benchmarks=bench_map,
+        scores=latest_scores,
+        employee_name=emp.name,
+        framework_title=fw.title,
+    )
+
+
+@framework_router.get(
+    "/{framework_id}/team-benchmark-report", response_model=TeamBenchmarkSummary
+)
+async def get_team_benchmark_report(
+    framework_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> TeamBenchmarkSummary:
+    fw = await _get_framework_or_404(framework_id, db)
+    _assert_owner(fw, current_user.user_id)
+
+    emp_stmt = (
+        select(EmployeeProfile)
+        .where(EmployeeProfile.framework_id == framework_id)
+        .order_by(EmployeeProfile.name)
+    )
+    employees = (await db.execute(emp_stmt)).scalars().all()
+
+    emp_ids = [e.id for e in employees]
+    scores_stmt = select(CompetencyScore).where(
+        CompetencyScore.employee_profile_id.in_(emp_ids)
+    )
+    all_scores = (await db.execute(scores_stmt)).scalars().all()
+
+    employee_scores: dict[str, dict[str, float | None]] = {}
+    employee_names: dict[str, str] = {}
+    for emp in employees:
+        employee_names[emp.id] = emp.name
+        emp_map: dict[str, float | None] = {}
+        for comp in fw.competencies:
+            comp_scores = [
+                s for s in all_scores
+                if s.employee_profile_id == emp.id and s.competency_id == comp.id
+            ]
+            emp_map[comp.id] = (
+                max(comp_scores, key=lambda s: s.assessed_at).normalized_score
+                if comp_scores else None
+            )
+        employee_scores[emp.id] = emp_map
+
+    bench_stmt = select(Benchmark).where(Benchmark.framework_id == framework_id)
+    bench_map = {
+        b.competency_id: b.required_score
+        for b in (await db.execute(bench_stmt)).scalars().all()
+    }
+
+    return team_benchmark_summary(
+        framework_id=framework_id,
+        framework_title=fw.title,
+        competency_names={c.id: c.name for c in fw.competencies},
+        benchmarks=bench_map,
+        employee_scores=employee_scores,
+        employee_names=employee_names,
     )
 
 

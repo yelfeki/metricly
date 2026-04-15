@@ -98,6 +98,15 @@ export default function Header({ backHref, backLabel, pageTitle }: HeaderProps) 
             >
               Frameworks
             </Link>
+            <Link
+              href="/portal"
+              className="rounded-full px-3 py-1 text-xs font-semibold transition-all"
+              style={{ color: "rgba(30,27,75,0.6)", position: "relative" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.4)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "")}
+            >
+              My Growth
+            </Link>
             {isAdmin && (
               <>
                 <Link

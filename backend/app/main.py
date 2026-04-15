@@ -10,6 +10,7 @@ from .api.dif import router as dif_router
 from .api.surveys import survey_router, question_router
 from .api.users import users_router
 from .api.frameworks import framework_router
+from .api.employees import employee_router
 from .core.auth import _fetch_jwks
 from .core.database import Base, engine, run_migrations
 from .models import survey as _survey_models  # noqa: F401 — registers ORM metadata
@@ -56,6 +57,7 @@ app.include_router(survey_router, prefix="/api/v1")
 app.include_router(question_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")
 app.include_router(framework_router, prefix="/api/v1")
+app.include_router(employee_router, prefix="/api/v1")
 
 
 @app.get("/health")

@@ -175,11 +175,11 @@ async def deploy_instrument(
     # Count selected items across all factors
     total_selected = sum(len(f["items"]) for f in spec["factors"])
 
-    # 1. Create Survey
+    # 1. Create Survey — draft so the user can review before publishing
     survey = Survey(
         name=spec["survey_name"],
         description=spec["survey_description"],
-        status="published",
+        status="draft",
         user_id=current_user.user_id,
     )
     db.add(survey)

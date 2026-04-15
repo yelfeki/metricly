@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import Header from "@/components/Header"
-import { getLibrary, getLibraryCategories } from "@/lib/api"
+import { getLibrary, getLibraryCategories, deployInstrument } from "@/lib/api"
 import type { CategoryGroup, InstrumentCategoryOut, InstrumentListItem, LibraryGrouped } from "@/lib/types"
 
 // ---------------------------------------------------------------------------
@@ -46,38 +47,78 @@ function FormatLabel({ format }: { format: string }) {
 // ---------------------------------------------------------------------------
 
 function InstrumentCard({ instrument }: { instrument: InstrumentListItem }) {
+  const router = useRouter()
   const alpha = instrument.reliability_alpha
+  const [deploying, setDeploying] = useState(false)
+  const [deployError, setDeployError] = useState<string | null>(null)
+
+  async function handleDeploy(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    setDeploying(true)
+    setDeployError(null)
+    try {
+      const result = await deployInstrument(instrument.id, { item_ids: null })
+      router.push(`/surveys/${result.survey_id}/edit`)
+    } catch (err) {
+      setDeployError(err instanceof Error ? err.message : String(err))
+      setDeploying(false)
+    }
+  }
+
   return (
-    <Link href={`/library/${instrument.id}`} className="card p-5 block transition-all hover:shadow-md" style={{ cursor: "pointer" }}>
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold leading-snug" style={{ color: "#1e1b4b" }}>{instrument.name}</p>
-          {instrument.construct_measured && (
-            <p className="mt-0.5 text-[11px]" style={{ color: "rgba(30,27,75,0.5)" }}>{instrument.construct_measured}</p>
+    <div className="card p-5 flex flex-col transition-all hover:shadow-md">
+      <Link href={`/library/${instrument.id}`} className="block flex-1">
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold leading-snug" style={{ color: "#1e1b4b" }}>{instrument.name}</p>
+            {instrument.construct_measured && (
+              <p className="mt-0.5 text-[11px]" style={{ color: "rgba(30,27,75,0.5)" }}>{instrument.construct_measured}</p>
+            )}
+          </div>
+          <LicenseBadge type={instrument.license_type} />
+        </div>
+
+        {instrument.description && (
+          <p
+            className="mb-3 text-xs line-clamp-2"
+            style={{ color: "rgba(30,27,75,0.55)" }}
+          >
+            {instrument.description}
+          </p>
+        )}
+
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]" style={{ color: "rgba(30,27,75,0.45)" }}>
+          <span>{instrument.total_items} items</span>
+          {instrument.estimated_minutes && <span>~{instrument.estimated_minutes} min</span>}
+          <FormatLabel format={instrument.response_format} />
+          {instrument.subscale_count > 0 && <span>{instrument.subscale_count} subscales</span>}
+          {alpha !== null && alpha !== undefined && (
+            <span style={{ color: "#5b21b6" }}>α = {alpha.toFixed(2)}</span>
           )}
         </div>
-        <LicenseBadge type={instrument.license_type} />
-      </div>
+      </Link>
 
-      {instrument.description && (
-        <p
-          className="mb-3 text-xs line-clamp-2"
-          style={{ color: "rgba(30,27,75,0.55)" }}
-        >
-          {instrument.description}
-        </p>
+      {deployError && (
+        <p className="mt-2 text-[11px]" style={{ color: "#dc2626" }}>{deployError}</p>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]" style={{ color: "rgba(30,27,75,0.45)" }}>
-        <span>{instrument.total_items} items</span>
-        {instrument.estimated_minutes && <span>~{instrument.estimated_minutes} min</span>}
-        <FormatLabel format={instrument.response_format} />
-        {instrument.subscale_count > 0 && <span>{instrument.subscale_count} subscales</span>}
-        {alpha !== null && alpha !== undefined && (
-          <span style={{ color: "#5b21b6" }}>α = {alpha.toFixed(2)}</span>
-        )}
+      <div className="mt-3 flex items-center gap-2">
+        <button
+          onClick={handleDeploy}
+          disabled={deploying}
+          className="btn-primary flex-1 text-xs py-1.5 disabled:opacity-50"
+        >
+          {deploying ? "Deploying…" : "Deploy Survey"}
+        </button>
+        <Link
+          href={`/library/${instrument.id}/customize`}
+          className="btn-ghost text-xs py-1.5"
+        >
+          Customize
+        </Link>
       </div>
-    </Link>
+    </div>
   )
 }
 

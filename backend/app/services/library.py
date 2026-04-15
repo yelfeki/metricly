@@ -26,14 +26,14 @@ _RESPONSE_FORMAT_TO_QTYPE: dict[str, str] = {
     "likert5": "likert_5",
     "likert7": "likert_7",
     "forced_choice": "single_choice",
-    "other": "likert_5",  # closest approximation
+    "other": "text",  # non-standard scales (e.g. PERMA 0–10) fall back to text
 }
 
 _RESPONSE_FORMAT_SCALE: dict[str, tuple[float, float]] = {
     "likert5": (1.0, 5.0),
     "likert7": (1.0, 7.0),
     "forced_choice": (0.0, 1.0),
-    "other": (1.0, 5.0),
+    "other": (0.0, 10.0),   # PERMA-style 0–10; text questions won't be scored
 }
 
 

@@ -82,7 +82,7 @@ export default function InstrumentDetailPage() {
     setDeploying(true); setDeployError(null)
     try {
       const result = await deployInstrument(id, { item_ids: null })
-      router.push(`/surveys/${result.survey_id}`)
+      router.push(`/surveys/${result.survey_id}/edit`)
     } catch (e) {
       setDeployError(e instanceof Error ? e.message : String(e))
       setDeploying(false)

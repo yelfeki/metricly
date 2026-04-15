@@ -227,6 +227,80 @@ class TestBuildSurveySpecSubscales:
 
 
 # ---------------------------------------------------------------------------
+# build_survey_spec — deploy behaviour
+# ---------------------------------------------------------------------------
+
+
+class TestDeploySpec:
+    """Verify the spec that the deploy route handler uses to create DB records."""
+
+    def setup_method(self):
+        self.inst = _make_instrument(short_name="PSS-7", response_format="likert7", total_items=7)
+        self.items = [
+            _make_item(i + 1, f"Item {i+1}", reverse=(i % 2 == 0))
+            for i in range(7)
+        ]
+        self.subscales = []
+
+    def test_creates_correct_number_of_questions(self):
+        """Full deploy: spec contains one item entry per instrument item."""
+        spec = build_survey_spec(self.inst, self.items, self.subscales)
+        total = sum(len(f["items"]) for f in spec["factors"])
+        assert total == 7
+
+    def test_reverse_scored_propagated(self):
+        """Items created with reverse=True appear as reverse_scored=True in spec."""
+        spec = build_survey_spec(self.inst, self.items, self.subscales)
+        spec_items = spec["factors"][0]["items"]
+        # items at indices 0, 2, 4, 6 were created with reverse=True
+        assert spec_items[0]["reverse_scored"] is True
+        assert spec_items[1]["reverse_scored"] is False
+        assert spec_items[2]["reverse_scored"] is True
+
+    def test_item_ids_subset_creates_only_those_items(self):
+        """Passing item_ids limits the items in the spec."""
+        subset_ids = ["item-1", "item-3", "item-5"]
+        spec = build_survey_spec(self.inst, self.items, self.subscales, item_ids=subset_ids)
+        total = sum(len(f["items"]) for f in spec["factors"])
+        assert total == 3
+
+    def test_spec_has_survey_name_and_description(self):
+        """Spec carries the survey name/description the route uses to create Survey row."""
+        spec = build_survey_spec(self.inst, self.items, self.subscales)
+        assert spec["survey_name"] == self.inst.name
+        assert spec["survey_description"] == self.inst.description
+
+    def test_other_format_maps_to_text_question_type(self):
+        """Instruments with response_format='other' (e.g. PERMA 0–10) get type 'text'."""
+        inst = _make_instrument(short_name="PERMA-18", response_format="other", total_items=3)
+        items = [_make_item(i + 1, f"Item {i+1}") for i in range(3)]
+        spec = build_survey_spec(inst, items, [])
+        assert spec["question_type"] == "text"
+
+    def test_likert5_format_maps_to_likert_5_question_type(self):
+        inst = _make_instrument(short_name="X", response_format="likert5", total_items=3)
+        items = [_make_item(i + 1, f"Item {i+1}") for i in range(3)]
+        spec = build_survey_spec(inst, items, [])
+        assert spec["question_type"] == "likert_5"
+        assert spec["scale_min"] == 1.0
+        assert spec["scale_max"] == 5.0
+
+    def test_likert7_format_maps_to_likert_7_question_type(self):
+        inst = _make_instrument(short_name="Y", response_format="likert7", total_items=3)
+        items = [_make_item(i + 1, f"Item {i+1}") for i in range(3)]
+        spec = build_survey_spec(inst, items, [])
+        assert spec["question_type"] == "likert_7"
+        assert spec["scale_min"] == 1.0
+        assert spec["scale_max"] == 7.0
+
+    def test_positions_are_sequential_from_one(self):
+        """Positions must be 1-based and contiguous so survey renders correctly."""
+        spec = build_survey_spec(self.inst, self.items, self.subscales)
+        positions = [it["position"] for it in spec["factors"][0]["items"]]
+        assert positions == list(range(1, 8))
+
+
+# ---------------------------------------------------------------------------
 # psychometric_warning
 # ---------------------------------------------------------------------------
 

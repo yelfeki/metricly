@@ -168,7 +168,7 @@ export default function CustomizePage() {
         item_ids: isFullSet ? null : selectedIds,
         customization_notes: notes || null,
       })
-      router.push(`/surveys/${result.survey_id}`)
+      router.push(`/surveys/${result.survey_id}/edit`)
     } catch (e) {
       setDeployError(e instanceof Error ? e.message : String(e))
       setDeploying(false)

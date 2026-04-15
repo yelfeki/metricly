@@ -654,3 +654,42 @@ export interface DeployResponse {
   items_deployed: number
   factors_created: number
 }
+
+// ---------------------------------------------------------------------------
+// Interpretive report (AI-generated)
+// ---------------------------------------------------------------------------
+
+export type ReportPurpose = "hiring" | "development" | "research"
+
+export interface InterpretiveReportContext {
+  role?: string | null
+  industry?: string | null
+  purpose: ReportPurpose
+}
+
+export interface FactorNarrative {
+  factor_name: string
+  score: number
+  label: string | null
+  narrative: string
+  strengths: string[]
+  watch_outs: string[]
+}
+
+export interface InterpretiveReportData {
+  overall_summary: string
+  factor_narratives: FactorNarrative[]
+  development_suggestions: string[]
+  hiring_recommendation?: string
+  role_fit_notes?: string
+}
+
+export interface InterpretiveReportOut {
+  id: string
+  response_id: string
+  survey_id: string
+  generated_at: string
+  context: InterpretiveReportContext
+  report: InterpretiveReportData
+  model_used: string
+}

@@ -22,6 +22,7 @@ dependencies = [
     "PyJWT[crypto]>=2.8.0",  # [crypto] pulls in cryptography for ES256/RS256
     "httpx>=0.27.0",         # async JWKS fetch
     "cryptography>=42.0.0",  # required by PyJWT[crypto] for EC key support
+    "anthropic>=0.40.0",     # Claude API for interpretive reports
 ]
 
 [project.optional-dependencies]

@@ -16,3 +16,4 @@ from .library import (  # noqa: F401
     InstrumentItem,
     LibraryDeployment,
 )
+from .report import InterpretiveReport  # noqa: F401

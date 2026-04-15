@@ -8,6 +8,7 @@ import type {
   GrowthProfile,
   GroupComparisonData,
   InstrumentCategoryOut,
+  InterpretiveReportOut,
   InstrumentOut,
   LabelThreshold,
   LibraryGrouped,
@@ -15,6 +16,7 @@ import type {
   PulseFrequency,
   PulseScheduleOut,
   QuestionOut,
+  ReportPurpose,
   RespondentsData,
   ResponseOut,
   ScoringAlgorithm,
@@ -529,3 +531,27 @@ export const deployInstrument = (
   body: { item_ids?: string[] | null; customization_notes?: string | null }
 ): Promise<DeployResponse> =>
   post(`/api/v1/library/instruments/${instrumentId}/deploy`, body)
+
+// ---------------------------------------------------------------------------
+// Interpretive Reports (AI-generated)
+// ---------------------------------------------------------------------------
+
+export interface InterpretiveReportRequest {
+  role?: string | null
+  industry?: string | null
+  purpose: ReportPurpose
+  force?: boolean
+}
+
+export const generateInterpretiveReport = (
+  surveyId: string,
+  responseId: string,
+  body: InterpretiveReportRequest
+): Promise<InterpretiveReportOut> =>
+  post(`/api/v1/surveys/${surveyId}/responses/${responseId}/interpretive-report`, body)
+
+export const getInterpretiveReport = (
+  surveyId: string,
+  responseId: string
+): Promise<InterpretiveReportOut> =>
+  get(`/api/v1/surveys/${surveyId}/responses/${responseId}/interpretive-report`)

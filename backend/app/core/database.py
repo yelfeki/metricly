@@ -235,6 +235,18 @@ async def run_migrations() -> None:
         )""",
         "CREATE INDEX IF NOT EXISTS ix_library_deployments_instrument_id ON library_deployments (instrument_id)",
         "CREATE INDEX IF NOT EXISTS ix_library_deployments_user_id ON library_deployments (user_id)",
+        # v1.3 — AI interpretive reports
+        """CREATE TABLE IF NOT EXISTS interpretive_reports (
+            id VARCHAR(36) PRIMARY KEY,
+            response_id VARCHAR(36) NOT NULL,
+            survey_id VARCHAR(36) NOT NULL,
+            generated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+            context_json TEXT NOT NULL DEFAULT '{}',
+            report_json TEXT NOT NULL,
+            model_used VARCHAR(100) NOT NULL
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_interpretive_reports_response_id ON interpretive_reports (response_id)",
+        "CREATE INDEX IF NOT EXISTS ix_interpretive_reports_survey_id ON interpretive_reports (survey_id)",
     ]
     for stmt in migrations:
         try:

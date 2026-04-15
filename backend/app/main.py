@@ -12,11 +12,13 @@ from .api.users import users_router
 from .api.frameworks import framework_router
 from .api.employees import employee_router
 from .api.library import library_router
+from .api.reports import reports_router
 from .core.auth import _fetch_jwks
 from .core.database import AsyncSessionLocal, Base, engine, run_migrations
 from .models import survey as _survey_models  # noqa: F401 — registers ORM metadata
 from .models import framework as _framework_models  # noqa: F401 — registers ORM metadata
 from .models import library as _library_models  # noqa: F401 — registers ORM metadata
+from .models import report as _report_models  # noqa: F401 — registers ORM metadata
 from .services.library_seed import seed_library
 
 
@@ -69,6 +71,7 @@ app.include_router(users_router, prefix="/api/v1")
 app.include_router(framework_router, prefix="/api/v1")
 app.include_router(employee_router, prefix="/api/v1")
 app.include_router(library_router, prefix="/api/v1")
+app.include_router(reports_router, prefix="/api/v1")
 
 
 @app.get("/health")

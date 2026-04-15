@@ -8,6 +8,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        playfair: ["var(--font-playfair)", "Georgia", "serif"],
+        jakarta: ["var(--font-jakarta)", "system-ui", "sans-serif"],
+      },
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",

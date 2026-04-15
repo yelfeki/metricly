@@ -342,3 +342,109 @@ export const listInvites = (surveyId: string): Promise<SurveyInvite[]> =>
 
 export const getMyRole = (): Promise<UserRole> =>
   get("/api/v1/users/me/role")
+
+// ---------------------------------------------------------------------------
+// Frameworks
+// ---------------------------------------------------------------------------
+
+import type {
+  CompetencyOut,
+  CompetencyScoreOut,
+  EmployeeProfileOut,
+  FrameworkListItem,
+  FrameworkOut,
+  FrameworkSurveyLink,
+  GapReport,
+  ProficiencyLevelOut,
+  TeamGapReport,
+} from "./types"
+
+// Framework CRUD
+export const listFrameworks = (): Promise<FrameworkListItem[]> =>
+  get("/api/v1/frameworks")
+
+export const createFramework = (body: {
+  title: string
+  description?: string | null
+  role_title?: string | null
+}): Promise<FrameworkOut> => post("/api/v1/frameworks", body)
+
+export const getFramework = (id: string): Promise<FrameworkOut> =>
+  get(`/api/v1/frameworks/${id}`)
+
+export const updateFramework = (
+  id: string,
+  body: { title?: string; description?: string | null; role_title?: string | null }
+): Promise<FrameworkOut> => patch(`/api/v1/frameworks/${id}`, body)
+
+export const deleteFramework = (id: string): Promise<void> =>
+  del(`/api/v1/frameworks/${id}`)
+
+// Competencies
+export const addCompetency = (
+  frameworkId: string,
+  body: { name: string; description?: string | null; order_index?: number }
+): Promise<CompetencyOut> => post(`/api/v1/frameworks/${frameworkId}/competencies`, body)
+
+export const updateCompetency = (
+  frameworkId: string,
+  competencyId: string,
+  body: { name?: string; description?: string | null; order_index?: number }
+): Promise<CompetencyOut> =>
+  patch(`/api/v1/frameworks/${frameworkId}/competencies/${competencyId}`, body)
+
+export const deleteCompetency = (frameworkId: string, competencyId: string): Promise<void> =>
+  del(`/api/v1/frameworks/${frameworkId}/competencies/${competencyId}`)
+
+// Proficiency levels
+export const addProficiencyLevel = (
+  frameworkId: string,
+  body: { level: number; label: string; description?: string | null; color?: string | null }
+): Promise<ProficiencyLevelOut> =>
+  post(`/api/v1/frameworks/${frameworkId}/proficiency-levels`, body)
+
+export const updateProficiencyLevel = (
+  frameworkId: string,
+  levelId: string,
+  body: { label?: string; description?: string | null; color?: string | null }
+): Promise<ProficiencyLevelOut> =>
+  patch(`/api/v1/frameworks/${frameworkId}/proficiency-levels/${levelId}`, body)
+
+export const deleteProficiencyLevel = (frameworkId: string, levelId: string): Promise<void> =>
+  del(`/api/v1/frameworks/${frameworkId}/proficiency-levels/${levelId}`)
+
+// Survey linking
+export const linkSurvey = (
+  frameworkId: string,
+  body: { survey_id: string; competency_id: string }
+): Promise<FrameworkSurveyLink> => post(`/api/v1/frameworks/${frameworkId}/link-survey`, body)
+
+export const unlinkSurvey = (frameworkId: string, competencyId: string): Promise<void> =>
+  del(`/api/v1/frameworks/${frameworkId}/link-survey/${competencyId}`)
+
+// Employees
+export const listEmployees = (frameworkId: string): Promise<EmployeeProfileOut[]> =>
+  get(`/api/v1/frameworks/${frameworkId}/employees`)
+
+export const createEmployee = (
+  frameworkId: string,
+  body: { name: string; email?: string | null; department?: string | null; role_title?: string | null }
+): Promise<EmployeeProfileOut> => post(`/api/v1/frameworks/${frameworkId}/employees`, body)
+
+export const deleteEmployee = (frameworkId: string, employeeId: string): Promise<void> =>
+  del(`/api/v1/frameworks/${frameworkId}/employees/${employeeId}`)
+
+// Scores
+export const submitCompetencyScore = (
+  frameworkId: string,
+  employeeId: string,
+  body: { competency_id: string; normalized_score: number; survey_response_id?: string | null }
+): Promise<CompetencyScoreOut> =>
+  post(`/api/v1/frameworks/${frameworkId}/employees/${employeeId}/scores`, body)
+
+// Gap reports
+export const getGapReport = (frameworkId: string, employeeId: string): Promise<GapReport> =>
+  get(`/api/v1/frameworks/${frameworkId}/gap-report?employee_id=${encodeURIComponent(employeeId)}`)
+
+export const getTeamGapReport = (frameworkId: string): Promise<TeamGapReport> =>
+  get(`/api/v1/frameworks/${frameworkId}/team-gap-report`)

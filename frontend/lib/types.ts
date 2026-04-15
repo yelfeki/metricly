@@ -346,3 +346,119 @@ export interface QuestionDraft {
   is_demographic: boolean
   demographic_key: string                   // "" = none
 }
+
+// ---------------------------------------------------------------------------
+// Competency Framework types
+// ---------------------------------------------------------------------------
+
+export interface CompetencyOut {
+  id: string
+  framework_id: string
+  name: string
+  description: string | null
+  order_index: number
+}
+
+export interface ProficiencyLevelOut {
+  id: string
+  framework_id: string
+  level: number
+  label: string
+  description: string | null
+  color: string | null
+}
+
+export interface FrameworkSurveyLink {
+  id: string
+  framework_id: string
+  survey_id: string
+  competency_id: string
+}
+
+export interface FrameworkOut {
+  id: string
+  user_id: string | null
+  title: string
+  description: string | null
+  role_title: string | null
+  created_at: string
+  competencies: CompetencyOut[]
+  proficiency_levels: ProficiencyLevelOut[]
+  survey_links: FrameworkSurveyLink[]
+}
+
+export interface FrameworkListItem {
+  id: string
+  title: string
+  description: string | null
+  role_title: string | null
+  created_at: string
+  competency_count: number
+}
+
+export interface EmployeeProfileOut {
+  id: string
+  user_id: string | null
+  framework_id: string
+  name: string
+  email: string | null
+  department: string | null
+  role_title: string | null
+  created_at: string
+}
+
+export interface CompetencyScoreOut {
+  id: string
+  employee_profile_id: string
+  competency_id: string
+  survey_response_id: string | null
+  normalized_score: number
+  proficiency_level: number | null
+  assessed_at: string
+}
+
+// Gap analysis
+
+export interface CompetencyGap {
+  competency_id: string
+  competency_name: string
+  required_level: number
+  required_score: number
+  actual_score: number | null
+  actual_level: number | null
+  gap: number | null
+  priority: boolean
+}
+
+export interface GapReport {
+  employee_id: string
+  employee_name: string
+  framework_id: string
+  framework_title: string
+  overall_readiness: number
+  gaps: CompetencyGap[]
+  top_priorities: CompetencyGap[]
+}
+
+export interface CompetencyTeamStats {
+  competency_id: string
+  competency_name: string
+  mean_score: number | null
+  level_distribution: Record<string, number>
+  critical: boolean
+}
+
+export interface TeamHeatmapRow {
+  employee_id: string
+  employee_name: string
+  scores: Record<string, number | null>
+}
+
+export interface TeamGapReport {
+  framework_id: string
+  framework_title: string
+  employee_count: number
+  competency_stats: CompetencyTeamStats[]
+  heatmap: TeamHeatmapRow[]
+  critical_gaps: CompetencyTeamStats[]
+}

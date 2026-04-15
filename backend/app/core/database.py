@@ -93,6 +93,64 @@ async def run_migrations() -> None:
             created_at TIMESTAMP WITH TIME ZONE NOT NULL
         )""",
         "CREATE INDEX IF NOT EXISTS ix_user_roles_user_id ON user_roles (user_id)",
+        # v1.0 — competency framework + gap analysis
+        """CREATE TABLE IF NOT EXISTS frameworks (
+            id VARCHAR(36) PRIMARY KEY,
+            user_id VARCHAR(36),
+            title VARCHAR(255) NOT NULL,
+            description TEXT,
+            role_title VARCHAR(255),
+            created_at TIMESTAMP WITH TIME ZONE NOT NULL
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_frameworks_user_id ON frameworks (user_id)",
+        """CREATE TABLE IF NOT EXISTS competencies (
+            id VARCHAR(36) PRIMARY KEY,
+            framework_id VARCHAR(36) NOT NULL REFERENCES frameworks(id) ON DELETE CASCADE,
+            name VARCHAR(255) NOT NULL,
+            description TEXT,
+            order_index INTEGER NOT NULL DEFAULT 0
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_competencies_framework_id ON competencies (framework_id)",
+        """CREATE TABLE IF NOT EXISTS proficiency_levels (
+            id VARCHAR(36) PRIMARY KEY,
+            framework_id VARCHAR(36) NOT NULL REFERENCES frameworks(id) ON DELETE CASCADE,
+            level INTEGER NOT NULL,
+            label VARCHAR(100) NOT NULL,
+            description TEXT,
+            color VARCHAR(20)
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_proficiency_levels_framework_id ON proficiency_levels (framework_id)",
+        """CREATE TABLE IF NOT EXISTS framework_surveys (
+            id VARCHAR(36) PRIMARY KEY,
+            framework_id VARCHAR(36) NOT NULL REFERENCES frameworks(id) ON DELETE CASCADE,
+            survey_id VARCHAR(36) NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+            competency_id VARCHAR(36) NOT NULL REFERENCES competencies(id) ON DELETE CASCADE
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_framework_surveys_framework_id ON framework_surveys (framework_id)",
+        "CREATE INDEX IF NOT EXISTS ix_framework_surveys_competency_id ON framework_surveys (competency_id)",
+        """CREATE TABLE IF NOT EXISTS employee_profiles (
+            id VARCHAR(36) PRIMARY KEY,
+            user_id VARCHAR(36),
+            framework_id VARCHAR(36) NOT NULL REFERENCES frameworks(id) ON DELETE CASCADE,
+            name VARCHAR(255) NOT NULL,
+            email VARCHAR(255),
+            department VARCHAR(255),
+            role_title VARCHAR(255),
+            created_at TIMESTAMP WITH TIME ZONE NOT NULL
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_employee_profiles_framework_id ON employee_profiles (framework_id)",
+        "CREATE INDEX IF NOT EXISTS ix_employee_profiles_user_id ON employee_profiles (user_id)",
+        """CREATE TABLE IF NOT EXISTS competency_scores (
+            id VARCHAR(36) PRIMARY KEY,
+            employee_profile_id VARCHAR(36) NOT NULL REFERENCES employee_profiles(id) ON DELETE CASCADE,
+            competency_id VARCHAR(36) NOT NULL REFERENCES competencies(id) ON DELETE CASCADE,
+            survey_response_id VARCHAR(36),
+            normalized_score FLOAT NOT NULL,
+            proficiency_level INTEGER,
+            assessed_at TIMESTAMP WITH TIME ZONE NOT NULL
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_competency_scores_employee_id ON competency_scores (employee_profile_id)",
+        "CREATE INDEX IF NOT EXISTS ix_competency_scores_competency_id ON competency_scores (competency_id)",
     ]
     for stmt in migrations:
         try:

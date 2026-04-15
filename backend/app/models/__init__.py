@@ -9,3 +9,10 @@ from .framework import (  # noqa: F401
     PulseSchedule,
     Benchmark,
 )
+from .library import (  # noqa: F401
+    InstrumentCategory,
+    Instrument,
+    InstrumentSubscale,
+    InstrumentItem,
+    LibraryDeployment,
+)

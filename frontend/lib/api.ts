@@ -3,10 +3,14 @@ import type {
   BenchmarkOut,
   CronbachAlphaResponse,
   DashboardData,
+  DeployResponse,
   FactorScoresResponse,
   GrowthProfile,
   GroupComparisonData,
+  InstrumentCategoryOut,
+  InstrumentOut,
   LabelThreshold,
+  LibraryGrouped,
   ParticipantReport,
   PulseFrequency,
   PulseScheduleOut,
@@ -501,3 +505,27 @@ export const getMyProfiles = (): Promise<EmployeeProfileOut[]> =>
 
 export const getEmployeeGrowth = (employeeId: string): Promise<GrowthProfile> =>
   get(`/api/v1/employees/${employeeId}/growth`)
+
+// ---------------------------------------------------------------------------
+// Assessment Library
+// ---------------------------------------------------------------------------
+
+export const getLibrary = (params?: { search?: string; category_id?: string }): Promise<LibraryGrouped> => {
+  const q = new URLSearchParams()
+  if (params?.search) q.set("search", params.search)
+  if (params?.category_id) q.set("category_id", params.category_id)
+  const qs = q.toString()
+  return get(`/api/v1/library${qs ? `?${qs}` : ""}`)
+}
+
+export const getLibraryCategories = (): Promise<InstrumentCategoryOut[]> =>
+  get("/api/v1/library/categories")
+
+export const getInstrument = (instrumentId: string): Promise<InstrumentOut> =>
+  get(`/api/v1/library/instruments/${instrumentId}`)
+
+export const deployInstrument = (
+  instrumentId: string,
+  body: { item_ids?: string[] | null; customization_notes?: string | null }
+): Promise<DeployResponse> =>
+  post(`/api/v1/library/instruments/${instrumentId}/deploy`, body)

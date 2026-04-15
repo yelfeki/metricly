@@ -559,3 +559,98 @@ export interface GrowthProfile {
   department: string | null
   competency_trends: CompetencyTrend[]
 }
+
+// ---------------------------------------------------------------------------
+// Assessment Library
+// ---------------------------------------------------------------------------
+
+export interface InstrumentCategoryOut {
+  id: string
+  name: string
+  description: string | null
+  icon_name: string | null
+  order_index: number
+}
+
+export interface InstrumentSubscaleOut {
+  id: string
+  instrument_id: string
+  name: string
+  description: string | null
+  item_count: number
+  scoring_notes: string | null
+}
+
+export interface InstrumentItemOut {
+  id: string
+  instrument_id: string
+  subscale_id: string | null
+  item_text: string
+  item_text_ar: string | null
+  order_index: number
+  is_reverse_scored: boolean
+  scoring_key: string | null
+}
+
+export interface InstrumentListItem {
+  id: string
+  name: string
+  short_name: string
+  description: string | null
+  construct_measured: string | null
+  category_id: string | null
+  category_name: string | null
+  license_type: string
+  is_proprietary: boolean
+  total_items: number
+  estimated_minutes: number | null
+  scoring_type: string
+  response_format: string
+  languages: string | null
+  reliability_alpha: number | null
+  subscale_count: number
+}
+
+export interface InstrumentOut {
+  id: string
+  category_id: string | null
+  name: string
+  short_name: string
+  description: string | null
+  construct_measured: string | null
+  theoretical_framework: string | null
+  source_citation: string | null
+  source_url: string | null
+  license_type: string
+  is_proprietary: boolean
+  total_items: number
+  estimated_minutes: number | null
+  scoring_type: string
+  response_format: string
+  validated_populations: string | null
+  languages: string | null
+  reliability_alpha: number | null
+  is_active: boolean
+  created_at: string
+  subscales: InstrumentSubscaleOut[]
+  items: InstrumentItemOut[]
+}
+
+export interface CategoryGroup {
+  category: InstrumentCategoryOut
+  instruments: InstrumentListItem[]
+}
+
+export interface LibraryGrouped {
+  total_instruments: number
+  categories: CategoryGroup[]
+}
+
+export interface DeployResponse {
+  deployment_id: string
+  survey_id: string
+  instrument_id: string
+  instrument_name: string
+  items_deployed: number
+  factors_created: number
+}

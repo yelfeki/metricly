@@ -172,6 +172,69 @@ async def run_migrations() -> None:
         )""",
         "CREATE INDEX IF NOT EXISTS ix_benchmarks_framework_id ON benchmarks (framework_id)",
         "CREATE INDEX IF NOT EXISTS ix_benchmarks_competency_id ON benchmarks (competency_id)",
+        # v1.2 — assessment library
+        """CREATE TABLE IF NOT EXISTS instrument_categories (
+            id VARCHAR(36) PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            description TEXT,
+            icon_name VARCHAR(100),
+            order_index INTEGER NOT NULL DEFAULT 0
+        )""",
+        """CREATE TABLE IF NOT EXISTS instruments (
+            id VARCHAR(36) PRIMARY KEY,
+            category_id VARCHAR(36) REFERENCES instrument_categories(id) ON DELETE SET NULL,
+            name VARCHAR(255) NOT NULL,
+            short_name VARCHAR(100) NOT NULL UNIQUE,
+            description TEXT,
+            construct_measured TEXT,
+            theoretical_framework TEXT,
+            source_citation TEXT,
+            source_url VARCHAR(500),
+            license_type VARCHAR(50) NOT NULL DEFAULT 'open',
+            is_proprietary BOOLEAN NOT NULL DEFAULT FALSE,
+            total_items INTEGER NOT NULL DEFAULT 0,
+            estimated_minutes INTEGER,
+            scoring_type VARCHAR(50) NOT NULL DEFAULT 'mean',
+            response_format VARCHAR(50) NOT NULL DEFAULT 'likert5',
+            validated_populations TEXT,
+            languages TEXT,
+            reliability_alpha FLOAT,
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at TIMESTAMP WITH TIME ZONE NOT NULL
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_instruments_category_id ON instruments (category_id)",
+        """CREATE TABLE IF NOT EXISTS instrument_subscales (
+            id VARCHAR(36) PRIMARY KEY,
+            instrument_id VARCHAR(36) NOT NULL REFERENCES instruments(id) ON DELETE CASCADE,
+            name VARCHAR(255) NOT NULL,
+            description TEXT,
+            item_count INTEGER NOT NULL DEFAULT 0,
+            scoring_notes TEXT
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_instrument_subscales_instrument_id ON instrument_subscales (instrument_id)",
+        """CREATE TABLE IF NOT EXISTS instrument_items (
+            id VARCHAR(36) PRIMARY KEY,
+            instrument_id VARCHAR(36) NOT NULL REFERENCES instruments(id) ON DELETE CASCADE,
+            subscale_id VARCHAR(36) REFERENCES instrument_subscales(id) ON DELETE SET NULL,
+            item_text TEXT NOT NULL,
+            item_text_ar TEXT,
+            order_index INTEGER NOT NULL DEFAULT 0,
+            is_reverse_scored BOOLEAN NOT NULL DEFAULT FALSE,
+            scoring_key TEXT
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_instrument_items_instrument_id ON instrument_items (instrument_id)",
+        "CREATE INDEX IF NOT EXISTS ix_instrument_items_subscale_id ON instrument_items (subscale_id)",
+        """CREATE TABLE IF NOT EXISTS library_deployments (
+            id VARCHAR(36) PRIMARY KEY,
+            user_id VARCHAR(36),
+            instrument_id VARCHAR(36) NOT NULL REFERENCES instruments(id) ON DELETE CASCADE,
+            survey_id VARCHAR(36),
+            customization_notes TEXT,
+            items_included TEXT,
+            created_at TIMESTAMP WITH TIME ZONE NOT NULL
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_library_deployments_instrument_id ON library_deployments (instrument_id)",
+        "CREATE INDEX IF NOT EXISTS ix_library_deployments_user_id ON library_deployments (user_id)",
     ]
     for stmt in migrations:
         try:

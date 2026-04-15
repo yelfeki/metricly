@@ -107,6 +107,15 @@ export default function Header({ backHref, backLabel, pageTitle }: HeaderProps) 
             >
               My Growth
             </Link>
+            <Link
+              href="/library"
+              className="rounded-full px-3 py-1 text-xs font-semibold transition-all"
+              style={{ color: "rgba(30,27,75,0.6)", position: "relative" }}
+              onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.4)")}
+              onMouseLeave={e => (e.currentTarget.style.background = "")}
+            >
+              Library
+            </Link>
             {isAdmin && (
               <>
                 <Link

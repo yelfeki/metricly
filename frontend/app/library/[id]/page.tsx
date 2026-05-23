@@ -14,7 +14,7 @@ import type { InstrumentOut } from "@/lib/types"
 function LicenseBadge({ type }: { type: string }) {
   const map: Record<string, { label: string; bg: string; color: string }> = {
     open:          { label: "Open Access",    bg: "rgba(34,197,94,0.1)",  color: "#16a34a" },
-    public_domain: { label: "Public Domain",  bg: "rgba(59,130,246,0.1)", color: "#2563eb" },
+    public_domain: { label: "Public Domain",  bg: "rgba(59,130,246,0.1)", color: "#3777A8" },
     proprietary:   { label: "Metricly",       bg: "rgba(91,33,182,0.1)",  color: "#5b21b6" },
   }
   const s = map[type] ?? map.open

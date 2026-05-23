@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react"
 import type { User } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
-import { setTokenProvider, getMyRole } from "@/lib/api"
+import { setTokenProvider, setSessionRefresher, getMyRole } from "@/lib/api"
 import type { UserRoleValue } from "@/lib/types"
 
 interface AuthContextValue {
@@ -22,10 +22,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = createClient()
 
-    // Register a token provider so every API call automatically gets the
-    // current access token without needing to thread it through every component.
+    // Token provider: returns the current cached access token. Fast — no
+    // network round-trip. api.ts will call the refresher on 401 if needed.
     setTokenProvider(async () => {
       const { data: { session } } = await supabase.auth.getSession()
+      return session?.access_token ?? null
+    })
+
+    // Session refresher: forces Supabase to exchange the refresh token for a
+    // new access token. Called automatically by api.ts on any 401 response.
+    setSessionRefresher(async () => {
+      const { data: { session } } = await supabase.auth.refreshSession()
       return session?.access_token ?? null
     })
 

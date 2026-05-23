@@ -348,6 +348,37 @@ export interface QuestionDraft {
 }
 
 // ---------------------------------------------------------------------------
+// Survey import types
+// ---------------------------------------------------------------------------
+
+export type ImportedQuestionType =
+  | "likert"
+  | "single_choice"
+  | "multiple_choice"
+  | "forced_choice"
+  | "yes_no"
+  | "true_false"
+  | "text"
+  | "rating"
+
+export interface ImportedQuestion {
+  text: string
+  question_type: ImportedQuestionType
+  likert_min: number | null
+  likert_max: number | null
+  options: string[]
+  reverse_scored: boolean
+  required: boolean
+  subscale: string | null
+  notes: string | null
+}
+
+export interface ImportResult {
+  source: "template" | "unstructured"
+  questions: ImportedQuestion[]
+}
+
+// ---------------------------------------------------------------------------
 // Competency Framework types
 // ---------------------------------------------------------------------------
 
@@ -692,4 +723,184 @@ export interface InterpretiveReportOut {
   context: InterpretiveReportContext
   report: InterpretiveReportData
   model_used: string
+}
+
+// ---------------------------------------------------------------------------
+// Skills Explorer
+// ---------------------------------------------------------------------------
+
+export interface SkillsChatMessage {
+  role: "user" | "assistant"
+  content: string
+}
+
+export interface SkillsProfile {
+  recommended_categories: string[]
+  recommended_skills: string[]
+  skills_not_in_library: string[]
+  industry_detected?: string | null
+  context_summary: string
+}
+
+// ---------------------------------------------------------------------------
+// Industry Library
+// ---------------------------------------------------------------------------
+
+export interface IndustryOut {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  keywords: string | null
+  icon_name: string | null
+  color_hex: string | null
+  order_index: number
+  instrument_count: number
+}
+
+export interface IndustryInstrumentOut {
+  id: string
+  name: string
+  short_name: string
+  description: string | null
+  construct_measured: string | null
+  total_items: number
+  estimated_minutes: number | null
+  scoring_type: string
+  response_format: string
+  reliability_alpha: number | null
+  license_type: string
+  is_proprietary: boolean
+  relevance_score: number
+  use_case_note: string | null
+  subscale_count: number
+}
+
+export interface IndustryDetailOut {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  keywords: string | null
+  icon_name: string | null
+  color_hex: string | null
+  order_index: number
+  instruments: IndustryInstrumentOut[]
+}
+
+// ---------------------------------------------------------------------------
+// Competency Framework Database
+// ---------------------------------------------------------------------------
+
+export interface CompetencyFrameworkListItem {
+  id: string
+  name: string
+  source: string | null
+  description: string | null
+  version: string | null
+  competency_count: number
+}
+
+export interface CompetencyProficiencyLevelOut {
+  level: number
+  label: string
+  behavioral_indicators: string[]
+  example_behaviors: string[]
+}
+
+export interface CompetencyInstrumentMappingOut {
+  instrument_id: string
+  instrument_name: string
+  instrument_short_name: string
+  mapping_strength: "primary" | "supporting"
+  rationale: string | null
+  subscale_focus: string | null
+  total_items: number
+  reliability_alpha: number | null
+  response_format: string
+}
+
+export interface CompetencyListItem {
+  id: string
+  name: string
+  definition: string | null
+  framework_id: string
+  framework_name: string
+  factor: string | null
+  cluster: string | null
+  category: string | null
+  is_leadership: boolean
+  is_technical: boolean
+  primary_instrument: string | null
+}
+
+export interface CompetencyDetail {
+  id: string
+  name: string
+  definition: string | null
+  framework_id: string
+  framework_name: string
+  factor: string | null
+  cluster: string | null
+  category: string | null
+  is_leadership: boolean
+  is_technical: boolean
+  proficiency_levels: CompetencyProficiencyLevelOut[]
+  instrument_mappings: CompetencyInstrumentMappingOut[]
+}
+
+export type SeniorityLevel = "junior" | "mid" | "senior" | "executive"
+export type BlueprintPurpose = "selection" | "development" | "360"
+
+export interface StrawManRequest {
+  role_title?: string | null
+  initiative?: string | null
+  competency_ids?: string[] | null
+  seniority_level: SeniorityLevel
+  purpose: BlueprintPurpose
+}
+
+export interface StrawManInstrumentRef {
+  name: string
+  short_name: string
+  subscale: string | null
+  items: number
+  alpha: number | null
+  response_format: string
+  rationale: string | null
+}
+
+export interface StrawManRow {
+  competency: string
+  competency_id: string
+  framework: string
+  factor: string | null
+  cluster: string | null
+  required_proficiency_level: number
+  proficiency_label: string
+  behavioral_indicators: string[]
+  primary_instrument: StrawManInstrumentRef | null
+  supporting_instruments: StrawManInstrumentRef[]
+  assessment_method: string
+  rationale: string
+}
+
+export interface StrawManResponse {
+  title: string
+  generated_at: string
+  seniority_level: string
+  purpose: string
+  rows: StrawManRow[]
+}
+
+export interface BatchDeployRequest {
+  instrument_ids: string[]
+  survey_title?: string
+}
+
+export interface BatchDeployResponse {
+  survey_id: string
+  instruments_deployed: number
+  total_items: number
+  factors_created: number
 }

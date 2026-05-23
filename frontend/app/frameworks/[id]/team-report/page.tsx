@@ -13,7 +13,7 @@ import type { CompetencyTeamStats, FrameworkOut, TeamGapReport, TeamHeatmapRow }
 const LEVEL_COLORS: Record<number, { bg: string; text: string; label: string }> = {
   1: { bg: "rgba(239,68,68,0.18)",   text: "#dc2626", label: "L1" },
   2: { bg: "rgba(245,158,11,0.18)",  text: "#d97706", label: "L2" },
-  3: { bg: "rgba(59,130,246,0.15)",  text: "#2563eb", label: "L3" },
+  3: { bg: "rgba(59,130,246,0.15)",  text: "#3777A8", label: "L3" },
   4: { bg: "rgba(34,197,94,0.15)",   text: "#16a34a", label: "L4" },
   5: { bg: "rgba(16,185,129,0.18)",  text: "#059669", label: "L5" },
 }

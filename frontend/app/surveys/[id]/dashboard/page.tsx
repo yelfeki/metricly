@@ -26,8 +26,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-  ReferenceLine,
-  Legend,
 } from "recharts"
 
 // ---------------------------------------------------------------------------
@@ -43,11 +41,26 @@ function fmtDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
 }
 
-// Distinct colors for grouped bar chart groups
 const GROUP_COLORS = [
-  "#6366f1", "#f59e0b", "#10b981", "#ef4444",
-  "#8b5cf6", "#06b6d4", "#f97316", "#84cc16",
+  "#7c3aed", "#f59e0b", "#10b981", "#ef4444",
+  "#06b6d4", "#f97316", "#84cc16", "#ec4899",
 ]
+
+// ---------------------------------------------------------------------------
+// Section wrapper
+// ---------------------------------------------------------------------------
+
+function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  return (
+    <section className="card p-6">
+      <div className="mb-5">
+        <h2 className="section-heading">{title}</h2>
+        {subtitle && <p className="mt-0.5 text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>{subtitle}</p>}
+      </div>
+      {children}
+    </section>
+  )
+}
 
 // ---------------------------------------------------------------------------
 // Section 1 — Overview cards
@@ -57,71 +70,60 @@ function OverviewCards({ data }: { data: DashboardData }) {
   const hasComp = data.average_composite !== null
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-      {/* Total responses */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Responses</p>
-        <p className="mt-2 text-4xl font-black tabular-nums text-slate-900">{data.response_count}</p>
+      <div className="card p-5">
+        <p className="label-caps">Responses</p>
+        <p className="metric-value mt-2 text-4xl font-black tabular-nums" style={{ color: "#1e1b4b" }}>
+          {data.response_count}
+        </p>
       </div>
 
-      {/* Average composite */}
       <div
-        className="rounded-2xl border p-5 shadow-sm"
-        style={{
-          borderColor: hasComp && data.composite_color ? `${data.composite_color}40` : "#e2e8f0",
-          background: hasComp && data.composite_color
-            ? `linear-gradient(135deg, ${data.composite_color}12 0%, #ffffff 100%)`
-            : "#ffffff",
-        }}
+        className="card p-5"
+        style={hasComp && data.composite_color ? {
+          background: `linear-gradient(145deg, ${data.composite_color}15 0%, rgba(255,255,255,0.55) 100%)`,
+        } : {}}
       >
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Avg. Score</p>
+        <p className="label-caps">Avg. Score</p>
         <p
-          className="mt-2 text-4xl font-black tabular-nums"
-          style={{ color: data.composite_color ?? "#6366f1" }}
+          className="metric-value mt-2 text-4xl font-black tabular-nums"
+          style={{ color: data.composite_color ?? "#5b21b6" }}
         >
           {fmt(data.average_composite)}
         </p>
         {data.composite_label && (
           <span
             className="mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-            style={{ backgroundColor: data.composite_color ?? "#6366f1" }}
+            style={{ backgroundColor: data.composite_color ?? "#5b21b6" }}
           >
             {data.composite_label}
           </span>
         )}
       </div>
 
-      {/* Date range start */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">First Response</p>
-        <p className="mt-2 text-sm font-semibold text-slate-700">{fmtDate(data.date_range_start)}</p>
+      <div className="card p-5">
+        <p className="label-caps">First Response</p>
+        <p className="metric-value mt-2 text-sm font-semibold" style={{ color: "rgba(30,27,75,0.7)" }}>
+          {fmtDate(data.date_range_start)}
+        </p>
       </div>
 
-      {/* Date range end */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Latest Response</p>
-        <p className="mt-2 text-sm font-semibold text-slate-700">{fmtDate(data.date_range_end)}</p>
+      <div className="card p-5">
+        <p className="label-caps">Latest Response</p>
+        <p className="metric-value mt-2 text-sm font-semibold" style={{ color: "rgba(30,27,75,0.7)" }}>
+          {fmtDate(data.date_range_end)}
+        </p>
       </div>
     </div>
   )
 }
 
 // ---------------------------------------------------------------------------
-// Section 2 — Factor performance (horizontal bar chart)
+// Section 2 — Factor performance
 // ---------------------------------------------------------------------------
 
 function FactorPerformance({ factors }: { factors: FactorDistribution[] }) {
-  const chartData = factors
-    .filter(f => f.mean !== null)
-    .map(f => ({
-      name: f.factor_name,
-      mean: f.mean!,
-      sd: f.sd ?? 0,
-      label: f.label,
-      color: f.color ?? "#6366f1",
-    }))
-
-  if (chartData.length === 0) {
-    return <p className="text-xs text-slate-400">No factor scores available yet.</p>
+  if (factors.filter(f => f.mean !== null).length === 0) {
+    return <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>No factor scores available yet.</p>
   }
 
   return (
@@ -129,46 +131,40 @@ function FactorPerformance({ factors }: { factors: FactorDistribution[] }) {
       {factors.filter(f => f.mean !== null).map(f => (
         <div key={f.factor_name}>
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-700">{f.factor_name}</span>
+            <span className="text-sm font-medium" style={{ color: "rgba(30,27,75,0.75)" }}>{f.factor_name}</span>
             <div className="flex items-center gap-2">
               {f.label && (
                 <span
                   className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-                  style={{ backgroundColor: f.color ?? "#64748b" }}
+                  style={{ backgroundColor: f.color ?? "#5b21b6" }}
                 >
                   {f.label}
                 </span>
               )}
-              <span className="text-xs tabular-nums text-slate-500">
-                {fmt(f.mean)} <span className="text-slate-400">± {fmt(f.sd)}</span>
-                <span className="ml-1 text-slate-300">n={f.n}</span>
+              <span className="text-xs tabular-nums" style={{ color: "rgba(30,27,75,0.45)" }}>
+                {fmt(f.mean)} <span style={{ color: "rgba(30,27,75,0.3)" }}>± {fmt(f.sd)}</span>
+                <span className="ml-1" style={{ color: "rgba(30,27,75,0.25)" }}>n={f.n}</span>
               </span>
             </div>
           </div>
           {/* Bar with SD range */}
-          <div className="relative h-6 w-full overflow-hidden rounded-full bg-slate-100">
-            {/* SD range */}
+          <div className="relative h-6 w-full overflow-hidden rounded-full" style={{ background: "rgba(91,33,182,0.06)" }}>
             {f.sd !== null && f.mean !== null && (
               <div
-                className="absolute top-1.5 h-3 rounded-full opacity-30"
+                className="absolute top-1.5 h-3 rounded-full opacity-20"
                 style={{
                   left: `${Math.max(0, f.mean - f.sd)}%`,
                   width: `${Math.min(100, f.mean + f.sd) - Math.max(0, f.mean - f.sd)}%`,
-                  backgroundColor: f.color ?? "#6366f1",
+                  backgroundColor: f.color ?? "#5b21b6",
                 }}
               />
             )}
-            {/* Mean bar */}
             <div
               className="absolute top-0 h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${f.mean ?? 0}%`,
-                backgroundColor: f.color ?? "#6366f1",
-                opacity: 0.85,
-              }}
+              style={{ width: `${f.mean ?? 0}%`, backgroundColor: f.color ?? "#5b21b6", opacity: 0.8 }}
             />
           </div>
-          <div className="mt-0.5 flex justify-between text-[10px] text-slate-400">
+          <div className="mt-0.5 flex justify-between text-[10px]" style={{ color: "rgba(30,27,75,0.25)" }}>
             <span>0</span><span>100</span>
           </div>
         </div>
@@ -181,38 +177,29 @@ function FactorPerformance({ factors }: { factors: FactorDistribution[] }) {
 // Section 3 — Score distribution histogram
 // ---------------------------------------------------------------------------
 
-const LABEL_BAND_COLORS = ["#ef4444", "#f59e0b", "#22c55e"]
-
 function ScoreDistribution({ data }: { data: DashboardData }) {
   const histData = data.composite_histogram.map(b => ({
     name: `${b.start}–${b.end}`,
     count: b.count,
-    start: b.start,
   }))
 
   if (data.composite_histogram.every(b => b.count === 0)) {
-    return <p className="text-xs text-slate-400">No composite scores yet.</p>
+    return <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>No composite scores yet.</p>
   }
 
   return (
     <ResponsiveContainer width="100%" height={200}>
       <BarChart data={histData} margin={{ top: 4, right: 8, bottom: 20, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-        <XAxis
-          dataKey="name"
-          tick={{ fontSize: 10, fill: "#94a3b8" }}
-          angle={-35}
-          textAnchor="end"
-          interval={0}
-        />
-        <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} allowDecimals={false} width={24} />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(91,33,182,0.07)" vertical={false} />
+        <XAxis dataKey="name" tick={{ fontSize: 10, fill: "rgba(30,27,75,0.4)" }} angle={-35} textAnchor="end" interval={0} />
+        <YAxis tick={{ fontSize: 10, fill: "rgba(30,27,75,0.4)" }} allowDecimals={false} width={24} />
         <Tooltip
           formatter={(v: unknown) => { const n = v as number; return [`${n} respondent${n !== 1 ? "s" : ""}`, "Count"] }}
-          contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #e2e8f0" }}
+          contentStyle={{ fontSize: 11, borderRadius: 12, border: "0.5px solid rgba(255,255,255,0.8)", background: "rgba(240,238,255,0.9)", backdropFilter: "blur(12px)" }}
         />
         <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-          {histData.map((entry, i) => (
-            <Cell key={i} fill="#6366f1" fillOpacity={0.75} />
+          {histData.map((_, i) => (
+            <Cell key={i} fill="#7c3aed" fillOpacity={0.7} />
           ))}
         </Bar>
       </BarChart>
@@ -227,7 +214,10 @@ function ScoreDistribution({ data }: { data: DashboardData }) {
 function SignificanceBadge({ fc }: { fc: FactorGroupComparison }) {
   if (!fc.significant) {
     return (
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+      <span
+        className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+        style={{ background: "rgba(30,27,75,0.07)", color: "rgba(30,27,75,0.5)" }}
+      >
         No significant difference
       </span>
     )
@@ -235,9 +225,8 @@ function SignificanceBadge({ fc }: { fc: FactorGroupComparison }) {
   const isLarge = fc.interpretation.includes("large")
   return (
     <span
-      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold text-white ${
-        isLarge ? "bg-red-500" : "bg-amber-500"
-      }`}
+      className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+      style={{ backgroundColor: isLarge ? "#dc2626" : "#d97706" }}
     >
       {fc.effect_size_type === "cohen_d"
         ? `Cohen's d = ${fmt(fc.effect_size, 2)}`
@@ -247,13 +236,7 @@ function SignificanceBadge({ fc }: { fc: FactorGroupComparison }) {
   )
 }
 
-function DemographicBreakdown({
-  surveyId,
-  demographicKeys,
-}: {
-  surveyId: string
-  demographicKeys: string[]
-}) {
+function DemographicBreakdown({ surveyId, demographicKeys }: { surveyId: string; demographicKeys: string[] }) {
   const [selectedKey, setSelectedKey] = useState(demographicKeys[0] ?? "")
   const [compData, setCompData] = useState<GroupComparisonData | null>(null)
   const [loading, setLoading] = useState(false)
@@ -262,20 +245,16 @@ function DemographicBreakdown({
   const load = useCallback(async (key: string) => {
     if (!key) return
     setLoading(true); setError(null)
-    try {
-      setCompData(await getGroupComparison(surveyId, key))
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-    } finally {
-      setLoading(false)
-    }
+    try { setCompData(await getGroupComparison(surveyId, key)) }
+    catch (e) { setError(e instanceof Error ? e.message : String(e)) }
+    finally { setLoading(false) }
   }, [surveyId])
 
   useEffect(() => { if (selectedKey) load(selectedKey) }, [selectedKey, load])
 
   if (demographicKeys.length === 0) {
     return (
-      <p className="text-xs text-slate-400">
+      <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>
         No demographic questions found. Mark questions as demographic in the survey editor to enable group comparison.
       </p>
     )
@@ -283,25 +262,23 @@ function DemographicBreakdown({
 
   return (
     <div className="space-y-5">
-      {/* Key selector */}
       <div className="flex items-center gap-3">
-        <label className="text-xs font-semibold text-slate-500">Compare by:</label>
+        <label className="text-xs font-semibold" style={{ color: "rgba(30,27,75,0.5)" }}>Compare by:</label>
         <select
           value={selectedKey}
           onChange={e => setSelectedKey(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+          className="field"
+          style={{ width: "auto", paddingTop: "0.375rem", paddingBottom: "0.375rem" }}
         >
-          {demographicKeys.map(k => (
-            <option key={k} value={k}>{k}</option>
-          ))}
+          {demographicKeys.map(k => <option key={k} value={k}>{k}</option>)}
         </select>
       </div>
 
-      {loading && <p className="text-xs text-slate-400">Loading…</p>}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {loading && <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Loading…</p>}
+      {error && <p className="text-xs" style={{ color: "#dc2626" }}>{error}</p>}
 
       {compData && compData.factors.length === 0 && (
-        <p className="text-xs text-slate-400">
+        <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>
           No factor scores available for comparison. Assign scoring algorithms to factors first.
         </p>
       )}
@@ -315,29 +292,27 @@ function DemographicBreakdown({
         return (
           <div key={fc.factor_name} className="space-y-2">
             <div className="flex items-center gap-3 flex-wrap">
-              <h4 className="text-sm font-semibold text-slate-700">{fc.factor_name}</h4>
+              <h4 className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>{fc.factor_name}</h4>
               <SignificanceBadge fc={fc} />
-              <div className="flex gap-2 text-[10px] text-slate-400">
-                {fc.groups.map(g => (
-                  <span key={g.group_value}>{g.group_value}: n={g.n}</span>
-                ))}
+              <div className="flex gap-2 text-[10px]" style={{ color: "rgba(30,27,75,0.35)" }}>
+                {fc.groups.map(g => <span key={g.group_value}>{g.group_value}: n={g.n}</span>)}
               </div>
             </div>
             <ResponsiveContainer width="100%" height={160}>
               <BarChart data={chartData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#94a3b8" }} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "#94a3b8" }} width={24} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(91,33,182,0.07)" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "rgba(30,27,75,0.4)" }} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "rgba(30,27,75,0.4)" }} width={24} />
                 <Tooltip
-                  formatter={(v: unknown, _name: unknown, props: { payload?: { n: number } }) => [
+                  formatter={(v: unknown, _n: unknown, props: { payload?: { n: number } }) => [
                     `${(v as number).toFixed(1)} (n=${props.payload?.n ?? "?"})`,
                     "Mean score",
                   ]}
-                  contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #e2e8f0" }}
+                  contentStyle={{ fontSize: 11, borderRadius: 12, border: "0.5px solid rgba(255,255,255,0.8)", background: "rgba(240,238,255,0.9)", backdropFilter: "blur(12px)" }}
                 />
                 <Bar dataKey="mean" radius={[4, 4, 0, 0]}>
                   {chartData.map((_, i) => (
-                    <Cell key={i} fill={GROUP_COLORS[i % GROUP_COLORS.length]} />
+                    <Cell key={i} fill={GROUP_COLORS[i % GROUP_COLORS.length]} fillOpacity={0.8} />
                   ))}
                 </Bar>
               </BarChart>
@@ -353,13 +328,7 @@ function DemographicBreakdown({
 // Section 5 — Respondents table
 // ---------------------------------------------------------------------------
 
-function RespondentsTable({
-  surveyId,
-  factorNames,
-}: {
-  surveyId: string
-  factorNames: string[]
-}) {
+function RespondentsTable({ surveyId, factorNames }: { surveyId: string; factorNames: string[] }) {
   const [data, setData] = useState<RespondentsData | null>(null)
   const [page, setPage] = useState(1)
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
@@ -368,13 +337,9 @@ function RespondentsTable({
 
   const load = useCallback(async () => {
     setLoading(true); setError(null)
-    try {
-      setData(await getRespondents(surveyId, page, 20, sortDir))
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-    } finally {
-      setLoading(false)
-    }
+    try { setData(await getRespondents(surveyId, page, 20, sortDir)) }
+    catch (e) { setError(e instanceof Error ? e.message : String(e)) }
+    finally { setLoading(false) }
   }, [surveyId, page, sortDir])
 
   useEffect(() => { load() }, [load])
@@ -383,64 +348,63 @@ function RespondentsTable({
 
   return (
     <div className="space-y-3">
-      {/* Controls */}
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs" style={{ color: "rgba(30,27,75,0.45)" }}>
           {data ? `${data.total} respondent${data.total !== 1 ? "s" : ""}` : ""}
         </p>
         <button
           onClick={() => setSortDir(d => d === "desc" ? "asc" : "desc")}
-          className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+          className="btn-ghost text-xs px-2.5 py-1"
         >
           Score {sortDir === "desc" ? "↓" : "↑"}
         </button>
       </div>
 
-      {loading && <p className="text-xs text-slate-400">Loading…</p>}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {loading && <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Loading…</p>}
+      {error && <p className="text-xs" style={{ color: "#dc2626" }}>{error}</p>}
 
       {data && data.rows.length === 0 && (
-        <p className="text-xs text-slate-400">No responses yet.</p>
+        <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>No responses yet.</p>
       )}
 
       {data && data.rows.length > 0 && (
         <>
-          <div className="overflow-x-auto rounded-xl border border-slate-100">
+          <div className="overflow-x-auto rounded-xl" style={{ border: "0.5px solid rgba(255,255,255,0.4)" }}>
             <table className="min-w-full text-xs">
               <thead>
-                <tr className="bg-slate-50">
-                  <th className="px-3 py-2 text-left font-semibold text-slate-500 whitespace-nowrap">Respondent</th>
-                  <th className="px-3 py-2 text-left font-semibold text-slate-500 whitespace-nowrap">Date</th>
-                  <th className="px-3 py-2 text-right font-semibold text-slate-500 whitespace-nowrap">Composite</th>
+                <tr style={{ background: "rgba(255,255,255,0.3)" }}>
+                  <th className="px-3 py-2 text-left label-caps whitespace-nowrap">Respondent</th>
+                  <th className="px-3 py-2 text-left label-caps whitespace-nowrap">Date</th>
+                  <th className="px-3 py-2 text-right label-caps whitespace-nowrap">Composite</th>
                   {factorNames.map(f => (
-                    <th key={f} className="px-3 py-2 text-right font-semibold text-slate-500 whitespace-nowrap max-w-[90px] truncate" title={f}>
+                    <th key={f} className="px-3 py-2 text-right label-caps whitespace-nowrap max-w-[90px] truncate" title={f}>
                       {f.length > 12 ? f.slice(0, 11) + "…" : f}
                     </th>
                   ))}
                   {data.rows[0] && Object.keys(data.rows[0].demographics).map(k => (
-                    <th key={k} className="px-3 py-2 text-left font-semibold text-slate-500 whitespace-nowrap capitalize">{k}</th>
+                    <th key={k} className="px-3 py-2 text-left label-caps whitespace-nowrap capitalize">{k}</th>
                   ))}
                   <th className="px-3 py-2" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {data.rows.map((row: RespondentRow) => (
-                  <tr key={row.response_id} className="hover:bg-slate-50">
-                    <td className="px-3 py-2 font-mono text-slate-600">
+                  <tr key={row.response_id} style={{ borderTop: "0.5px solid rgba(255,255,255,0.3)" }}>
+                    <td className="px-3 py-2 font-mono" style={{ color: "rgba(30,27,75,0.6)" }}>
                       {row.respondent_ref ?? row.response_id.slice(0, 8)}
                     </td>
-                    <td className="px-3 py-2 text-slate-500 whitespace-nowrap">
+                    <td className="px-3 py-2 whitespace-nowrap" style={{ color: "rgba(30,27,75,0.45)" }}>
                       {new Date(row.submitted_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </td>
                     <td className="px-3 py-2 text-right">
                       <div className="flex flex-col items-end gap-0.5">
-                        <span className="tabular-nums font-semibold" style={{ color: row.composite_color ?? "#475569" }}>
+                        <span className="tabular-nums font-semibold" style={{ color: row.composite_color ?? "rgba(30,27,75,0.5)" }}>
                           {fmt(row.composite_score)}
                         </span>
                         {row.composite_label && (
                           <span
                             className="rounded-full px-1.5 py-0.5 text-[9px] font-bold text-white"
-                            style={{ backgroundColor: row.composite_color ?? "#64748b" }}
+                            style={{ backgroundColor: row.composite_color ?? "#5b21b6" }}
                           >
                             {row.composite_label}
                           </span>
@@ -450,22 +414,23 @@ function RespondentsTable({
                     {factorNames.map(f => {
                       const entry = row.factor_scores[f]
                       return (
-                        <td key={f} className="px-3 py-2 text-right tabular-nums text-slate-600">
+                        <td key={f} className="px-3 py-2 text-right tabular-nums" style={{ color: "rgba(30,27,75,0.6)" }}>
                           {entry?.normalized !== null && entry?.normalized !== undefined
                             ? fmt(entry.normalized)
-                            : <span className="text-slate-300">—</span>}
+                            : <span style={{ color: "rgba(30,27,75,0.2)" }}>—</span>}
                         </td>
                       )
                     })}
                     {Object.entries(data.rows[0].demographics).map(([k]) => (
-                      <td key={k} className="px-3 py-2 text-slate-600">
-                        {row.demographics[k] ?? <span className="text-slate-300">—</span>}
+                      <td key={k} className="px-3 py-2" style={{ color: "rgba(30,27,75,0.6)" }}>
+                        {row.demographics[k] ?? <span style={{ color: "rgba(30,27,75,0.2)" }}>—</span>}
                       </td>
                     ))}
                     <td className="px-3 py-2">
                       <Link
                         href={`/surveys/${surveyId}/responses/${row.response_id}/report`}
-                        className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-50 transition-colors whitespace-nowrap"
+                        className="rounded-full px-1.5 py-0.5 text-[10px] font-bold transition-colors whitespace-nowrap"
+                        style={{ color: "#5b21b6", background: "rgba(91,33,182,0.08)" }}
                       >
                         Report →
                       </Link>
@@ -476,21 +441,20 @@ function RespondentsTable({
             </table>
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-2">
               <button
                 disabled={page === 1}
                 onClick={() => setPage(p => p - 1)}
-                className="rounded border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 disabled:opacity-40 hover:bg-slate-50 transition-colors"
+                className="btn-ghost text-xs px-2.5 py-1 disabled:opacity-40"
               >
                 ← Prev
               </button>
-              <span className="text-xs text-slate-500">{page} / {totalPages}</span>
+              <span className="text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>{page} / {totalPages}</span>
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage(p => p + 1)}
-                className="rounded border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 disabled:opacity-40 hover:bg-slate-50 transition-colors"
+                className="btn-ghost text-xs px-2.5 py-1 disabled:opacity-40"
               >
                 Next →
               </button>
@@ -505,26 +469,6 @@ function RespondentsTable({
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
-
-function Section({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string
-  subtitle?: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="mb-5">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">{title}</h2>
-        {subtitle && <p className="mt-0.5 text-xs text-slate-400">{subtitle}</p>}
-      </div>
-      {children}
-    </section>
-  )
-}
 
 export default function DashboardPage() {
   const { id } = useParams<{ id: string }>()
@@ -542,53 +486,42 @@ export default function DashboardPage() {
   const factorNames = data?.factor_distributions.map(f => f.factor_name) ?? []
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col">
       <Header backHref={`/surveys/${id}/results`} backLabel="Results" />
       <main className="flex-1 px-6 py-10">
         <div className="mx-auto max-w-4xl space-y-6">
 
-          {/* Page title */}
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-900">
-                Company Dashboard
-              </h1>
-              <p className="mt-1 text-sm text-slate-500">
+              <h1 className="page-title">Company Dashboard</h1>
+              <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
                 Cohort analytics and demographic breakdown
               </p>
             </div>
-            <Link
-              href={`/surveys/${id}/results`}
-              className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"
-            >
+            <Link href={`/surveys/${id}/results`} className="btn-ghost text-xs px-3 py-1.5">
               ← Individual results
             </Link>
           </div>
 
           {loading && (
-            <div className="flex justify-center py-20 text-sm text-slate-400">Loading dashboard…</div>
-          )}
-
-          {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
-              {error}
+            <div className="flex justify-center py-20 text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
+              Loading dashboard…
             </div>
           )}
 
+          {error && <div className="alert-error">{error}</div>}
+
           {data && (
             <>
-              {/* Section 1 — Overview */}
               <OverviewCards data={data} />
 
-              {/* Section 2 — Factor performance */}
               <Section
                 title="Factor Performance"
-                subtitle="Mean normalized score per factor, ranked highest to lowest. Error bands show ± 1 SD."
+                subtitle="Mean normalized score per factor. Error bands show ± 1 SD."
               >
                 <FactorPerformance factors={data.factor_distributions} />
               </Section>
 
-              {/* Section 3 — Score distribution */}
               <Section
                 title="Score Distribution"
                 subtitle="Histogram of composite scores across all respondents (0–100 scale)."
@@ -596,21 +529,16 @@ export default function DashboardPage() {
                 <ScoreDistribution data={data} />
               </Section>
 
-              {/* Section 4 — Demographic breakdown */}
               <Section
                 title="Demographic Breakdown"
-                subtitle="Between-group comparison of factor scores. Uses Welch's t-test (2 groups) or one-way ANOVA (3+ groups)."
+                subtitle="Between-group comparison using Welch's t-test (2 groups) or one-way ANOVA (3+ groups)."
               >
-                <DemographicBreakdown
-                  surveyId={id}
-                  demographicKeys={data.demographic_keys}
-                />
+                <DemographicBreakdown surveyId={id} demographicKeys={data.demographic_keys} />
               </Section>
 
-              {/* Section 5 — Respondents table */}
               <Section
                 title="All Respondents"
-                subtitle="Sortable by composite score. Click Report to view the individual assessment."
+                subtitle="Sortable by composite score. Click Report to view individual assessment."
               >
                 <RespondentsTable surveyId={id} factorNames={factorNames} />
               </Section>

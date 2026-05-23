@@ -100,7 +100,7 @@ function Step2Competencies({
           <div className="mb-3 flex items-center justify-between gap-3">
             <span
               className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-              style={{ background: "linear-gradient(135deg, #5b21b6, #2563eb)" }}
+              style={{ background: "linear-gradient(135deg, #5b21b6, #3777A8)" }}
             >
               {i + 1}
             </span>
@@ -390,7 +390,7 @@ export default function NewFrameworkPage() {
                     className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all"
                     style={{
                       background: i <= step
-                        ? "linear-gradient(135deg, #5b21b6, #2563eb)"
+                        ? "linear-gradient(135deg, #5b21b6, #3777A8)"
                         : "rgba(255,255,255,0.4)",
                       color: i <= step ? "#fff" : "rgba(30,27,75,0.4)",
                       border: i <= step ? "none" : "0.5px solid rgba(30,27,75,0.15)",
@@ -414,7 +414,7 @@ export default function NewFrameworkPage() {
                 {i < STEPS.length - 1 && (
                   <div
                     className="mb-4 h-px w-8 sm:w-12"
-                    style={{ background: i < step ? "linear-gradient(90deg, #5b21b6, #2563eb)" : "rgba(30,27,75,0.12)" }}
+                    style={{ background: i < step ? "linear-gradient(90deg, #5b21b6, #3777A8)" : "rgba(30,27,75,0.12)" }}
                   />
                 )}
               </div>

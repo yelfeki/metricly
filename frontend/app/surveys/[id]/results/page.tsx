@@ -20,11 +20,11 @@ function Bar({ label, value, maxValue, suffix = "" }: {
   const pct = maxValue > 0 ? (value / maxValue) * 100 : 0
   return (
     <div className="flex items-center gap-3 text-sm">
-      <span className="w-32 shrink-0 truncate text-xs text-slate-600" title={label}>{label}</span>
-      <div className="flex-1 overflow-hidden rounded-full bg-slate-100 h-2.5">
-        <div className="h-full rounded-full bg-indigo-400 transition-all duration-300" style={{ width: `${pct}%` }} />
+      <span className="w-32 shrink-0 truncate text-xs" style={{ color: "rgba(30,27,75,0.6)" }} title={label}>{label}</span>
+      <div className="flex-1 bar-track">
+        <div className="bar-fill-accent transition-all duration-300" style={{ width: `${pct}%` }} />
       </div>
-      <span className="w-16 text-right text-xs tabular-nums text-slate-500">{value}{suffix}</span>
+      <span className="w-16 text-right text-xs tabular-nums" style={{ color: "rgba(30,27,75,0.5)" }}>{value}{suffix}</span>
     </div>
   )
 }
@@ -41,15 +41,15 @@ function LikertCard({ stat }: { stat: QuestionStat }) {
       {stat.n > 0 && (
         <div className="mb-4 flex items-center gap-6">
           <div className="text-center">
-            <p className="text-3xl font-bold tabular-nums text-indigo-600">
+            <p className="metric-value text-3xl font-bold tabular-nums" style={{ color: "#5b21b6" }}>
               {stat.mean !== null ? round2(stat.mean) : "—"}
             </p>
-            <p className="text-xs text-slate-400">Mean</p>
+            <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Mean</p>
           </div>
           {stat.std !== null && stat.std > 0 && (
             <div className="text-center">
-              <p className="text-xl font-semibold tabular-nums text-slate-700">±{round2(stat.std)}</p>
-              <p className="text-xs text-slate-400">SD</p>
+              <p className="metric-value text-xl font-semibold tabular-nums" style={{ color: "rgba(30,27,75,0.7)" }}>±{round2(stat.std)}</p>
+              <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>SD</p>
             </div>
           )}
         </div>
@@ -70,19 +70,17 @@ function ChoiceCard({ stat }: { stat: QuestionStat }) {
   return (
     <div className="space-y-2">
       {entries.length === 0
-        ? <p className="text-xs text-slate-400">No responses yet.</p>
+        ? <p className="text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>No responses yet.</p>
         : entries.map(([opt, count]) => <Bar key={opt} label={opt} value={count} maxValue={maxCount} />)
       }
     </div>
   )
 }
 
-// Forced choice: group distribution keys ("label|item") by label
 function ForcedChoiceCard({ stat, question }: { stat: QuestionStat; question: QuestionOut }) {
   const cfg = question.options as ForcedChoiceConfig | null
   const labels = cfg?.labels ?? []
 
-  // Group: { "Most like me": { "Bold": 5, "Creative": 2 }, ... }
   const grouped: Record<string, Record<string, number>> = {}
   Object.entries(stat.distribution).forEach(([key, count]) => {
     const sep = key.indexOf("|")
@@ -95,7 +93,7 @@ function ForcedChoiceCard({ stat, question }: { stat: QuestionStat; question: Qu
 
   const orderedLabels = labels.length ? labels : Object.keys(grouped)
 
-  if (stat.n === 0) return <p className="text-xs text-slate-400">No responses yet.</p>
+  if (stat.n === 0) return <p className="text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>No responses yet.</p>
 
   return (
     <div className="space-y-5">
@@ -104,7 +102,7 @@ function ForcedChoiceCard({ stat, question }: { stat: QuestionStat; question: Qu
         const maxCount = Math.max(1, ...Object.values(items))
         return (
           <div key={label}>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-indigo-500">{label}</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-wider" style={{ color: "#5b21b6" }}>{label}</p>
             <div className="space-y-1.5">
               {Object.entries(items)
                 .sort(([, a], [, b]) => b - a)
@@ -119,40 +117,43 @@ function ForcedChoiceCard({ stat, question }: { stat: QuestionStat; question: Qu
   )
 }
 
-// Ranking: items sorted by average rank (lower = more preferred)
 function RankingCard({ stat }: { stat: QuestionStat }) {
   const avgs = stat.ranking_averages ?? {}
   const sorted = Object.entries(avgs).sort(([, a], [, b]) => a - b)
-  if (sorted.length === 0) return <p className="text-xs text-slate-400">No responses yet.</p>
+  if (sorted.length === 0) return <p className="text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>No responses yet.</p>
   const maxAvg = Math.max(...sorted.map(([, v]) => v))
   return (
     <div className="space-y-2">
       {sorted.map(([item, avg], i) => (
         <div key={item} className="flex items-center gap-3">
-          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-600">
+          <span
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
+            style={{ background: "rgba(91,33,182,0.1)", color: "#5b21b6" }}
+          >
             {i + 1}
           </span>
-          <span className="w-28 shrink-0 truncate text-xs text-slate-600" title={item}>{item}</span>
-          <div className="flex-1 overflow-hidden rounded-full bg-slate-100 h-2.5">
-            {/* Invert: lower avg rank = wider bar */}
-            <div className="h-full rounded-full bg-indigo-400 transition-all duration-300"
-              style={{ width: `${100 - ((avg - 1) / Math.max(maxAvg - 1, 1)) * 100}%` }} />
+          <span className="w-28 shrink-0 truncate text-xs" style={{ color: "rgba(30,27,75,0.6)" }} title={item}>{item}</span>
+          <div className="flex-1 bar-track">
+            <div className="bar-fill-accent" style={{ width: `${100 - ((avg - 1) / Math.max(maxAvg - 1, 1)) * 100}%` }} />
           </div>
-          <span className="w-16 text-right text-xs tabular-nums text-slate-400">avg {avg.toFixed(1)}</span>
+          <span className="w-16 text-right text-xs tabular-nums" style={{ color: "rgba(30,27,75,0.4)" }}>avg {avg.toFixed(1)}</span>
         </div>
       ))}
-      <p className="pt-1 text-[11px] text-slate-400">Lower average rank = ranked higher by respondents.</p>
+      <p className="pt-1 text-[11px]" style={{ color: "rgba(30,27,75,0.35)" }}>Lower average rank = ranked higher by respondents.</p>
     </div>
   )
 }
 
 function TextCard({ stat }: { stat: QuestionStat }) {
   const vals = stat.text_values ?? []
-  if (vals.length === 0) return <p className="text-xs text-slate-400">No responses yet.</p>
+  if (vals.length === 0) return <p className="text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>No responses yet.</p>
   return (
     <div className="space-y-2">
       {vals.map((v, i) => (
-        <div key={i} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700">{v}</div>
+        <div key={i}
+          className="rounded-xl px-3 py-2 text-sm"
+          style={{ background: "rgba(91,33,182,0.05)", border: "0.5px solid rgba(91,33,182,0.1)", color: "#1e1b4b" }}
+        >{v}</div>
       ))}
     </div>
   )
@@ -160,14 +161,20 @@ function TextCard({ stat }: { stat: QuestionStat }) {
 
 function QuestionResultCard({ stat, question }: { stat: QuestionStat; question: QuestionOut }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 px-5 py-4">
-        <p className="text-sm font-semibold text-slate-800">{stat.text}</p>
+    <div className="card overflow-hidden">
+      <div
+        className="border-b px-5 py-4"
+        style={{ borderColor: "rgba(255,255,255,0.35)" }}
+      >
+        <p className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>{stat.text}</p>
         <div className="mt-1 flex items-center gap-3">
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500 capitalize">
+          <span
+            className="rounded-full px-2 py-0.5 text-[11px] font-medium capitalize"
+            style={{ background: "rgba(91,33,182,0.08)", color: "rgba(30,27,75,0.6)" }}
+          >
             {stat.question_type.replace(/_/g, " ")}
           </span>
-          <span className="text-xs text-slate-400">{stat.n} response{stat.n !== 1 ? "s" : ""}</span>
+          <span className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>{stat.n} response{stat.n !== 1 ? "s" : ""}</span>
         </div>
       </div>
       <div className="px-5 py-4">
@@ -177,7 +184,7 @@ function QuestionResultCard({ stat, question }: { stat: QuestionStat; question: 
         {stat.question_type === "ranking" && <RankingCard stat={stat} />}
         {stat.question_type === "text" && <TextCard stat={stat} />}
         {stat.n === 0 && !["likert_5","likert_7","forced_choice","ranking","text"].includes(stat.question_type) && (
-          <p className="text-xs text-slate-400">No responses yet.</p>
+          <p className="text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>No responses yet.</p>
         )}
       </div>
     </div>
@@ -188,11 +195,43 @@ function QuestionResultCard({ stat, question }: { stat: QuestionStat; question: 
 // Reliability panel
 // ---------------------------------------------------------------------------
 
-const INTERP_STYLES: Record<string, string> = {
-  poor: "bg-red-50 text-red-700 ring-red-200",
-  acceptable: "bg-amber-50 text-amber-700 ring-amber-200",
-  good: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  excellent: "bg-indigo-50 text-indigo-700 ring-indigo-200",
+const INTERP_COLORS: Record<string, string> = {
+  poor: "#dc2626",
+  acceptable: "#d97706",
+  good: "#059669",
+  excellent: "#5b21b6",
+}
+
+function AccordionCard({
+  title, subtitle, open, onToggle, children,
+}: {
+  title: string; subtitle: string; open: boolean; onToggle: () => void; children: React.ReactNode
+}) {
+  return (
+    <div className="card overflow-hidden">
+      <button onClick={onToggle} className="flex w-full items-center justify-between px-5 py-4 text-left" style={{ position: "relative", zIndex: 1 }}>
+        <div>
+          <p className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>{title}</p>
+          <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>{subtitle}</p>
+        </div>
+        <svg
+          className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
+          style={{ color: "rgba(30,27,75,0.35)" }}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div
+          className="border-t px-5 py-4"
+          style={{ borderColor: "rgba(255,255,255,0.35)", position: "relative", zIndex: 1 }}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function ReliabilityPanel({ surveyId }: { surveyId: string }) {
@@ -215,64 +254,56 @@ function ReliabilityPanel({ surveyId }: { surveyId: string }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <button
-        onClick={open ? () => setOpen(false) : run}
-        className="flex w-full items-center justify-between px-5 py-4 text-left"
-      >
-        <div>
-          <p className="text-sm font-semibold text-slate-800">Reliability Analysis</p>
-          <p className="text-xs text-slate-400">Cronbach&apos;s alpha · internal consistency</p>
-        </div>
-        <svg
-          className={`h-4 w-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {open && (
-        <div className="border-t border-slate-100 px-5 py-4">
-          {loading && <p className="text-xs text-slate-400">Computing…</p>}
-          {error && <p className="text-xs text-red-600">{error}</p>}
-          {data && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="text-center">
-                  <p className="text-4xl font-bold tabular-nums text-indigo-600">{data.alpha.toFixed(3)}</p>
-                  <p className="text-xs text-slate-400">Cronbach&apos;s α</p>
-                </div>
-                <div>
-                  <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ring-1 capitalize ${INTERP_STYLES[data.interpretation]}`}>
-                    {data.interpretation}
-                  </span>
-                  <p className="mt-1 text-xs text-slate-400">{data.n_items} items · {data.n_respondents} respondents</p>
-                </div>
-              </div>
-
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Item-total correlations</p>
-                <div className="space-y-1.5">
-                  {data.item_total_correlations.map((r, i) => (
-                    <div key={i} className="flex items-center gap-3 text-xs">
-                      <span className="w-16 shrink-0 text-slate-500">Item {i + 1}</span>
-                      <div className="flex-1 overflow-hidden rounded-full bg-slate-100 h-2">
-                        <div className="h-full rounded-full bg-indigo-400" style={{ width: `${Math.max(0, r) * 100}%` }} />
-                      </div>
-                      <span className="w-12 text-right tabular-nums text-slate-500">{r.toFixed(3)}</span>
-                      <span className="w-20 text-right tabular-nums text-slate-400">
-                        α−{i + 1}: {data.alpha_if_item_deleted[i].toFixed(3)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+    <AccordionCard
+      title="Reliability Analysis"
+      subtitle="Cronbach's alpha · internal consistency"
+      open={open}
+      onToggle={open ? () => setOpen(false) : run}
+    >
+      {loading && <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Computing…</p>}
+      {error && <p className="text-xs" style={{ color: "#dc2626" }}>{error}</p>}
+      {data && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="text-center">
+              <p className="metric-value text-4xl font-bold tabular-nums" style={{ color: "#5b21b6" }}>
+                {data.alpha.toFixed(3)}
+              </p>
+              <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Cronbach&apos;s α</p>
             </div>
-          )}
+            <div>
+              <span
+                className="inline-flex rounded-full px-3 py-1 text-xs font-bold capitalize text-white"
+                style={{ backgroundColor: INTERP_COLORS[data.interpretation] ?? "#5b21b6" }}
+              >
+                {data.interpretation}
+              </span>
+              <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>
+                {data.n_items} items · {data.n_respondents} respondents
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <p className="label-caps mb-2">Item-total correlations</p>
+            <div className="space-y-1.5">
+              {data.item_total_correlations.map((r, i) => (
+                <div key={i} className="flex items-center gap-3 text-xs">
+                  <span className="w-16 shrink-0" style={{ color: "rgba(30,27,75,0.5)" }}>Item {i + 1}</span>
+                  <div className="flex-1 bar-track">
+                    <div className="bar-fill-accent" style={{ width: `${Math.max(0, r) * 100}%` }} />
+                  </div>
+                  <span className="w-12 text-right tabular-nums" style={{ color: "rgba(30,27,75,0.5)" }}>{r.toFixed(3)}</span>
+                  <span className="w-20 text-right tabular-nums" style={{ color: "rgba(30,27,75,0.35)" }}>
+                    α−{i + 1}: {data.alpha_if_item_deleted[i].toFixed(3)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </AccordionCard>
   )
 }
 
@@ -281,20 +312,16 @@ function ReliabilityPanel({ surveyId }: { surveyId: string }) {
 // ---------------------------------------------------------------------------
 
 function ScoreCell({ entry }: { entry: FactorScoreEntry | undefined }) {
-  if (!entry || entry.raw_mean === null) {
-    return <span className="text-slate-300">—</span>
-  }
+  if (!entry || entry.raw_mean === null) return <span style={{ color: "rgba(30,27,75,0.2)" }}>—</span>
   const hasNorm = entry.normalized !== null
   return (
     <div className="flex flex-col items-end gap-0.5">
-      <span className="tabular-nums text-slate-700">{entry.raw_mean.toFixed(2)}</span>
-      {hasNorm && (
-        <span className="tabular-nums text-[10px] text-slate-400">{entry.normalized!.toFixed(1)}</span>
-      )}
+      <span className="tabular-nums" style={{ color: "rgba(30,27,75,0.7)" }}>{entry.raw_mean.toFixed(2)}</span>
+      {hasNorm && <span className="tabular-nums text-[10px]" style={{ color: "rgba(30,27,75,0.4)" }}>{entry.normalized!.toFixed(1)}</span>}
       {entry.label && (
         <span
-          className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white"
-          style={{ backgroundColor: entry.color ?? "#64748b" }}
+          className="rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white"
+          style={{ backgroundColor: entry.color ?? "#5b21b6" }}
         >
           {entry.label}
         </span>
@@ -325,30 +352,10 @@ function FactorScoresPanel({ surveyId }: { surveyId: string }) {
   function downloadCSV() {
     if (!data || data.rows.length === 0) return
     const headers = ["Respondent", ...data.factors.flatMap(f => [`${f} (raw)`, `${f} (norm)`, `${f} label`])]
-    const summaryMean = [
-      "Mean",
-      ...data.factors.flatMap(f => {
-        const e = data.summary.mean[f]
-        return [e?.raw_mean?.toFixed(4) ?? "", e?.normalized?.toFixed(2) ?? "", e?.label ?? ""]
-      }),
-    ]
-    const summarySd = [
-      "SD",
-      ...data.factors.flatMap(f => {
-        const sd = data.summary.sd[f]
-        return [sd !== null && sd !== undefined ? sd.toFixed(4) : "", "", ""]
-      }),
-    ]
-    const rows = data.rows.map(row => [
-      row.respondent_id,
-      ...data.factors.flatMap(f => {
-        const e = row.scores[f]
-        return [e?.raw_mean?.toFixed(4) ?? "", e?.normalized?.toFixed(2) ?? "", e?.label ?? ""]
-      }),
-    ])
-    const csv = [headers, ...rows, [], summaryMean, summarySd]
-      .map(r => r.join(","))
-      .join("\n")
+    const summaryMean = ["Mean", ...data.factors.flatMap(f => { const e = data.summary.mean[f]; return [e?.raw_mean?.toFixed(4) ?? "", e?.normalized?.toFixed(2) ?? "", e?.label ?? ""] })]
+    const summarySd = ["SD", ...data.factors.flatMap(f => { const sd = data.summary.sd[f]; return [sd !== null && sd !== undefined ? sd.toFixed(4) : "", "", ""] })]
+    const rows = data.rows.map(row => [row.respondent_id, ...data.factors.flatMap(f => { const e = row.scores[f]; return [e?.raw_mean?.toFixed(4) ?? "", e?.normalized?.toFixed(2) ?? "", e?.label ?? ""] })])
+    const csv = [headers, ...rows, [], summaryMean, summarySd].map(r => r.join(",")).join("\n")
     const blob = new Blob([csv], { type: "text/csv" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
@@ -357,112 +364,92 @@ function FactorScoresPanel({ surveyId }: { surveyId: string }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <button
-        onClick={open ? () => setOpen(false) : run}
-        className="flex w-full items-center justify-between px-5 py-4 text-left"
-      >
-        <div>
-          <p className="text-sm font-semibold text-slate-800">Factor Scores</p>
-          <p className="text-xs text-slate-400">Mean score per respondent × factor, with normalization</p>
-        </div>
-        <svg
-          className={`h-4 w-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-
-      {open && (
-        <div className="border-t border-slate-100 px-5 py-4">
-          {loading && <p className="text-xs text-slate-400">Loading…</p>}
-          {error && <p className="text-xs text-red-600">{error}</p>}
-          {data && data.factors.length === 0 && (
-            <p className="text-xs text-slate-400">
-              No factors assigned to questions yet. Open the survey editor and assign factors to questions to see scores here.
-            </p>
-          )}
-          {data && data.factors.length > 0 && (
-            <div className="space-y-4">
-              {data.rows.length === 0 ? (
-                <p className="text-xs text-slate-400">No responses yet.</p>
-              ) : (
-                <>
-                  {/* Table */}
-                  <div className="overflow-x-auto rounded-lg border border-slate-100">
-                    <table className="min-w-full text-xs">
-                      <thead>
-                        <tr className="bg-slate-50">
-                          <th className="px-3 py-2 text-left font-semibold text-slate-500 whitespace-nowrap">Respondent</th>
-                          {data.factors.map(f => (
-                            <th key={f} className="px-3 py-2 text-right font-semibold text-slate-500 whitespace-nowrap">{f}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {data.rows.map((row, i) => (
-                          <tr key={i} className="hover:bg-slate-50">
-                            <td className="px-3 py-2 text-slate-600 font-mono">
-                              <div className="flex items-center gap-2">
-                                <span>{row.respondent_id}</span>
-                                <Link
-                                  href={`/surveys/${surveyId}/responses/${row.response_id}/report`}
-                                  className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-50 transition-colors whitespace-nowrap"
-                                  title="View individual report"
-                                >
-                                  Report →
-                                </Link>
-                              </div>
-                            </td>
-                            {data.factors.map(f => (
-                              <td key={f} className="px-3 py-2 text-right">
-                                <ScoreCell entry={row.scores[f]} />
-                              </td>
-                            ))}
-                          </tr>
+    <AccordionCard
+      title="Factor Scores"
+      subtitle="Mean score per respondent × factor, with normalization"
+      open={open}
+      onToggle={open ? () => setOpen(false) : run}
+    >
+      {loading && <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Loading…</p>}
+      {error && <p className="text-xs" style={{ color: "#dc2626" }}>{error}</p>}
+      {data && data.factors.length === 0 && (
+        <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>
+          No factors assigned yet. Open the survey editor and assign factors to questions.
+        </p>
+      )}
+      {data && data.factors.length > 0 && (
+        <div className="space-y-4">
+          {data.rows.length === 0 ? (
+            <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>No responses yet.</p>
+          ) : (
+            <>
+              <div className="overflow-x-auto rounded-xl" style={{ border: "0.5px solid rgba(255,255,255,0.4)" }}>
+                <table className="min-w-full text-xs">
+                  <thead>
+                    <tr style={{ background: "rgba(255,255,255,0.3)" }}>
+                      <th className="px-3 py-2 text-left label-caps whitespace-nowrap">Respondent</th>
+                      {data.factors.map(f => (
+                        <th key={f} className="px-3 py-2 text-right label-caps whitespace-nowrap">{f}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.rows.map((row, i) => (
+                      <tr key={i} style={{ borderTop: "0.5px solid rgba(255,255,255,0.3)" }}>
+                        <td className="px-3 py-2 font-mono" style={{ color: "rgba(30,27,75,0.6)" }}>
+                          <div className="flex items-center gap-2">
+                            <span>{row.respondent_id}</span>
+                            <Link
+                              href={`/surveys/${surveyId}/responses/${row.response_id}/report`}
+                              className="rounded-full px-1.5 py-0.5 text-[10px] font-bold transition-colors whitespace-nowrap"
+                              style={{ color: "#5b21b6", background: "rgba(91,33,182,0.08)" }}
+                              title="View individual report"
+                            >
+                              Report →
+                            </Link>
+                          </div>
+                        </td>
+                        {data.factors.map(f => (
+                          <td key={f} className="px-3 py-2 text-right">
+                            <ScoreCell entry={row.scores[f]} />
+                          </td>
                         ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="border-t-2 border-slate-200 bg-slate-50">
-                          <td className="px-3 py-2 font-semibold text-slate-500">Mean</td>
-                          {data.factors.map(f => (
-                            <td key={f} className="px-3 py-2 text-right font-semibold text-indigo-600">
-                              <ScoreCell entry={data.summary.mean[f]} />
-                            </td>
-                          ))}
-                        </tr>
-                        <tr className="bg-slate-50">
-                          <td className="px-3 py-2 font-semibold text-slate-500">SD</td>
-                          {data.factors.map(f => (
-                            <td key={f} className="px-3 py-2 text-right tabular-nums text-slate-500">
-                              {data.summary.sd[f] !== null && data.summary.sd[f] !== undefined
-                                ? (data.summary.sd[f] as number).toFixed(2)
-                                : <span className="text-slate-300">—</span>}
-                            </td>
-                          ))}
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-
-                  {/* Download */}
-                  <button
-                    onClick={downloadCSV}
-                    className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"
-                  >
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Download CSV
-                  </button>
-                </>
-              )}
-            </div>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ borderTop: "1px solid rgba(255,255,255,0.4)", background: "rgba(255,255,255,0.2)" }}>
+                      <td className="px-3 py-2 font-semibold" style={{ color: "rgba(30,27,75,0.5)" }}>Mean</td>
+                      {data.factors.map(f => (
+                        <td key={f} className="px-3 py-2 text-right font-semibold" style={{ color: "#5b21b6" }}>
+                          <ScoreCell entry={data.summary.mean[f]} />
+                        </td>
+                      ))}
+                    </tr>
+                    <tr style={{ background: "rgba(255,255,255,0.2)" }}>
+                      <td className="px-3 py-2 font-semibold" style={{ color: "rgba(30,27,75,0.5)" }}>SD</td>
+                      {data.factors.map(f => (
+                        <td key={f} className="px-3 py-2 text-right tabular-nums" style={{ color: "rgba(30,27,75,0.5)" }}>
+                          {data.summary.sd[f] !== null && data.summary.sd[f] !== undefined
+                            ? (data.summary.sd[f] as number).toFixed(2)
+                            : <span style={{ color: "rgba(30,27,75,0.2)" }}>—</span>}
+                        </td>
+                      ))}
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              <button onClick={downloadCSV} className="btn-ghost gap-1.5 text-xs px-3 py-1.5">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download CSV
+              </button>
+            </>
           )}
         </div>
       )}
-    </div>
+    </AccordionCard>
   )
 }
 
@@ -473,23 +460,23 @@ function FactorScoresPanel({ surveyId }: { surveyId: string }) {
 function StatusBadge({ status }: { status: string }) {
   if (status === "published") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+      <span className="badge-live">
+        <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
         Live
       </span>
     )
   }
   if (status === "closed") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600 ring-1 ring-red-200">
+      <span className="badge-closed">
         <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
         Closed
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-500 ring-1 ring-slate-200">
-      <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+    <span className="badge-draft">
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: "rgba(30,27,75,0.3)" }} />
       Draft
     </span>
   )
@@ -510,25 +497,25 @@ function StatsPanel({ surveyId }: { surveyId: string }) {
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-        <p className="text-2xl font-bold tabular-nums text-indigo-600">{data.total_responded}</p>
-        <p className="mt-0.5 text-xs text-slate-400">Responses</p>
+      <div className="card p-4">
+        <p className="metric-value text-2xl font-bold tabular-nums" style={{ color: "#5b21b6" }}>{data.total_responded}</p>
+        <p className="mt-0.5 label-caps">Responses</p>
       </div>
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-        <p className="text-2xl font-bold tabular-nums text-slate-700">{data.total_invited}</p>
-        <p className="mt-0.5 text-xs text-slate-400">Invited</p>
+      <div className="card p-4">
+        <p className="metric-value text-2xl font-bold tabular-nums" style={{ color: "rgba(30,27,75,0.7)" }}>{data.total_invited}</p>
+        <p className="mt-0.5 label-caps">Invited</p>
       </div>
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-        <p className="text-2xl font-bold tabular-nums text-emerald-600">{data.response_rate.toFixed(1)}%</p>
-        <p className="mt-0.5 text-xs text-slate-400">Response rate</p>
+      <div className="card p-4">
+        <p className="metric-value text-2xl font-bold tabular-nums" style={{ color: "#059669" }}>{data.response_rate.toFixed(1)}%</p>
+        <p className="mt-0.5 label-caps">Response rate</p>
       </div>
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-        <p className="text-sm font-semibold tabular-nums text-slate-700">
+      <div className="card p-4">
+        <p className="metric-value text-sm font-semibold tabular-nums" style={{ color: "rgba(30,27,75,0.7)" }}>
           {data.last_response_at
             ? new Date(data.last_response_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
             : "—"}
         </p>
-        <p className="mt-0.5 text-xs text-slate-400">Last response</p>
+        <p className="mt-0.5 label-caps">Last response</p>
       </div>
     </div>
   )
@@ -549,25 +536,14 @@ function InvitePanel({ surveyId }: { surveyId: string }) {
 
   async function loadInvites() {
     setLoadingList(true)
-    try {
-      setInvites(await listInvites(surveyId))
-    } catch {
-      // ignore
-    } finally {
-      setLoadingList(false)
-    }
+    try { setInvites(await listInvites(surveyId)) } catch { /* ignore */ }
+    finally { setLoadingList(false) }
   }
 
-  function handleOpen() {
-    setOpen(true)
-    if (invites.length === 0) loadInvites()
-  }
+  function handleOpen() { setOpen(true); if (invites.length === 0) loadInvites() }
 
   async function handleSend() {
-    const emails = emailText
-      .split(/[\n,;]+/)
-      .map(e => e.trim())
-      .filter(Boolean)
+    const emails = emailText.split(/[\n,;]+/).map(e => e.trim()).filter(Boolean)
     if (emails.length === 0) return
     setSending(true); setError(null)
     try {
@@ -588,90 +564,75 @@ function InvitePanel({ surveyId }: { surveyId: string }) {
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <button
-        onClick={open ? () => setOpen(false) : handleOpen}
-        className="flex w-full items-center justify-between px-5 py-4 text-left"
-      >
+    <AccordionCard
+      title="Invite participants"
+      subtitle="Add emails to generate unique respond links"
+      open={open}
+      onToggle={open ? () => setOpen(false) : handleOpen}
+    >
+      <div className="space-y-4">
         <div>
-          <p className="text-sm font-semibold text-slate-800">Invite participants</p>
-          <p className="text-xs text-slate-400">Add emails to generate unique respond links</p>
+          <label className="label-caps mb-1.5 block">
+            Emails — one per line, or comma/semicolon separated
+          </label>
+          <textarea
+            value={emailText}
+            onChange={e => setEmailText(e.target.value)}
+            rows={3}
+            placeholder={"alice@company.com\nbob@company.com"}
+            className="field w-full resize-none"
+          />
         </div>
-        <svg
-          className={`h-4 w-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        {error && <p className="text-xs" style={{ color: "#dc2626" }}>{error}</p>}
+        <button
+          onClick={handleSend}
+          disabled={sending || !emailText.trim()}
+          className="btn-primary text-xs px-4 py-2 disabled:opacity-50"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+          {sending ? "Creating…" : "Create invite links"}
+        </button>
 
-      {open && (
-        <div className="border-t border-slate-100 px-5 py-4 space-y-4">
-          {/* Email input */}
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-slate-600">
-              Emails — one per line, or comma/semicolon separated
-            </label>
-            <textarea
-              value={emailText}
-              onChange={e => setEmailText(e.target.value)}
-              rows={3}
-              placeholder={"alice@company.com\nbob@company.com"}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 placeholder:text-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 resize-none"
-            />
-          </div>
-          {error && <p className="text-xs text-red-600">{error}</p>}
-          <button
-            onClick={handleSend}
-            disabled={sending || !emailText.trim()}
-            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {sending ? "Creating…" : "Create invite links"}
-          </button>
-
-          {/* Invite list */}
-          {loadingList && <p className="text-xs text-slate-400">Loading…</p>}
-          {invites.length > 0 && (
-            <div className="overflow-hidden rounded-lg border border-slate-100">
-              <table className="min-w-full text-xs">
-                <thead>
-                  <tr className="bg-slate-50 text-left">
-                    <th className="px-3 py-2 font-semibold text-slate-500">Email</th>
-                    <th className="px-3 py-2 font-semibold text-slate-500">Status</th>
-                    <th className="px-3 py-2 font-semibold text-slate-500">Link</th>
+        {loadingList && <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Loading…</p>}
+        {invites.length > 0 && (
+          <div className="overflow-hidden rounded-xl" style={{ border: "0.5px solid rgba(255,255,255,0.4)" }}>
+            <table className="min-w-full text-xs">
+              <thead>
+                <tr style={{ background: "rgba(255,255,255,0.3)" }}>
+                  <th className="px-3 py-2 text-left label-caps">Email</th>
+                  <th className="px-3 py-2 text-left label-caps">Status</th>
+                  <th className="px-3 py-2 text-left label-caps">Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invites.map(inv => (
+                  <tr key={inv.id} style={{ borderTop: "0.5px solid rgba(255,255,255,0.3)" }}>
+                    <td className="px-3 py-2" style={{ color: "rgba(30,27,75,0.7)" }}>{inv.email}</td>
+                    <td className="px-3 py-2">
+                      {inv.responded_at
+                        ? <span className="font-semibold" style={{ color: "#059669" }}>Responded</span>
+                        : <span style={{ color: "rgba(30,27,75,0.4)" }}>Pending</span>
+                      }
+                    </td>
+                    <td className="px-3 py-2">
+                      <button
+                        onClick={() => copyLink(inv.respond_url)}
+                        className="rounded-full px-2 py-0.5 font-semibold transition-colors"
+                        style={{ color: "#5b21b6", background: "rgba(91,33,182,0.08)" }}
+                      >
+                        {copied === inv.respond_url ? "Copied!" : "Copy link"}
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {invites.map(inv => (
-                    <tr key={inv.id} className="hover:bg-slate-50">
-                      <td className="px-3 py-2 text-slate-700">{inv.email}</td>
-                      <td className="px-3 py-2">
-                        {inv.responded_at ? (
-                          <span className="text-emerald-600 font-medium">Responded</span>
-                        ) : (
-                          <span className="text-slate-400">Pending</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2">
-                        <button
-                          onClick={() => copyLink(inv.respond_url)}
-                          className="rounded px-2 py-0.5 text-indigo-600 hover:bg-indigo-50 transition-colors font-medium"
-                        >
-                          {copied === inv.respond_url ? "Copied!" : "Copy link"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          {!loadingList && invites.length === 0 && (
-            <p className="text-xs text-slate-400">No invites yet.</p>
-          )}
-        </div>
-      )}
-    </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {!loadingList && invites.length === 0 && (
+          <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>No invites yet.</p>
+        )}
+      </div>
+    </AccordionCard>
   )
 }
 
@@ -691,10 +652,7 @@ export default function ResultsPage() {
   async function load() {
     setLoading(true); setError(null)
     try {
-      const [res, survey] = await Promise.all([
-        getSurveyResults(id),
-        getSurvey(id),
-      ])
+      const [res, survey] = await Promise.all([getSurveyResults(id), getSurvey(id)])
       setResults(res)
       setQuestions(survey.questions)
       setSurveyStatus(survey.status)
@@ -724,8 +682,12 @@ export default function ResultsPage() {
       <Header backHref="/surveys" backLabel="Surveys" />
       <main className="flex-1 px-6 py-10">
         <div className="mx-auto max-w-2xl">
-          {loading && <div className="flex items-center justify-center py-20 text-sm text-slate-400">Loading results…</div>}
-          {error && <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">{error}</div>}
+          {loading && (
+            <div className="flex items-center justify-center py-20 text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
+              Loading results…
+            </div>
+          )}
+          {error && <div className="alert-error">{error}</div>}
 
           {results && (
             <div className="space-y-6">
@@ -733,46 +695,42 @@ export default function ResultsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">{results.survey_name}</h1>
+                    <h1 className="page-title">{results.survey_name}</h1>
                     <StatusBadge status={surveyStatus} />
                   </div>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
                     {results.response_count} response{results.response_count !== 1 ? "s" : ""}
                     {" · "}{results.questions.length} question{results.questions.length !== 1 ? "s" : ""}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-wrap items-center gap-2">
-                  {/* Copy respond link — only when live or closed */}
                   {(surveyStatus === "published" || surveyStatus === "closed") && (
                     <button
                       onClick={() => {
                         const url = `${window.location.origin}/surveys/${id}/respond`
                         navigator.clipboard.writeText(url).catch(() => prompt("Copy this link:", url))
                       }}
-                      className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"
+                      className="btn-ghost text-xs px-3 py-1.5"
                     >
                       Copy link
                     </button>
                   )}
-                  <Link href={`/surveys/${id}/respond`}
-                    className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50">
-                    Preview
-                  </Link>
-                  <Link href={`/surveys/${id}/edit`}
-                    className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50">
-                    Edit
-                  </Link>
-                  <Link href={`/surveys/${id}/dashboard`}
-                    className="rounded-lg bg-indigo-50 border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-700 shadow-sm transition hover:bg-indigo-100">
+                  <Link href={`/surveys/${id}/respond`} className="btn-ghost text-xs px-3 py-1.5">Preview</Link>
+                  <Link href={`/surveys/${id}/edit`} className="btn-ghost text-xs px-3 py-1.5">Edit</Link>
+                  <Link
+                    href={`/surveys/${id}/dashboard`}
+                    className="btn-ghost text-xs px-3 py-1.5 font-bold"
+                    style={{ color: "#5b21b6" }}
+                  >
                     Dashboard
                   </Link>
 
-                  {/* Status action buttons */}
                   {surveyStatus === "draft" && (
                     <button
                       onClick={() => handleStatusChange("published")}
                       disabled={statusChanging}
-                      className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                      className="btn-primary text-xs px-3 py-1.5 disabled:opacity-50"
+                      style={{ background: "linear-gradient(135deg,#059669,#047857)" }}
                     >
                       {statusChanging ? "…" : "Go Live"}
                     </button>
@@ -781,7 +739,7 @@ export default function ResultsPage() {
                     <button
                       onClick={() => handleStatusChange("closed")}
                       disabled={statusChanging}
-                      className="rounded-lg bg-red-500 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-red-600 disabled:opacity-50"
+                      className="btn-danger text-xs px-3 py-1.5 disabled:opacity-50"
                     >
                       {statusChanging ? "…" : "Close"}
                     </button>
@@ -790,14 +748,18 @@ export default function ResultsPage() {
                     <button
                       onClick={() => handleStatusChange("published")}
                       disabled={statusChanging}
-                      className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                      className="btn-primary text-xs px-3 py-1.5 disabled:opacity-50"
+                      style={{ background: "linear-gradient(135deg,#059669,#047857)" }}
                     >
                       {statusChanging ? "…" : "Reopen"}
                     </button>
                   )}
 
-                  <button onClick={load}
-                    className="rounded-lg border border-slate-200 p-2 text-slate-400 shadow-sm transition hover:text-slate-600" title="Refresh">
+                  <button
+                    onClick={load}
+                    className="btn-ghost p-1.5"
+                    title="Refresh"
+                  >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
@@ -805,20 +767,21 @@ export default function ResultsPage() {
                 </div>
               </div>
 
-              {/* Response rate stats */}
+              {/* Stats */}
               <StatsPanel surveyId={id} />
 
               {results.response_count === 0 && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700">
+                <div
+                  className="rounded-xl px-5 py-4 text-sm"
+                  style={{ background: "rgba(245,158,11,0.1)", border: "0.5px solid rgba(245,158,11,0.25)", color: "#b45309" }}
+                >
                   No responses yet. Share the{" "}
                   <Link href={`/surveys/${id}/respond`} className="font-semibold underline underline-offset-2">survey link</Link>
                   {" "}or use the invite panel below to start collecting data.
                 </div>
               )}
 
-              {/* Invite panel */}
               <InvitePanel surveyId={id} />
-
               <ReliabilityPanel surveyId={id} />
               <FactorScoresPanel surveyId={id} />
 

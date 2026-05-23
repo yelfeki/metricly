@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import Header from "@/components/Header"
+import ImportModal from "@/components/ImportModal"
 import { getSurveys, deleteSurvey } from "@/lib/api"
 import type { SurveyListItem } from "@/lib/types"
 
@@ -16,23 +17,23 @@ function copyRespondLink(id: string) {
 function StatusBadge({ status }: { status: string }) {
   if (status === "published") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+      <span className="badge-live">
+        <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
         Live
       </span>
     )
   }
   if (status === "closed") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-600 ring-1 ring-red-200">
+      <span className="badge-closed">
         <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
         Closed
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500 ring-1 ring-slate-200">
-      <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+    <span className="badge-draft">
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: "rgba(30,27,75,0.3)" }} />
       Draft
     </span>
   )
@@ -51,6 +52,7 @@ export default function SurveysPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [showImport, setShowImport] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -88,108 +90,127 @@ export default function SurveysPage() {
           {/* Page header */}
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">Surveys</h1>
-              <p className="mt-1 text-sm text-slate-500">
+              <h1 className="page-title">Surveys</h1>
+              <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
                 Build surveys, collect responses, and analyse results.
               </p>
             </div>
-            <Link
-              href="/surveys/new"
-              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              New Survey
-            </Link>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowImport(true)}
+                className="btn-ghost flex items-center gap-2"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                Import
+              </button>
+              <Link href="/surveys/new" className="btn-primary">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                New Survey
+              </Link>
+            </div>
           </div>
 
-          {/* States */}
           {loading && (
-            <div className="flex items-center justify-center py-20 text-sm text-slate-400">
+            <div className="flex items-center justify-center py-20 text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
               Loading surveys…
             </div>
           )}
 
-          {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
-              {error}
-            </div>
-          )}
+          {error && <div className="alert-error">{error}</div>}
 
           {!loading && !error && surveys.length === 0 && (
-            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 py-20 text-center">
-              <svg className="mb-4 h-10 w-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div
+              className="flex flex-col items-center justify-center rounded-[14px] py-20 text-center"
+              style={{
+                background: "rgba(255,255,255,0.3)",
+                border: "1.5px dashed rgba(91,33,182,0.2)",
+                backdropFilter: "blur(8px)",
+              }}
+            >
+              <svg
+                className="mb-4 h-10 w-10"
+                style={{ color: "rgba(91,33,182,0.25)" }}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <p className="text-sm font-medium text-slate-500">No surveys yet</p>
-              <p className="mt-1 text-xs text-slate-400">Create your first survey to get started.</p>
-              <Link
-                href="/surveys/new"
-                className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
-              >
+              <p className="text-sm font-semibold" style={{ color: "rgba(30,27,75,0.55)" }}>No surveys yet</p>
+              <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>Create your first survey to get started.</p>
+              <Link href="/surveys/new" className="btn-primary mt-5">
                 Create Survey
               </Link>
             </div>
           )}
 
           {!loading && !error && surveys.length > 0 && (
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              <table className="w-full text-sm">
+            <div className="card overflow-hidden">
+              <table className="data-table">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                    <th className="px-5 py-3 text-left">Survey</th>
-                    <th className="px-5 py-3 text-left">Status</th>
-                    <th className="px-5 py-3 text-left">Responses</th>
-                    <th className="px-5 py-3 text-left">Created</th>
-                    <th className="px-5 py-3 text-right">Actions</th>
+                  <tr>
+                    <th>Survey</th>
+                    <th>Status</th>
+                    <th>Responses</th>
+                    <th>Created</th>
+                    <th className="text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody>
                   {surveys.map((s) => (
-                    <tr key={s.id} className="transition-colors hover:bg-slate-50">
-                      <td className="px-5 py-4">
-                        <p className="font-medium text-slate-900">{s.name}</p>
+                    <tr key={s.id}>
+                      <td>
+                        <p className="font-semibold text-sm" style={{ color: "#1e1b4b" }}>{s.name}</p>
                         {s.description && (
-                          <p className="mt-0.5 line-clamp-1 text-xs text-slate-400">{s.description}</p>
+                          <p className="mt-0.5 line-clamp-1 text-xs" style={{ color: "rgba(30,27,75,0.45)" }}>
+                            {s.description}
+                          </p>
                         )}
                       </td>
-                      <td className="px-5 py-4">
+                      <td>
                         <StatusBadge status={s.status} />
                       </td>
-                      <td className="px-5 py-4 tabular-nums text-slate-600">
+                      <td className="tabular-nums text-sm font-semibold" style={{ color: "rgba(30,27,75,0.7)" }}>
                         {s.response_count}
                       </td>
-                      <td className="px-5 py-4 text-slate-400">
+                      <td className="text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
                         {formatDate(s.created_at)}
                       </td>
-                      <td className="px-5 py-4">
-                        <div className="flex items-center justify-end gap-2">
+                      <td>
+                        <div className="flex items-center justify-end gap-1">
                           {(s.status === "published" || s.status === "closed") && (
                             <button
                               onClick={() => copyRespondLink(s.id)}
                               title="Copy respond link"
-                              className="rounded px-2.5 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100 transition-colors"
+                              className="rounded-full px-2.5 py-1 text-xs font-semibold transition-all"
+                              style={{ color: "rgba(30,27,75,0.5)" }}
                             >
                               Copy link
                             </button>
                           )}
                           <Link
                             href={`/surveys/${s.id}/edit`}
-                            className="rounded px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                            className="rounded-full px-2.5 py-1 text-xs font-semibold transition-all"
+                            style={{ color: "rgba(30,27,75,0.6)" }}
                           >
                             Edit
                           </Link>
                           <Link
                             href={`/surveys/${s.id}/results`}
-                            className="rounded px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+                            className="rounded-full px-2.5 py-1 text-xs font-semibold transition-all"
+                            style={{ color: "#5b21b6" }}
                           >
                             Results
                           </Link>
                           <button
                             onClick={() => handleDelete(s.id, s.name)}
                             disabled={deleting === s.id}
-                            className="rounded px-2.5 py-1 text-xs font-medium text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                            className="rounded-full px-2.5 py-1 text-xs font-semibold transition-all disabled:opacity-50"
+                            style={{ color: "#dc2626" }}
                           >
                             {deleting === s.id ? "…" : "Delete"}
                           </button>
@@ -203,6 +224,12 @@ export default function SurveysPage() {
           )}
         </div>
       </main>
+
+      {showImport && (
+        <ImportModal
+          onClose={() => setShowImport(false)}
+        />
+      )}
     </div>
   )
 }

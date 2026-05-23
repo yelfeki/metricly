@@ -9,6 +9,62 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 
+class Industry(Base):
+    """Industry vertical for instrument tagging and browsing."""
+
+    __tablename__ = "industries"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    slug: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    keywords: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array
+    icon_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    color_hex: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    order_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    instrument_mappings: Mapped[list["IndustryInstrumentMapping"]] = relationship(
+        "IndustryInstrumentMapping",
+        back_populates="industry",
+        cascade="all, delete-orphan",
+    )
+
+    def __repr__(self) -> str:
+        return f"<Industry id={self.id!r} slug={self.slug!r}>"
+
+
+class IndustryInstrumentMapping(Base):
+    """Maps validated instruments to industry verticals with relevance context."""
+
+    __tablename__ = "industry_instrument_mappings"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    industry_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("industries.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    instrument_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("instruments.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    relevance_score: Mapped[int] = mapped_column(Integer, nullable=False, default=3)  # 1-5
+    use_case_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    industry: Mapped["Industry"] = relationship("Industry", back_populates="instrument_mappings")
+    instrument: Mapped["Instrument"] = relationship("Instrument", back_populates="industry_mappings")
+
+    def __repr__(self) -> str:
+        return f"<IndustryInstrumentMapping industry={self.industry_id!r} instrument={self.instrument_id!r}>"
+
+
 def _now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -70,6 +126,8 @@ class Instrument(Base):
     validated_populations: Mapped[str | None] = mapped_column(Text, nullable=True)
     languages: Mapped[str | None] = mapped_column(Text, nullable=True)
     reliability_alpha: Mapped[float | None] = mapped_column(Float, nullable=True)
+    industry_tags: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON array of industry slugs
+    is_industry_specific: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False
@@ -92,6 +150,9 @@ class Instrument(Base):
     )
     deployments: Mapped[list["LibraryDeployment"]] = relationship(
         "LibraryDeployment", back_populates="instrument", cascade="all, delete-orphan"
+    )
+    industry_mappings: Mapped[list["IndustryInstrumentMapping"]] = relationship(
+        "IndustryInstrumentMapping", back_populates="instrument", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
@@ -174,3 +235,23 @@ class LibraryDeployment(Base):
 
     def __repr__(self) -> str:
         return f"<LibraryDeployment id={self.id!r} instrument={self.instrument_id!r}>"
+
+
+class SkillRequest(Base):
+    """Records user requests to add an instrument not yet in the library."""
+
+    __tablename__ = "skill_requests"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    skill_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    context_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    requester_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    requested_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="pending")
+
+    def __repr__(self) -> str:
+        return f"<SkillRequest id={self.id!r} skill={self.skill_name!r} status={self.status!r}>"

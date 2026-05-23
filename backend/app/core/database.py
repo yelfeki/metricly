@@ -247,6 +247,80 @@ async def run_migrations() -> None:
         )""",
         "CREATE INDEX IF NOT EXISTS ix_interpretive_reports_response_id ON interpretive_reports (response_id)",
         "CREATE INDEX IF NOT EXISTS ix_interpretive_reports_survey_id ON interpretive_reports (survey_id)",
+        # v1.4 — skills explorer assessment requests
+        """CREATE TABLE IF NOT EXISTS skill_requests (
+            id VARCHAR(36) PRIMARY KEY,
+            skill_name VARCHAR(255) NOT NULL,
+            context_summary TEXT,
+            requester_email VARCHAR(255),
+            requested_at TIMESTAMP WITH TIME ZONE NOT NULL,
+            status VARCHAR(50) NOT NULL DEFAULT 'pending'
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_skill_requests_status ON skill_requests (status)",
+        # v1.5 — competency framework database (Korn Ferry, O*NET, Core Behavioral)
+        """CREATE TABLE IF NOT EXISTS competency_frameworks (
+            id VARCHAR(36) PRIMARY KEY,
+            name VARCHAR(255) NOT NULL UNIQUE,
+            source VARCHAR(255),
+            description TEXT,
+            version VARCHAR(50)
+        )""",
+        """CREATE TABLE IF NOT EXISTS competency_definitions (
+            id VARCHAR(36) PRIMARY KEY,
+            framework_id VARCHAR(36) NOT NULL REFERENCES competency_frameworks(id) ON DELETE CASCADE,
+            name VARCHAR(255) NOT NULL,
+            definition TEXT,
+            cluster VARCHAR(255),
+            factor VARCHAR(255),
+            category VARCHAR(255),
+            is_leadership BOOLEAN NOT NULL DEFAULT FALSE,
+            is_technical BOOLEAN NOT NULL DEFAULT FALSE
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_competency_definitions_framework_id ON competency_definitions (framework_id)",
+        "CREATE INDEX IF NOT EXISTS ix_competency_definitions_factor ON competency_definitions (factor)",
+        "CREATE INDEX IF NOT EXISTS ix_competency_definitions_cluster ON competency_definitions (cluster)",
+        """CREATE TABLE IF NOT EXISTS competency_proficiency_levels (
+            id VARCHAR(36) PRIMARY KEY,
+            competency_id VARCHAR(36) NOT NULL REFERENCES competency_definitions(id) ON DELETE CASCADE,
+            level INTEGER NOT NULL,
+            label VARCHAR(100) NOT NULL,
+            behavioral_indicators TEXT,
+            example_behaviors TEXT
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_competency_proficiency_levels_competency_id ON competency_proficiency_levels (competency_id)",
+        """CREATE TABLE IF NOT EXISTS competency_instrument_mappings (
+            id VARCHAR(36) PRIMARY KEY,
+            competency_id VARCHAR(36) NOT NULL REFERENCES competency_definitions(id) ON DELETE CASCADE,
+            instrument_id VARCHAR(36) NOT NULL REFERENCES instruments(id) ON DELETE CASCADE,
+            mapping_strength VARCHAR(50) NOT NULL DEFAULT 'supporting',
+            rationale TEXT,
+            subscale_focus VARCHAR(255)
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_competency_instrument_mappings_competency_id ON competency_instrument_mappings (competency_id)",
+        "CREATE INDEX IF NOT EXISTS ix_competency_instrument_mappings_instrument_id ON competency_instrument_mappings (instrument_id)",
+        # v1.6 — industry-specific psychological scale library
+        """CREATE TABLE IF NOT EXISTS industries (
+            id VARCHAR(36) PRIMARY KEY,
+            name VARCHAR(255) NOT NULL UNIQUE,
+            slug VARCHAR(100) NOT NULL UNIQUE,
+            description TEXT,
+            keywords TEXT,
+            icon_name VARCHAR(100),
+            color_hex VARCHAR(20),
+            order_index INTEGER NOT NULL DEFAULT 0
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_industries_slug ON industries (slug)",
+        """CREATE TABLE IF NOT EXISTS industry_instrument_mappings (
+            id VARCHAR(36) PRIMARY KEY,
+            industry_id VARCHAR(36) NOT NULL REFERENCES industries(id) ON DELETE CASCADE,
+            instrument_id VARCHAR(36) NOT NULL REFERENCES instruments(id) ON DELETE CASCADE,
+            relevance_score INTEGER NOT NULL DEFAULT 3,
+            use_case_note TEXT
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_industry_instrument_mappings_industry_id ON industry_instrument_mappings (industry_id)",
+        "CREATE INDEX IF NOT EXISTS ix_industry_instrument_mappings_instrument_id ON industry_instrument_mappings (instrument_id)",
+        "ALTER TABLE instruments ADD COLUMN IF NOT EXISTS industry_tags TEXT",
+        "ALTER TABLE instruments ADD COLUMN IF NOT EXISTS is_industry_specific BOOLEAN NOT NULL DEFAULT FALSE",
     ]
     for stmt in migrations:
         try:

@@ -38,8 +38,6 @@ export default function SignupPage() {
       return
     }
 
-    // Supabase may auto-confirm (if disabled in project settings) or send an email.
-    // Try to sign in immediately; if that fails, show the "check email" message.
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
     if (!signInError) {
       router.push("/surveys")
@@ -53,18 +51,22 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4">
-        <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100">
-            <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <div className="flex min-h-screen flex-col items-center justify-center px-4">
+        <div className="card w-full max-w-sm p-8 text-center">
+          <div
+            className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full"
+            style={{ background: "rgba(16,185,129,0.12)" }}
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#059669" }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-lg font-semibold text-slate-900">Check your email</h2>
-          <p className="mt-2 text-sm text-slate-500">
-            We sent a confirmation link to <span className="font-medium text-slate-700">{email}</span>.
+          <h2 className="section-heading">Check your email</h2>
+          <p className="mt-2 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+            We sent a confirmation link to{" "}
+            <span className="font-semibold" style={{ color: "#1e1b4b" }}>{email}</span>.
             Click the link to activate your account, then{" "}
-            <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-700">sign in</Link>.
+            <Link href="/login" className="font-semibold" style={{ color: "#5b21b6" }}>sign in</Link>.
           </p>
         </div>
       </div>
@@ -72,41 +74,47 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4">
+    <div className="flex min-h-screen flex-col items-center justify-center px-4">
       {/* Logo */}
       <div className="mb-8 text-center">
         <Link href="/" className="inline-flex items-center gap-2">
-          <span className="text-2xl font-bold tracking-tight text-slate-900">Metricly</span>
-          <span className="rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-700">
+          <span className="font-playfair text-2xl font-bold gradient-text">Metricly</span>
+          <span
+            className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest"
+            style={{
+              background: "rgba(91,33,182,0.1)",
+              border: "0.5px solid rgba(91,33,182,0.2)",
+              color: "#5b21b6",
+            }}
+          >
             Beta
           </span>
         </Link>
-        <p className="mt-2 text-sm text-slate-500">Psychometric intelligence for the Arab world</p>
+        <p className="mt-2 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+          Psychometric intelligence for the Arab world
+        </p>
       </div>
 
       {/* Card */}
-      <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-100 px-6 py-5">
-          <h1 className="text-lg font-semibold text-slate-900">Create your account</h1>
-          <p className="mt-0.5 text-sm text-slate-500">
+      <div className="card w-full max-w-sm overflow-hidden">
+        <div
+          className="border-b px-6 py-5"
+          style={{ borderColor: "rgba(255,255,255,0.35)" }}
+        >
+          <h1 className="section-heading">Create your account</h1>
+          <p className="mt-0.5 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
             Already have an account?{" "}
-            <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-700">
+            <Link href="/login" className="font-semibold" style={{ color: "#5b21b6" }}>
               Sign in
             </Link>
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
-          {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
+          {error && <div className="alert-error">{error}</div>}
 
           <div>
-            <label htmlFor="email" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Email
-            </label>
+            <label htmlFor="email" className="label-caps mb-1.5 block">Email</label>
             <input
               id="email"
               type="email"
@@ -115,14 +123,12 @@ export default function SignupPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
+              className="field"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Password
-            </label>
+            <label htmlFor="password" className="label-caps mb-1.5 block">Password</label>
             <input
               id="password"
               type="password"
@@ -131,14 +137,12 @@ export default function SignupPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="Min. 8 characters"
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
+              className="field"
             />
           </div>
 
           <div>
-            <label htmlFor="confirm" className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Confirm password
-            </label>
+            <label htmlFor="confirm" className="label-caps mb-1.5 block">Confirm password</label>
             <input
               id="confirm"
               type="password"
@@ -147,15 +151,11 @@ export default function SignupPage() {
               value={confirm}
               onChange={e => setConfirm(e.target.value)}
               placeholder="••••••••"
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
+              className="field"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-60"
-          >
+          <button type="submit" disabled={loading} className="btn-primary w-full">
             {loading ? (
               <>
                 <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -164,9 +164,7 @@ export default function SignupPage() {
                 </svg>
                 Creating account…
               </>
-            ) : (
-              "Create account"
-            )}
+            ) : "Create account"}
           </button>
         </form>
       </div>

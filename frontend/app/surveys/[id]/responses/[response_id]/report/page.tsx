@@ -575,7 +575,7 @@ function AIReportRenderer({ aiReport, onRegenerate }: AIReportRendererProps) {
             border: "0.5px solid rgba(59,130,246,0.15)",
           }}
         >
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#2563eb" }}>
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#3777A8" }}>
             Role Fit: {context.role}
           </p>
           <p className="text-sm leading-relaxed" style={{ color: "rgba(30,27,75,0.75)" }}>
@@ -623,7 +623,7 @@ function AIReportRenderer({ aiReport, onRegenerate }: AIReportRendererProps) {
 }
 
 // ---------------------------------------------------------------------------
-// AI Report section — orchestrates form / loading / rendered states
+// AI Report section — orchestrates form / polling / rendered states
 // ---------------------------------------------------------------------------
 
 interface AIReportSectionProps {
@@ -632,42 +632,60 @@ interface AIReportSectionProps {
 }
 
 function AIReportSection({ surveyId, responseId }: AIReportSectionProps) {
-  const [phase, setPhase] = useState<"idle" | "form" | "loading" | "done">("idle")
+  const [phase, setPhase] = useState<"idle" | "form" | "polling" | "done" | "slow">("idle")
   const [aiReport, setAiReport] = useState<InterpretiveReportOut | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const [savedContext, setSavedContext] = useState({ role: "", industry: "", purpose: "development" as ReportPurpose })
   const reportRef = useRef<HTMLDivElement>(null)
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // On mount: check if a cached report already exists
+  function stopPolling() {
+    if (pollIntervalRef.current) { clearInterval(pollIntervalRef.current); pollIntervalRef.current = null }
+    if (pollTimeoutRef.current) { clearTimeout(pollTimeoutRef.current); pollTimeoutRef.current = null }
+  }
+
+  // On mount: silent GET — if a cached report exists show it immediately
   useEffect(() => {
     getInterpretiveReport(surveyId, responseId)
       .then(r => { setAiReport(r); setPhase("done") })
       .catch(() => { /* 404 = no report yet, stay in idle */ })
+    return () => stopPolling()
   }, [surveyId, responseId])
 
-  async function handleGenerate(role: string, industry: string, purpose: ReportPurpose, force = false) {
-    setPhase("loading")
-    setError(null)
-    setSavedContext({ role, industry, purpose })
-    try {
-      const result = await generateInterpretiveReport(surveyId, responseId, {
-        role: role || null,
-        industry: industry || null,
-        purpose,
-        force,
-      })
-      setAiReport(result)
-      setPhase("done")
-      // Scroll to the rendered report
-      setTimeout(() => reportRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
-      setPhase("form")
-    }
+  function startPolling() {
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const r = await getInterpretiveReport(surveyId, responseId)
+        stopPolling()
+        setAiReport(r)
+        setPhase("done")
+        setTimeout(() => reportRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100)
+      } catch {
+        // 404 = not ready yet — keep polling
+      }
+    }, 3000)
+
+    // After 60 s give up and show a soft message
+    pollTimeoutRef.current = setTimeout(() => {
+      stopPolling()
+      setPhase("slow")
+    }, 60_000)
   }
 
-  function handleRegenerate() {
-    setPhase("form")
+  function handleGenerate(role: string, industry: string, purpose: ReportPurpose, force = false) {
+    setSavedContext({ role, industry, purpose })
+    setPhase("polling")
+
+    // Fire the POST and ignore the response — the backend saves the report
+    // regardless of whether the connection stays open for the full ~30s.
+    generateInterpretiveReport(surveyId, responseId, {
+      role: role || null,
+      industry: industry || null,
+      purpose,
+      force,
+    }).catch(() => { /* fire-and-forget */ })
+
+    startPolling()
   }
 
   if (phase === "idle") {
@@ -698,23 +716,18 @@ function AIReportSection({ surveyId, responseId }: AIReportSectionProps) {
 
   if (phase === "form") {
     return (
-      <div>
-        {error && (
-          <div className="alert-error mb-4">{error}</div>
-        )}
-        <AIContextForm
-          onSubmit={(r, i, p) => handleGenerate(r, i, p, !!aiReport)}
-          onCancel={() => setPhase(aiReport ? "done" : "idle")}
-          loading={false}
-          initialRole={savedContext.role}
-          initialIndustry={savedContext.industry}
-          initialPurpose={savedContext.purpose}
-        />
-      </div>
+      <AIContextForm
+        onSubmit={(r, i, p) => handleGenerate(r, i, p, !!aiReport)}
+        onCancel={() => setPhase(aiReport ? "done" : "idle")}
+        loading={false}
+        initialRole={savedContext.role}
+        initialIndustry={savedContext.industry}
+        initialPurpose={savedContext.purpose}
+      />
     )
   }
 
-  if (phase === "loading") {
+  if (phase === "polling") {
     return (
       <div className="flex flex-col items-center gap-4 rounded-[18px] py-12"
         style={{ background: "rgba(91,33,182,0.03)", border: "0.5px solid rgba(91,33,182,0.12)" }}
@@ -724,11 +737,26 @@ function AIReportSection({ surveyId, responseId }: AIReportSectionProps) {
           <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
         <div className="text-center">
-          <p className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>Generating report…</p>
+          <p className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>Generating your report…</p>
           <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>
-            Claude is analyzing the factor profile
+            This takes about 30 seconds
           </p>
         </div>
+      </div>
+    )
+  }
+
+  if (phase === "slow") {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-[18px] py-10 text-center"
+        style={{ background: "rgba(245,158,11,0.05)", border: "0.5px solid rgba(245,158,11,0.25)" }}
+      >
+        <p className="text-sm font-semibold" style={{ color: "#92400e" }}>
+          Taking longer than expected — try refreshing the page
+        </p>
+        <button onClick={() => window.location.reload()} className="btn-primary text-sm">
+          Refresh
+        </button>
       </div>
     )
   }
@@ -738,7 +766,7 @@ function AIReportSection({ surveyId, responseId }: AIReportSectionProps) {
 
   return (
     <div ref={reportRef}>
-      <AIReportRenderer aiReport={aiReport} onRegenerate={handleRegenerate} />
+      <AIReportRenderer aiReport={aiReport} onRegenerate={() => setPhase("form")} />
     </div>
   )
 }

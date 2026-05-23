@@ -45,12 +45,8 @@ const NEEDS_OPTIONS: QuestionType[] = ["single_choice", "multiple_choice", "rank
 const SCORED_OPTIONS: QuestionType[] = ["single_choice", "multiple_choice", "forced_choice"]
 const LIKERT_TYPES: QuestionType[] = ["likert_5", "likert_7"]
 
-// ---------------------------------------------------------------------------
-// Extended draft type: serverId is set for questions that already exist in DB
-// ---------------------------------------------------------------------------
-
 interface EditDraft extends QuestionDraft {
-  serverId: string | null  // null → new, not yet saved
+  serverId: string | null
 }
 
 function newDraft(position: number, type: QuestionType = "likert_5"): EditDraft {
@@ -134,10 +130,11 @@ function FactorSelect({ value, factorNames, onChange, onCreateFactor }: FactorSe
           onChange={e => setNewName(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") saveNew(); if (e.key === "Escape") { setCreating(false); setNewName("") } }}
           placeholder="Factor name"
-          className="w-28 rounded border border-indigo-300 bg-white px-2 py-0.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+          className="w-28 rounded-lg border px-2 py-0.5 text-xs focus:outline-none"
+          style={{ background: "rgba(255,255,255,0.7)", borderColor: "rgba(91,33,182,0.3)", color: "#1e1b4b" }}
         />
-        <button type="button" onClick={saveNew} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Save</button>
-        <button type="button" onClick={() => { setCreating(false); setNewName("") }} className="text-xs text-slate-400 hover:text-slate-600">✕</button>
+        <button type="button" onClick={saveNew} className="text-xs font-semibold" style={{ color: "#5b21b6" }}>Save</button>
+        <button type="button" onClick={() => { setCreating(false); setNewName("") }} className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>✕</button>
       </div>
     )
   }
@@ -149,7 +146,8 @@ function FactorSelect({ value, factorNames, onChange, onCreateFactor }: FactorSe
         if (e.target.value === "__new__") { setCreating(true) }
         else { onChange(e.target.value) }
       }}
-      className="rounded border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+      className="rounded-lg border px-2 py-0.5 text-xs focus:outline-none"
+      style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
     >
       <option value="">No factor</option>
       {factorNames.map(f => <option key={f} value={f}>{f}</option>)}
@@ -182,17 +180,12 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
   const needsList = isChoice || isFC || isRanking
   const hasScores = SCORED_OPTIONS.includes(q.question_type)
 
-  function setOption(i: number, v: string) {
-    const next = [...q.options]; next[i] = v; onChange(q.localId, { options: next })
-  }
+  function setOption(i: number, v: string) { const next = [...q.options]; next[i] = v; onChange(q.localId, { options: next }) }
   function setOptionScore(i: number, v: string) {
-    const scores = [...q.option_scores]
-    scores[i] = parseFloat(v) || 0
+    const scores = [...q.option_scores]; scores[i] = parseFloat(v) || 0
     onChange(q.localId, { option_scores: scores })
   }
-  function addOption() {
-    onChange(q.localId, { options: [...q.options, ""], option_scores: [...q.option_scores, 0] })
-  }
+  function addOption() { onChange(q.localId, { options: [...q.options, ""], option_scores: [...q.option_scores, 0] }) }
   function removeOption(i: number) {
     onChange(q.localId, {
       options: q.options.filter((_, idx) => idx !== i),
@@ -201,8 +194,7 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
   }
   function setLabel(i: 0 | 1, v: string) {
     const next: [string, string] = [...q.forced_choice_labels] as [string, string]
-    next[i] = v
-    onChange(q.localId, { forced_choice_labels: next })
+    next[i] = v; onChange(q.localId, { forced_choice_labels: next })
   }
   function handleTypeChange(type: QuestionType) {
     const willNeedList = NEEDS_OPTIONS.includes(type)
@@ -215,9 +207,9 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
   const itemLabel = isFC ? "Item" : "Option"
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className="card">
       <div className="flex items-start gap-3 px-4 py-3">
-        <div className="mt-1.5 flex cursor-grab flex-col gap-0.5 text-slate-300 hover:text-slate-500 active:cursor-grabbing">
+        <div className="mt-1.5 flex cursor-grab flex-col gap-0.5 active:cursor-grabbing" style={{ color: "rgba(30,27,75,0.2)" }}>
           {[0,1,2].map(r => (
             <div key={r} className="flex gap-0.5">
               <span className="h-1 w-1 rounded-full bg-current" />
@@ -225,7 +217,10 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
             </div>
           ))}
         </div>
-        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500">
+        <span
+          className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+          style={{ background: "rgba(91,33,182,0.1)", color: "#5b21b6" }}
+        >
           {index + 1}
         </span>
         <div className="min-w-0 flex-1 space-y-3">
@@ -234,26 +229,28 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
             onChange={e => onChange(q.localId, { text: e.target.value })}
             placeholder={`Question ${index + 1}`}
             rows={2}
-            className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
+            className="field w-full resize-none"
           />
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs text-slate-400">Type:</span>
+            <span className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Type:</span>
             {QUESTION_TYPES.map(t => (
               <button key={t.value} type="button" onClick={() => handleTypeChange(t.value)}
-                className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-                  q.question_type === t.value
-                    ? "bg-indigo-600 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}>
+                className="rounded-full px-2.5 py-0.5 text-xs font-semibold transition-all"
+                style={q.question_type === t.value
+                  ? { background: "linear-gradient(135deg,#5b21b6,#3777A8)", color: "white" }
+                  : { background: "rgba(30,27,75,0.07)", color: "rgba(30,27,75,0.6)" }
+                }>
                 {t.icon} {t.label}
               </button>
             ))}
           </div>
 
-          {/* Psychometric metadata row */}
-          <div className="flex flex-wrap items-center gap-4 rounded-lg bg-slate-50 px-3 py-2">
+          <div
+            className="flex flex-wrap items-center gap-4 rounded-xl px-3 py-2"
+            style={{ background: "rgba(91,33,182,0.05)", border: "0.5px solid rgba(91,33,182,0.1)" }}
+          >
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-medium text-slate-400">Factor:</span>
+              <span className="text-[11px] font-medium" style={{ color: "rgba(30,27,75,0.4)" }}>Factor:</span>
               <FactorSelect
                 value={q.factor}
                 factorNames={factorNames}
@@ -264,44 +261,35 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
             {isLikert && (
               <>
                 <label className="flex cursor-pointer items-center gap-1.5">
-                  <input
-                    type="checkbox"
-                    checked={q.reverse_scored}
+                  <input type="checkbox" checked={q.reverse_scored}
                     onChange={e => onChange(q.localId, { reverse_scored: e.target.checked })}
-                    className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600"
-                  />
-                  <span className="text-[11px] font-medium text-slate-500">Reverse scored</span>
+                    className="h-3.5 w-3.5 rounded" />
+                  <span className="text-[11px] font-medium" style={{ color: "rgba(30,27,75,0.5)" }}>Reverse scored</span>
                 </label>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-medium text-slate-400">Weight:</span>
-                  <input
-                    type="number"
-                    value={q.score_weight}
-                    min="0"
-                    step="0.1"
+                  <span className="text-[11px] font-medium" style={{ color: "rgba(30,27,75,0.4)" }}>Weight:</span>
+                  <input type="number" value={q.score_weight} min="0" step="0.1"
                     onChange={e => onChange(q.localId, { score_weight: parseFloat(e.target.value) || 1.0 })}
-                    className="w-16 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                    className="w-16 rounded-lg border px-1.5 py-0.5 text-xs focus:outline-none"
+                    style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
                   />
                 </div>
               </>
             )}
             <label className="flex cursor-pointer items-center gap-1.5">
-              <input
-                type="checkbox"
-                checked={q.is_demographic}
+              <input type="checkbox" checked={q.is_demographic}
                 onChange={e => onChange(q.localId, { is_demographic: e.target.checked, demographic_key: e.target.checked ? q.demographic_key : "" })}
-                className="h-3.5 w-3.5 rounded border-slate-300 text-emerald-600"
-              />
-              <span className="text-[11px] font-medium text-slate-500">Demographic</span>
+                className="h-3.5 w-3.5 rounded" />
+              <span className="text-[11px] font-medium" style={{ color: "rgba(30,27,75,0.5)" }}>Demographic</span>
             </label>
             {q.is_demographic && (
               <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-medium text-slate-400">Key:</span>
-                <input
-                  value={q.demographic_key}
+                <span className="text-[11px] font-medium" style={{ color: "rgba(30,27,75,0.4)" }}>Key:</span>
+                <input value={q.demographic_key}
                   onChange={e => onChange(q.localId, { demographic_key: e.target.value })}
                   placeholder="e.g. department"
-                  className="w-32 rounded border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-300"
+                  className="w-32 rounded-lg border px-2 py-0.5 text-xs focus:outline-none"
+                  style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
                 />
               </div>
             )}
@@ -310,71 +298,58 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
           {isLikert && (
             <div className="flex gap-1.5">
               {Array.from({ length: q.question_type === "likert_5" ? 5 : 7 }, (_, i) => (
-                <div key={i} className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
-                  q.reverse_scored ? "border-amber-200 bg-amber-50 text-amber-500" : "border-slate-200 bg-slate-50 text-slate-400"
-                }`}>
+                <div key={i}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold"
+                  style={q.reverse_scored
+                    ? { background: "rgba(245,158,11,0.12)", border: "0.5px solid rgba(245,158,11,0.3)", color: "#b45309" }
+                    : { background: "rgba(91,33,182,0.07)", border: "0.5px solid rgba(91,33,182,0.12)", color: "rgba(30,27,75,0.5)" }
+                  }>
                   {q.reverse_scored ? (q.question_type === "likert_5" ? 5 : 7) - i : i + 1}
                 </div>
               ))}
-              {q.reverse_scored && (
-                <span className="self-center text-[10px] text-amber-500 font-medium">reversed</span>
-              )}
+              {q.reverse_scored && <span className="self-center text-[10px] font-semibold" style={{ color: "#b45309" }}>reversed</span>}
             </div>
           )}
 
           {isFC && (
-            <div className="grid grid-cols-2 gap-2 rounded-lg bg-indigo-50 p-3">
+            <div className="grid grid-cols-2 gap-2 rounded-xl p-3" style={{ background: "rgba(91,33,182,0.06)", border: "0.5px solid rgba(91,33,182,0.12)" }}>
               <div>
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-indigo-500">Label A</label>
-                <input value={q.forced_choice_labels[0]} onChange={e => setLabel(0, e.target.value)}
-                  placeholder="e.g. Most like me"
-                  className="w-full rounded border border-indigo-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300" />
+                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider" style={{ color: "#5b21b6" }}>Label A</label>
+                <input value={q.forced_choice_labels[0]} onChange={e => setLabel(0, e.target.value)} placeholder="e.g. Most like me" className="field w-full" />
               </div>
               <div>
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-indigo-500">Label B</label>
-                <input value={q.forced_choice_labels[1]} onChange={e => setLabel(1, e.target.value)}
-                  placeholder="e.g. Least like me"
-                  className="w-full rounded border border-indigo-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300" />
+                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider" style={{ color: "#5b21b6" }}>Label B</label>
+                <input value={q.forced_choice_labels[1]} onChange={e => setLabel(1, e.target.value)} placeholder="e.g. Least like me" className="field w-full" />
               </div>
             </div>
           )}
-          {isRanking && (
-            <p className="text-[11px] text-slate-400">Respondents will drag these items into their preferred order.</p>
-          )}
+          {isRanking && <p className="text-[11px]" style={{ color: "rgba(30,27,75,0.4)" }}>Respondents will drag these items into their preferred order.</p>}
+
           {needsList && (
             <div className="space-y-2">
               {hasScores && (
                 <div className="flex items-center gap-2 px-0.5">
-                  <span className="flex-1 text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                    {isFC ? "Item" : "Option"}
-                  </span>
-                  <span className="w-16 text-right text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                    {isFC ? "Weight" : "Score"}
-                  </span>
+                  <span className="flex-1 label-caps">{isFC ? "Item" : "Option"}</span>
+                  <span className="w-16 text-right label-caps">{isFC ? "Weight" : "Score"}</span>
                 </div>
               )}
               {q.options.map((opt, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center text-xs text-slate-400 font-medium">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center text-xs font-medium" style={{ color: "rgba(30,27,75,0.4)" }}>
                     {isRanking ? i + 1 : isFC ? "·" : q.question_type === "multiple_choice" ? "☐" : "○"}
                   </span>
                   <input value={opt} onChange={e => setOption(i, e.target.value)}
-                    placeholder={`${itemLabel} ${i + 1}`}
-                    className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-100" />
+                    placeholder={`${itemLabel} ${i + 1}`} className="field flex-1" />
                   {hasScores && (
-                    <input
-                      type="number"
-                      value={q.option_scores[i] ?? 0}
-                      step="0.1"
-                      onChange={e => setOptionScore(i, e.target.value)}
-                      placeholder="0"
+                    <input type="number" value={q.option_scores[i] ?? 0} step="0.1"
+                      onChange={e => setOptionScore(i, e.target.value)} placeholder="0"
                       title={isFC ? "Weight for this item" : "Score for this option"}
-                      className="w-16 rounded border border-slate-200 bg-slate-50 px-1.5 py-1 text-xs text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-100"
+                      className="w-16 rounded-lg border px-1.5 py-1 text-xs focus:outline-none"
+                      style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
                     />
                   )}
                   {q.options.length > 2 && (
-                    <button type="button" onClick={() => removeOption(i)}
-                      className="text-slate-300 hover:text-red-400 transition-colors">
+                    <button type="button" onClick={() => removeOption(i)} className="transition-colors" style={{ color: "rgba(30,27,75,0.2)" }}>
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                       </svg>
@@ -382,8 +357,7 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
                   )}
                 </div>
               ))}
-              <button type="button" onClick={addOption}
-                className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 transition-colors">
+              <button type="button" onClick={addOption} className="flex items-center gap-1 text-xs font-semibold transition-colors" style={{ color: "#5b21b6" }}>
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
@@ -392,21 +366,22 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
             </div>
           )}
         </div>
+
         <div className="flex flex-col gap-1">
           <button type="button" onClick={() => onMoveUp(q.localId)} disabled={index === 0}
-            className="rounded p-1 text-slate-300 hover:text-slate-600 disabled:opacity-20 transition-colors" title="Move up">
+            className="rounded p-1 disabled:opacity-20 transition-colors" style={{ color: "rgba(30,27,75,0.3)" }} title="Move up">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
             </svg>
           </button>
           <button type="button" onClick={() => onMoveDown(q.localId)} disabled={index === total - 1}
-            className="rounded p-1 text-slate-300 hover:text-slate-600 disabled:opacity-20 transition-colors" title="Move down">
+            className="rounded p-1 disabled:opacity-20 transition-colors" style={{ color: "rgba(30,27,75,0.3)" }} title="Move down">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
           <button type="button" onClick={() => onDelete(q.localId)}
-            className="rounded p-1 text-slate-300 hover:text-red-500 transition-colors" title="Delete">
+            className="rounded p-1 transition-colors" style={{ color: "rgba(30,27,75,0.25)" }} title="Delete">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
@@ -418,16 +393,14 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
 }
 
 // ---------------------------------------------------------------------------
-// Factor row (in Factors tab)
+// Factor row
 // ---------------------------------------------------------------------------
 
-interface FactorRowProps {
+function FactorRow({ factor, onSave, onDelete }: {
   factor: SurveyFactor
   onSave: (id: string, name: string, description: string) => Promise<void>
   onDelete: (id: string) => Promise<void>
-}
-
-function FactorRow({ factor, onSave, onDelete }: FactorRowProps) {
+}) {
   const [name, setName] = useState(factor.name)
   const [description, setDescription] = useState(factor.description ?? "")
   const [saving, setSaving] = useState(false)
@@ -449,26 +422,26 @@ function FactorRow({ factor, onSave, onDelete }: FactorRowProps) {
   }
 
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+    <div className="card flex items-start gap-3 px-4 py-3">
       <div className="flex-1 space-y-2">
         <input
           value={name}
           onChange={e => setName(e.target.value)}
           onBlur={() => { if (dirty && name.trim()) handleSave() }}
           placeholder="Factor name"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
+          className="field w-full"
         />
         <input
           value={description}
           onChange={e => setDescription(e.target.value)}
           onBlur={() => { if (dirty) handleSave() }}
           placeholder="Description (optional)"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
+          className="field w-full"
         />
       </div>
-      {saving && <span className="mt-2 text-xs text-slate-400">Saving…</span>}
+      {saving && <span className="mt-2 text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Saving…</span>}
       <button type="button" onClick={handleDelete} disabled={deleting}
-        className="mt-1 rounded p-1 text-slate-300 hover:text-red-500 disabled:opacity-40 transition-colors">
+        className="mt-1 rounded p-1 disabled:opacity-40 transition-colors" style={{ color: "rgba(30,27,75,0.25)" }}>
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
         </svg>
@@ -478,19 +451,17 @@ function FactorRow({ factor, onSave, onDelete }: FactorRowProps) {
 }
 
 // ---------------------------------------------------------------------------
-// Scoring algorithm form (one per factor)
+// Scoring algorithm form
 // ---------------------------------------------------------------------------
 
-interface ScoringFormProps {
+const DEFAULT_COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
+
+function ScoringAlgorithmForm({ surveyId, factor, existing, onSaved }: {
   surveyId: string
   factor: SurveyFactor
   existing: ScoringAlgorithm | null
   onSaved: (algo: ScoringAlgorithm) => void
-}
-
-const DEFAULT_COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
-
-function ScoringAlgorithmForm({ surveyId, factor, existing, onSaved }: ScoringFormProps) {
+}) {
   const [minPossible, setMinPossible] = useState(existing?.min_possible ?? 1)
   const [maxPossible, setMaxPossible] = useState(existing?.max_possible ?? 5)
   const [normMin, setNormMin] = useState(existing?.normalized_min ?? 0)
@@ -503,9 +474,7 @@ function ScoringAlgorithmForm({ surveyId, factor, existing, onSaved }: ScoringFo
     const color = DEFAULT_COLORS[labels.length % DEFAULT_COLORS.length]
     setLabels(prev => [...prev, { threshold: 0, label: "", color }])
   }
-  function removeLabel(i: number) {
-    setLabels(prev => prev.filter((_, idx) => idx !== i))
-  }
+  function removeLabel(i: number) { setLabels(prev => prev.filter((_, idx) => idx !== i)) }
   function updateLabel(i: number, patch: Partial<LabelThreshold>) {
     setLabels(prev => prev.map((l, idx) => idx === i ? { ...l, ...patch } : l))
   }
@@ -514,17 +483,8 @@ function ScoringAlgorithmForm({ surveyId, factor, existing, onSaved }: ScoringFo
     if (maxPossible <= minPossible) { setErr("Max must be greater than min."); return }
     setErr(null); setSaving(true)
     try {
-      const payload = {
-        factor_id: factor.id,
-        min_possible: minPossible,
-        max_possible: maxPossible,
-        normalized_min: normMin,
-        normalized_max: normMax,
-        labels: labels.length > 0 ? labels : null,
-      }
-      const algo = existing
-        ? await updateAlgorithm(surveyId, existing.id, payload)
-        : await createAlgorithm(surveyId, payload)
+      const payload = { factor_id: factor.id, min_possible: minPossible, max_possible: maxPossible, normalized_min: normMin, normalized_max: normMax, labels: labels.length > 0 ? labels : null }
+      const algo = existing ? await updateAlgorithm(surveyId, existing.id, payload) : await createAlgorithm(surveyId, payload)
       onSaved(algo)
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
@@ -533,109 +493,65 @@ function ScoringAlgorithmForm({ surveyId, factor, existing, onSaved }: ScoringFo
     }
   }
 
-  // Live preview: normalize 0% to 100% of raw range and show label segments
   const sortedLabels = [...labels].sort((a, b) => a.threshold - b.threshold)
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
-      <h3 className="text-sm font-semibold text-slate-700">{factor.name}</h3>
+    <div className="card p-5 space-y-4">
+      <h3 className="section-heading">{factor.name}</h3>
 
-      {/* Raw score range */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Min possible score
-          </label>
-          <input
-            type="number"
-            value={minPossible}
-            step="0.1"
-            onChange={e => setMinPossible(parseFloat(e.target.value) || 0)}
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
-          />
+          <label className="label-caps mb-1.5 block">Min possible score</label>
+          <input type="number" value={minPossible} step="0.1"
+            onChange={e => setMinPossible(parseFloat(e.target.value) || 0)} className="field w-full" />
         </div>
         <div>
-          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Max possible score
-          </label>
-          <input
-            type="number"
-            value={maxPossible}
-            step="0.1"
-            onChange={e => setMaxPossible(parseFloat(e.target.value) || 0)}
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
-          />
+          <label className="label-caps mb-1.5 block">Max possible score</label>
+          <input type="number" value={maxPossible} step="0.1"
+            onChange={e => setMaxPossible(parseFloat(e.target.value) || 0)} className="field w-full" />
         </div>
       </div>
 
-      {/* Normalized scale */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Normalized min
-          </label>
-          <input
-            type="number"
-            value={normMin}
-            step="1"
-            onChange={e => setNormMin(parseFloat(e.target.value) || 0)}
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
-          />
+          <label className="label-caps mb-1.5 block">Normalized min</label>
+          <input type="number" value={normMin} step="1"
+            onChange={e => setNormMin(parseFloat(e.target.value) || 0)} className="field w-full" />
         </div>
         <div>
-          <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Normalized max
-          </label>
-          <input
-            type="number"
-            value={normMax}
-            step="1"
-            onChange={e => setNormMax(parseFloat(e.target.value) || 0)}
-            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
-          />
+          <label className="label-caps mb-1.5 block">Normalized max</label>
+          <input type="number" value={normMax} step="1"
+            onChange={e => setNormMax(parseFloat(e.target.value) || 0)} className="field w-full" />
         </div>
       </div>
 
-      {/* Label thresholds */}
       <div>
-        <label className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-          Label thresholds (on normalized scale)
-        </label>
+        <label className="label-caps mb-2 block">Label thresholds (on normalized scale)</label>
         {labels.length === 0 && (
-          <p className="text-xs text-slate-400 mb-2">No labels defined. Scores will be shown as numbers only.</p>
+          <p className="text-xs mb-2" style={{ color: "rgba(30,27,75,0.4)" }}>No labels defined. Scores will be shown as numbers only.</p>
         )}
         <div className="space-y-2">
           {labels.map((l, i) => (
             <div key={i} className="flex items-center gap-2">
               <div className="flex items-center gap-1">
-                <span className="text-[10px] text-slate-400 w-14">Threshold</span>
-                <input
-                  type="number"
-                  value={l.threshold}
-                  min={normMin}
-                  max={normMax}
-                  step="1"
+                <span className="text-[10px] w-14" style={{ color: "rgba(30,27,75,0.4)" }}>Threshold</span>
+                <input type="number" value={l.threshold} min={normMin} max={normMax} step="1"
                   onChange={e => updateLabel(i, { threshold: parseFloat(e.target.value) || 0 })}
-                  className="w-16 rounded border border-slate-200 bg-slate-50 px-1.5 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                  className="w-16 rounded-lg border px-1.5 py-1 text-xs focus:outline-none"
+                  style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
                 />
               </div>
-              <input
-                value={l.label}
-                onChange={e => updateLabel(i, { label: e.target.value })}
+              <input value={l.label} onChange={e => updateLabel(i, { label: e.target.value })}
                 placeholder="Label"
-                className="flex-1 rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                className="flex-1 rounded-lg border px-2 py-1 text-xs focus:outline-none"
+                style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
               />
-              <div className="flex items-center gap-1">
-                <input
-                  type="color"
-                  value={l.color}
-                  onChange={e => updateLabel(i, { color: e.target.value })}
-                  className="h-6 w-8 cursor-pointer rounded border border-slate-200 p-0.5"
-                  title="Label color"
-                />
-              </div>
-              <button type="button" onClick={() => removeLabel(i)}
-                className="text-slate-300 hover:text-red-400 transition-colors">
+              <input type="color" value={l.color} onChange={e => updateLabel(i, { color: e.target.value })}
+                className="h-6 w-8 cursor-pointer rounded border p-0.5"
+                style={{ borderColor: "rgba(255,255,255,0.6)" }}
+                title="Label color"
+              />
+              <button type="button" onClick={() => removeLabel(i)} className="transition-colors" style={{ color: "rgba(30,27,75,0.2)" }}>
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -644,7 +560,7 @@ function ScoringAlgorithmForm({ surveyId, factor, existing, onSaved }: ScoringFo
           ))}
         </div>
         <button type="button" onClick={addLabel}
-          className="mt-2 flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 transition-colors">
+          className="mt-2 flex items-center gap-1 text-xs font-semibold transition-colors" style={{ color: "#5b21b6" }}>
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
@@ -652,72 +568,40 @@ function ScoringAlgorithmForm({ surveyId, factor, existing, onSaved }: ScoringFo
         </button>
       </div>
 
-      {/* Live preview */}
       {labels.length > 0 && (
         <div>
-          <label className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-            Preview
-          </label>
-          <div className="relative h-8 w-full overflow-hidden rounded-lg bg-slate-100">
+          <label className="label-caps mb-2 block">Preview</label>
+          <div className="relative h-8 w-full overflow-hidden rounded-lg" style={{ background: "rgba(91,33,182,0.08)" }}>
             {sortedLabels.map((l, i) => {
               const next = sortedLabels[i + 1]
               const start = ((l.threshold - normMin) / (normMax - normMin)) * 100
               const end = next ? ((next.threshold - normMin) / (normMax - normMin)) * 100 : 100
               const width = Math.max(0, end - start)
               return (
-                <div
-                  key={i}
-                  style={{
-                    position: "absolute",
-                    left: `${start}%`,
-                    width: `${width}%`,
-                    height: "100%",
-                    backgroundColor: l.color,
-                    opacity: 0.85,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <span className="text-[10px] font-semibold text-white drop-shadow truncate px-1">{l.label}</span>
+                <div key={i} style={{ position: "absolute", left: `${start}%`, width: `${width}%`, height: "100%", backgroundColor: l.color, opacity: 0.85, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span className="text-[10px] font-bold text-white drop-shadow truncate px-1">{l.label}</span>
                 </div>
               )
             })}
-            {/* Below-all-thresholds zone */}
             {sortedLabels.length > 0 && sortedLabels[0].threshold > normMin && (
-              <div
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  width: `${((sortedLabels[0].threshold - normMin) / (normMax - normMin)) * 100}%`,
-                  height: "100%",
-                  backgroundColor: "#e2e8f0",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <span className="text-[10px] text-slate-400 truncate px-1">—</span>
+              <div style={{ position: "absolute", left: 0, width: `${((sortedLabels[0].threshold - normMin) / (normMax - normMin)) * 100}%`, height: "100%", background: "rgba(30,27,75,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span className="text-[10px] truncate px-1" style={{ color: "rgba(30,27,75,0.3)" }}>—</span>
               </div>
             )}
           </div>
-          <div className="mt-1 flex justify-between text-[10px] text-slate-400">
-            <span>{normMin}</span>
-            <span>{normMax}</span>
+          <div className="mt-1 flex justify-between text-[10px]" style={{ color: "rgba(30,27,75,0.35)" }}>
+            <span>{normMin}</span><span>{normMax}</span>
           </div>
         </div>
       )}
 
-      {err && <p className="text-xs text-red-600">{err}</p>}
+      {err && <p className="text-xs" style={{ color: "#dc2626" }}>{err}</p>}
 
-      <button type="button" onClick={handleSave} disabled={saving}
-        className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50">
+      <button type="button" onClick={handleSave} disabled={saving} className="btn-primary text-xs px-4 py-1.5 disabled:opacity-50">
         {saving ? "Saving…" : existing ? "Update algorithm" : "Save algorithm"}
-        {!saving && (
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        )}
+        {!saving && <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>}
       </button>
     </div>
   )
@@ -739,19 +623,16 @@ export default function EditSurveyPage() {
   const [factors, setFactors] = useState<SurveyFactor[]>([])
   const [algorithms, setAlgorithms] = useState<ScoringAlgorithm[]>([])
   const [activeTab, setActiveTab] = useState<"questions" | "factors" | "scoring">("questions")
-
   const [loadError, setLoadError] = useState<string | null>(null)
   const [loadingData, setLoadingData] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  // Drag state
   const dragId = useRef<string | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
 
   const factorNames = factors.map(f => f.name)
 
-  // Load survey + factors + algorithms on mount
   useEffect(() => {
     Promise.all([getSurvey(id), getFactors(id), getAlgorithms(id)])
       .then(([survey, loadedFactors, loadedAlgos]) => {
@@ -768,44 +649,30 @@ export default function EditSurveyPage() {
       .finally(() => setLoadingData(false))
   }, [id])
 
-  // ── Factor operations (immediate API sync) ────────────────────────────────
-
   async function handleAddFactor() {
     const f = await createFactor(id, { name: "New factor", description: null })
     setFactors(prev => [...prev, f])
   }
-
   async function handleSaveFactor(factorId: string, name: string, desc: string) {
     const updated = await updateFactor(id, factorId, { name, description: desc || null })
     setFactors(prev => prev.map(f => f.id === factorId ? updated : f))
   }
-
   async function handleDeleteFactor(factorId: string) {
     await deleteFactor(id, factorId)
     setFactors(prev => prev.filter(f => f.id !== factorId))
   }
-
   async function handleCreateFactorInline(name: string) {
     const f = await createFactor(id, { name, description: null })
     setFactors(prev => [...prev, f])
   }
 
-  // ── Question operations ───────────────────────────────────────────────────
-
-  function addNewQuestion(type: QuestionType) {
-    setQuestions(prev => [...prev, newDraft(prev.length + 1, type)])
-  }
-
+  function addNewQuestion(type: QuestionType) { setQuestions(prev => [...prev, newDraft(prev.length + 1, type)]) }
   function onChange(localId: string, patch: Partial<EditDraft>) {
     setQuestions(prev => prev.map(q => q.localId === localId ? { ...q, ...patch } : q))
   }
-
   function onDelete(localId: string) {
-    setQuestions(prev =>
-      prev.filter(q => q.localId !== localId).map((q, i) => ({ ...q, position: i + 1 }))
-    )
+    setQuestions(prev => prev.filter(q => q.localId !== localId).map((q, i) => ({ ...q, position: i + 1 })))
   }
-
   function onMoveUp(localId: string) {
     setQuestions(prev => {
       const idx = prev.findIndex(q => q.localId === localId)
@@ -815,7 +682,6 @@ export default function EditSurveyPage() {
       return next.map((q, i) => ({ ...q, position: i + 1 }))
     })
   }
-
   function onMoveDown(localId: string) {
     setQuestions(prev => {
       const idx = prev.findIndex(q => q.localId === localId)
@@ -825,14 +691,8 @@ export default function EditSurveyPage() {
       return next.map((q, i) => ({ ...q, position: i + 1 }))
     })
   }
-
-  function handleDragStart(e: React.DragEvent, localId: string) {
-    dragId.current = localId
-    e.dataTransfer.effectAllowed = "move"
-  }
-  function handleDragOver(e: React.DragEvent, localId: string) {
-    e.preventDefault(); setDragOverId(localId)
-  }
+  function handleDragStart(e: React.DragEvent, localId: string) { dragId.current = localId; e.dataTransfer.effectAllowed = "move" }
+  function handleDragOver(e: React.DragEvent, localId: string) { e.preventDefault(); setDragOverId(localId) }
   function handleDrop(e: React.DragEvent, targetId: string) {
     e.preventDefault(); setDragOverId(null)
     const fromId = dragId.current
@@ -854,10 +714,7 @@ export default function EditSurveyPage() {
     const hasNonZero = q.option_scores.some(s => s !== 0)
     if (!hasNonZero) return null
     const map: Record<string, number> = {}
-    q.options.forEach((opt, i) => {
-      const key = opt.trim()
-      if (key) map[key] = q.option_scores[i] ?? 0
-    })
+    q.options.forEach((opt, i) => { const key = opt.trim(); if (key) map[key] = q.option_scores[i] ?? 0 })
     return Object.keys(map).length ? map : null
   }
 
@@ -874,44 +731,24 @@ export default function EditSurveyPage() {
       demographic_key: q.is_demographic ? (q.demographic_key.trim() || null) : null,
     }
     if (q.question_type === "forced_choice") {
-      return {
-        ...base,
-        forced_choice_config: {
-          items: q.options.map(o => o.trim()).filter(Boolean),
-          labels: q.forced_choice_labels,
-        },
-      }
+      return { ...base, forced_choice_config: { items: q.options.map(o => o.trim()).filter(Boolean), labels: q.forced_choice_labels } }
     }
-    return {
-      ...base,
-      options: NEEDS_OPTIONS.includes(q.question_type)
-        ? q.options.map(o => o.trim()).filter(Boolean)
-        : null,
-    }
+    return { ...base, options: NEEDS_OPTIONS.includes(q.question_type) ? q.options.map(o => o.trim()).filter(Boolean) : null }
   }
 
   async function handleSave() {
     if (!title.trim()) { setSaveError("Survey title is required."); return }
     setSaveError(null); setSaving(true)
     try {
-      // 1. Update survey metadata
       await updateSurvey(id, { name: title.trim(), description: description.trim() || null, status })
-
-      // 2. Delete removed questions
       const currentServerIds = new Set(questions.filter(q => q.serverId).map(q => q.serverId!))
       const toDelete = Array.from(originalServerIds).filter(sid => !currentServerIds.has(sid))
       await Promise.all(toDelete.map(sid => deleteQuestion(sid)))
-
-      // 3. Update or create questions sequentially to preserve order
       for (const q of questions) {
         const payload = buildQuestionPayload(q)
-        if (q.serverId) {
-          await updateQuestion(q.serverId, payload)
-        } else {
-          await addQuestion(id, payload)
-        }
+        if (q.serverId) { await updateQuestion(q.serverId, payload) }
+        else { await addQuestion(id, payload) }
       }
-
       router.push(`/surveys/${id}/results`)
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : String(e))
@@ -924,7 +761,7 @@ export default function EditSurveyPage() {
     return (
       <div className="flex min-h-screen flex-col">
         <Header backHref="/surveys" backLabel="Surveys" />
-        <main className="flex flex-1 items-center justify-center py-20 text-sm text-slate-400">
+        <main className="flex flex-1 items-center justify-center py-20 text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
           Loading survey…
         </main>
       </div>
@@ -936,7 +773,7 @@ export default function EditSurveyPage() {
       <div className="flex min-h-screen flex-col">
         <Header backHref="/surveys" backLabel="Surveys" />
         <main className="flex flex-1 items-center justify-center py-20">
-          <p className="text-sm text-red-600">{loadError}</p>
+          <p className="text-sm" style={{ color: "#dc2626" }}>{loadError}</p>
         </main>
       </div>
     )
@@ -948,38 +785,37 @@ export default function EditSurveyPage() {
       <main className="flex-1 px-6 py-10">
         <div className="mx-auto max-w-2xl space-y-6">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Edit Survey</h1>
-            <p className="mt-1 text-sm text-slate-500">Changes are saved when you click Save.</p>
+            <h1 className="page-title">Edit Survey</h1>
+            <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>Changes are saved when you click Save.</p>
           </div>
 
           {/* Metadata */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+          <div className="card p-5 space-y-4">
             <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Title <span className="text-red-500">*</span>
-              </label>
+              <label className="label-caps mb-1.5 block">Title <span style={{ color: "#dc2626" }}>*</span></label>
               <input value={title} onChange={e => setTitle(e.target.value)}
-                placeholder="e.g. Job Satisfaction Survey"
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition" />
+                placeholder="e.g. Job Satisfaction Survey" className="field w-full" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Description <span className="text-slate-400 font-normal normal-case">(optional)</span>
+              <label className="label-caps mb-1.5 block">
+                Description <span className="normal-case font-normal" style={{ color: "rgba(30,27,75,0.35)" }}>(optional)</span>
               </label>
               <textarea value={description} onChange={e => setDescription(e.target.value)}
                 placeholder="Briefly describe the purpose of this survey…" rows={2}
-                className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition" />
+                className="field w-full resize-none" />
             </div>
             <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-slate-500">Status</label>
-              <div className="flex gap-3">
+              <label className="label-caps mb-2 block">Status</label>
+              <div className="flex gap-2">
                 {(["draft", "published"] as SurveyStatus[]).map(s => (
                   <button key={s} type="button" onClick={() => setStatus(s)}
-                    className={`rounded-full px-4 py-1 text-xs font-semibold transition-colors capitalize ${
-                      status === s
-                        ? s === "published" ? "bg-emerald-600 text-white" : "bg-slate-700 text-white"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}>
+                    className="rounded-full px-4 py-1 text-xs font-semibold transition-all capitalize"
+                    style={status === s
+                      ? s === "published"
+                        ? { background: "linear-gradient(135deg,#059669,#047857)", color: "white" }
+                        : { background: "rgba(30,27,75,0.75)", color: "white" }
+                      : { background: "rgba(30,27,75,0.08)", color: "rgba(30,27,75,0.6)" }
+                    }>
                     {s}
                   </button>
                 ))}
@@ -988,22 +824,14 @@ export default function EditSurveyPage() {
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+          <div className="tab-bar">
             {([
               ["questions", `Questions (${questions.length})`],
               ["factors", `Factors (${factors.length})`],
               ["scoring", "Scoring"],
             ] as const).map(([tab, label]) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setActiveTab(tab)}
-                className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition-colors ${
-                  activeTab === tab
-                    ? "bg-white text-slate-800 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
-                }`}
-              >
+              <button key={tab} type="button" onClick={() => setActiveTab(tab)}
+                className={`tab flex-1 ${activeTab === tab ? "active" : ""}`}>
                 {label}
               </button>
             ))}
@@ -1012,9 +840,7 @@ export default function EditSurveyPage() {
           {/* Questions tab */}
           {activeTab === "questions" && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-slate-400">Drag ⠿ to reorder</p>
-              </div>
+              <p className="text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>Drag ⠿ to reorder</p>
 
               {questions.map((q, index) => (
                 <div key={q.localId}
@@ -1023,9 +849,9 @@ export default function EditSurveyPage() {
                   onDragOver={e => handleDragOver(e, q.localId)}
                   onDrop={e => handleDrop(e, q.localId)}
                   onDragEnd={handleDragEnd}
-                  className={`rounded-xl transition-all ${
+                  className={`rounded-[14px] transition-all ${
                     dragOverId === q.localId && dragId.current !== q.localId
-                      ? "ring-2 ring-indigo-400 ring-offset-1" : ""
+                      ? "ring-2 ring-violet-400 ring-offset-1" : ""
                   } ${dragId.current === q.localId ? "opacity-50" : ""}`}
                 >
                   <QuestionCard
@@ -1037,13 +863,15 @@ export default function EditSurveyPage() {
                 </div>
               ))}
 
-              {/* Add question palette */}
-              <div className="rounded-xl border-2 border-dashed border-slate-200 p-4">
-                <p className="mb-3 text-center text-xs font-medium text-slate-400">Add question</p>
+              <div
+                className="rounded-[14px] p-4"
+                style={{ background: "rgba(255,255,255,0.25)", border: "1.5px dashed rgba(91,33,182,0.2)", backdropFilter: "blur(8px)" }}
+              >
+                <p className="mb-3 text-center text-xs font-semibold" style={{ color: "rgba(30,27,75,0.4)" }}>Add question</p>
                 <div className="flex flex-wrap justify-center gap-2">
                   {QUESTION_TYPES.map(t => (
                     <button key={t.value} type="button" onClick={() => addNewQuestion(t.value)}
-                      className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700">
+                      className="btn-ghost flex items-center gap-1.5 px-3 py-1.5 text-xs">
                       <span>{t.icon}</span>{t.label}
                     </button>
                   ))}
@@ -1055,28 +883,27 @@ export default function EditSurveyPage() {
           {/* Factors tab */}
           {activeTab === "factors" && (
             <div className="space-y-3">
-              <p className="text-xs text-slate-500">
+              <p className="text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>
                 Define the factors (subscales) of your instrument. Changes are saved immediately.
               </p>
 
               {factors.length === 0 && (
-                <div className="rounded-xl border-2 border-dashed border-slate-200 px-5 py-8 text-center">
-                  <p className="text-sm text-slate-400">No factors defined yet.</p>
-                  <p className="mt-1 text-xs text-slate-400">Add a factor below, or create one inline from any question card.</p>
+                <div
+                  className="rounded-[14px] px-5 py-8 text-center"
+                  style={{ background: "rgba(255,255,255,0.25)", border: "1.5px dashed rgba(91,33,182,0.2)", backdropFilter: "blur(8px)" }}
+                >
+                  <p className="text-sm" style={{ color: "rgba(30,27,75,0.45)" }}>No factors defined yet.</p>
+                  <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>Add a factor below, or create one inline from any question card.</p>
                 </div>
               )}
 
               {factors.map(f => (
-                <FactorRow
-                  key={f.id}
-                  factor={f}
-                  onSave={handleSaveFactor}
-                  onDelete={handleDeleteFactor}
-                />
+                <FactorRow key={f.id} factor={f} onSave={handleSaveFactor} onDelete={handleDeleteFactor} />
               ))}
 
               <button type="button" onClick={handleAddFactor}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 py-3 text-xs font-medium text-slate-500 transition hover:border-indigo-300 hover:text-indigo-600">
+                className="flex w-full items-center justify-center gap-2 rounded-[14px] py-3 text-xs font-semibold transition-all"
+                style={{ background: "rgba(255,255,255,0.25)", border: "1.5px dashed rgba(91,33,182,0.2)", color: "rgba(30,27,75,0.5)", backdropFilter: "blur(8px)" }}>
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
@@ -1088,15 +915,16 @@ export default function EditSurveyPage() {
           {/* Scoring tab */}
           {activeTab === "scoring" && (
             <div className="space-y-4">
-              <p className="text-xs text-slate-500">
+              <p className="text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>
                 Configure how each factor&apos;s raw mean score is normalized and mapped to interpretable labels.
               </p>
               {factors.length === 0 ? (
-                <div className="rounded-xl border-2 border-dashed border-slate-200 px-5 py-8 text-center">
-                  <p className="text-sm text-slate-400">No factors defined yet.</p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    Add factors in the Factors tab first, then configure scoring here.
-                  </p>
+                <div
+                  className="rounded-[14px] px-5 py-8 text-center"
+                  style={{ background: "rgba(255,255,255,0.25)", border: "1.5px dashed rgba(91,33,182,0.2)", backdropFilter: "blur(8px)" }}
+                >
+                  <p className="text-sm" style={{ color: "rgba(30,27,75,0.45)" }}>No factors defined yet.</p>
+                  <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>Add factors in the Factors tab first.</p>
                 </div>
               ) : (
                 factors.map(factor => {
@@ -1107,12 +935,7 @@ export default function EditSurveyPage() {
                       surveyId={id}
                       factor={factor}
                       existing={existing}
-                      onSaved={algo =>
-                        setAlgorithms(prev => {
-                          const without = prev.filter(a => a.id !== algo.id)
-                          return [...without, algo]
-                        })
-                      }
+                      onSaved={algo => setAlgorithms(prev => [...prev.filter(a => a.id !== algo.id), algo])}
                     />
                   )
                 })
@@ -1120,24 +943,21 @@ export default function EditSurveyPage() {
             </div>
           )}
 
-          {saveError && (
-            <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">{saveError}</p>
-          )}
+          {saveError && <div className="alert-error">{saveError}</div>}
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
-            <button type="button" onClick={() => router.back()} disabled={saving}
-              className="rounded-lg border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50">
+          <div
+            className="flex items-center justify-end gap-3 pt-4"
+            style={{ borderTop: "0.5px solid rgba(255,255,255,0.35)" }}
+          >
+            <button type="button" onClick={() => router.back()} disabled={saving} className="btn-ghost disabled:opacity-50">
               Cancel
             </button>
-            <button type="button" onClick={handleSave} disabled={saving}
-              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50">
+            <button type="button" onClick={handleSave} disabled={saving} className="btn-primary disabled:opacity-50">
               {saving ? "Saving…" : "Save changes"}
-              {!saving && (
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              )}
+              {!saving && <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>}
             </button>
           </div>
         </div>

@@ -2,17 +2,19 @@ import Link from "next/link"
 
 export default function ForbiddenPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-6">
-      <div className="text-center">
-        <p className="text-6xl font-black text-slate-200">403</p>
-        <h1 className="mt-2 text-xl font-bold text-slate-800">Access restricted</h1>
-        <p className="mt-2 text-sm text-slate-500">
+    <div className="flex min-h-screen flex-col items-center justify-center px-6">
+      <div className="card p-12 text-center max-w-sm w-full">
+        <p
+          className="font-playfair text-7xl font-black"
+          style={{ color: "rgba(91,33,182,0.15)" }}
+        >
+          403
+        </p>
+        <h1 className="section-heading mt-2">Access restricted</h1>
+        <p className="mt-2 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
           This section requires admin access. Contact your administrator if you need access.
         </p>
-        <Link
-          href="/surveys"
-          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition-colors"
-        >
+        <Link href="/surveys" className="btn-primary mt-6 inline-flex">
           Go to Assessments
         </Link>
       </div>

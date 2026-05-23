@@ -8,6 +8,8 @@ from sqlalchemy.orm import selectinload
 from ..core.auth import AuthUser, require_user
 from ..core.database import get_db
 from ..models.library import (
+    Industry,
+    IndustryInstrumentMapping,
     Instrument,
     InstrumentCategory,
     InstrumentItem,
@@ -21,14 +23,24 @@ from ..models.survey import (
     UserRole,
 )
 from ..schemas.library import (
+    BatchDeployRequest,
+    BatchDeployResponse,
     DeployRequest,
     DeployResponse,
+    IndustryDetailOut,
+    IndustryInstrumentOut,
+    IndustryOut,
     InstrumentCreate,
     InstrumentItemCreate,
     InstrumentOut,
     LibraryGrouped,
 )
-from ..services.library import build_library_grouped, build_survey_spec, psychometric_warning
+from ..services.library import (
+    build_batch_survey_spec,
+    build_library_grouped,
+    build_survey_spec,
+    psychometric_warning,
+)
 
 library_router = APIRouter(prefix="/library", tags=["library"])
 
@@ -244,6 +256,98 @@ async def deploy_instrument(
 
 
 # ---------------------------------------------------------------------------
+# POST /library/batch-deploy — create one survey from multiple instruments
+# ---------------------------------------------------------------------------
+
+
+@library_router.post(
+    "/batch-deploy",
+    response_model=BatchDeployResponse,
+    status_code=201,
+)
+async def batch_deploy(
+    body: BatchDeployRequest,
+    current_user: AuthUser = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+) -> BatchDeployResponse:
+    if not body.instrument_ids:
+        from fastapi import HTTPException as _HTTPException
+        raise _HTTPException(status_code=422, detail="instrument_ids must not be empty.")
+
+    # Load all instruments (with relationships) in the requested order
+    instruments: list[Instrument] = []
+    for iid in body.instrument_ids:
+        instruments.append(await _get_instrument_or_404(iid, db))
+
+    spec = build_batch_survey_spec(instruments, survey_title=body.survey_title)
+
+    # Create Survey
+    survey = Survey(
+        name=spec["survey_name"],
+        description=spec["survey_description"],
+        status="draft",
+        user_id=current_user.user_id,
+    )
+    db.add(survey)
+    await db.flush()
+
+    factors_created = 0
+    total_items = 0
+
+    for factor_spec in spec["factors"]:
+        factor = SurveyFactor(
+            survey_id=survey.id,
+            name=factor_spec["name"],
+            description=factor_spec.get("description"),
+        )
+        db.add(factor)
+        await db.flush()
+        factors_created += 1
+
+        qtype = factor_spec.get("question_type", "likert_5")
+        for item_spec in factor_spec["items"]:
+            question = Question(
+                survey_id=survey.id,
+                text=item_spec["text"],
+                question_type=qtype,
+                position=item_spec["position"],
+                factor=factor_spec["name"],
+                reverse_scored=item_spec["reverse_scored"],
+                score_weight=1.0,
+            )
+            db.add(question)
+            total_items += 1
+
+        algo = ScoringAlgorithm(
+            survey_id=survey.id,
+            factor_id=factor.id,
+            min_possible=factor_spec["min_possible"],
+            max_possible=factor_spec["max_possible"],
+            normalized_min=0.0,
+            normalized_max=100.0,
+        )
+        db.add(algo)
+
+    # Record individual deployments for audit trail
+    for instrument in instruments:
+        deployment = LibraryDeployment(
+            user_id=current_user.user_id,
+            instrument_id=instrument.id,
+            survey_id=survey.id,
+        )
+        db.add(deployment)
+
+    await db.commit()
+
+    return BatchDeployResponse(
+        survey_id=survey.id,
+        instruments_deployed=len(instruments),
+        total_items=total_items,
+        factors_created=factors_created,
+    )
+
+
+# ---------------------------------------------------------------------------
 # POST /library/instruments — admin: create instrument
 # ---------------------------------------------------------------------------
 
@@ -333,3 +437,106 @@ async def add_instrument_items(
     instrument.total_items = len(existing_items) + len(items)
     await db.commit()
     return await _get_instrument_or_404(instrument_id, db)
+
+
+# ---------------------------------------------------------------------------
+# GET /library/industries — list all industries with instrument count
+# ---------------------------------------------------------------------------
+
+
+@library_router.get("/industries", response_model=list[IndustryOut])
+async def list_industries(
+    _: AuthUser = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[IndustryOut]:
+    stmt = select(Industry).options(selectinload(Industry.instrument_mappings)).order_by(Industry.order_index)
+    industries = list((await db.execute(stmt)).scalars().all())
+    return [
+        IndustryOut(
+            id=ind.id,
+            name=ind.name,
+            slug=ind.slug,
+            description=ind.description,
+            keywords=ind.keywords,
+            icon_name=ind.icon_name,
+            color_hex=ind.color_hex,
+            order_index=ind.order_index,
+            instrument_count=len(ind.instrument_mappings),
+        )
+        for ind in industries
+    ]
+
+
+# ---------------------------------------------------------------------------
+# GET /library/industries/{slug} — industry detail with instruments
+# ---------------------------------------------------------------------------
+
+
+@library_router.get("/industries/{slug}", response_model=IndustryDetailOut)
+async def get_industry(
+    slug: str,
+    _: AuthUser = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+) -> IndustryDetailOut:
+    stmt = (
+        select(Industry)
+        .options(
+            selectinload(Industry.instrument_mappings).selectinload(
+                IndustryInstrumentMapping.instrument
+            ).selectinload(Instrument.subscales)
+        )
+        .where(Industry.slug == slug)
+    )
+    industry = (await db.execute(stmt)).scalar_one_or_none()
+    if industry is None:
+        raise HTTPException(status_code=404, detail="Industry not found.")
+
+    instruments_out = []
+    for mapping in sorted(industry.instrument_mappings, key=lambda m: -m.relevance_score):
+        inst = mapping.instrument
+        instruments_out.append(
+            IndustryInstrumentOut(
+                id=inst.id,
+                name=inst.name,
+                short_name=inst.short_name,
+                description=inst.description,
+                construct_measured=inst.construct_measured,
+                total_items=inst.total_items,
+                estimated_minutes=inst.estimated_minutes,
+                scoring_type=inst.scoring_type,
+                response_format=inst.response_format,
+                reliability_alpha=inst.reliability_alpha,
+                license_type=inst.license_type,
+                is_proprietary=inst.is_proprietary,
+                relevance_score=mapping.relevance_score,
+                use_case_note=mapping.use_case_note,
+                subscale_count=len(inst.subscales),
+            )
+        )
+
+    return IndustryDetailOut(
+        id=industry.id,
+        name=industry.name,
+        slug=industry.slug,
+        description=industry.description,
+        keywords=industry.keywords,
+        icon_name=industry.icon_name,
+        color_hex=industry.color_hex,
+        order_index=industry.order_index,
+        instruments=instruments_out,
+    )
+
+
+# ---------------------------------------------------------------------------
+# GET /library/industries/{slug}/instruments — instruments list for an industry
+# ---------------------------------------------------------------------------
+
+
+@library_router.get("/industries/{slug}/instruments", response_model=list[IndustryInstrumentOut])
+async def list_industry_instruments(
+    slug: str,
+    _: AuthUser = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[IndustryInstrumentOut]:
+    detail = await get_industry(slug, _, db)
+    return detail.instruments

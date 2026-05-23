@@ -144,6 +144,18 @@ class DeployResponse(BaseModel):
     factors_created: int
 
 
+class BatchDeployRequest(BaseModel):
+    instrument_ids: list[str]
+    survey_title: str | None = None
+
+
+class BatchDeployResponse(BaseModel):
+    survey_id: str
+    instruments_deployed: int
+    total_items: int
+    factors_created: int
+
+
 # ---------------------------------------------------------------------------
 # Admin — create instrument
 # ---------------------------------------------------------------------------
@@ -176,3 +188,50 @@ class InstrumentItemCreate(BaseModel):
     is_reverse_scored: bool = False
     scoring_key: str | None = None
     subscale_id: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Industry library schemas
+# ---------------------------------------------------------------------------
+
+
+class IndustryOut(BaseModel):
+    id: str
+    name: str
+    slug: str
+    description: str | None
+    keywords: str | None  # JSON array
+    icon_name: str | None
+    color_hex: str | None
+    order_index: int
+    instrument_count: int
+
+
+class IndustryInstrumentOut(BaseModel):
+    id: str
+    name: str
+    short_name: str
+    description: str | None
+    construct_measured: str | None
+    total_items: int
+    estimated_minutes: int | None
+    scoring_type: str
+    response_format: str
+    reliability_alpha: float | None
+    license_type: str
+    is_proprietary: bool
+    relevance_score: int
+    use_case_note: str | None
+    subscale_count: int
+
+
+class IndustryDetailOut(BaseModel):
+    id: str
+    name: str
+    slug: str
+    description: str | None
+    keywords: str | None
+    icon_name: str | None
+    color_hex: str | None
+    order_index: int
+    instruments: list[IndustryInstrumentOut]

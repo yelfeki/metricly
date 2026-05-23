@@ -5,6 +5,13 @@ import { NextResponse, type NextRequest } from "next/server"
 const PUBLIC_SURVEY_PATTERN = /^\/surveys\/[^/]+\/respond(\/.*)?$/
 
 export async function middleware(request: NextRequest) {
+  // Skip for backend API proxy routes — they auth via Bearer token and the
+  // Supabase cookie handling here would consume the POST body before it's
+  // forwarded, causing 500s on any mutating request.
+  if (request.nextUrl.pathname.startsWith("/api/v1")) {
+    return NextResponse.next()
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -38,11 +45,22 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // ── Protected: anything under /surveys except the respond page ──────────
+  // ── Protected routes (login required) ───────────────────────────────────
   const isSurveysRoute = pathname.startsWith("/surveys")
   const isPublicSurveyRoute = PUBLIC_SURVEY_PATTERN.test(pathname)
+  const isSkillsExplorerRoute = pathname.startsWith("/skills-explorer")
+  const isCompetenciesRoute = pathname.startsWith("/competencies")
+  const isStrawManRoute = pathname.startsWith("/straw-man")
+  const isLibraryRoute = pathname.startsWith("/library")
 
-  if (isSurveysRoute && !isPublicSurveyRoute && !user) {
+  const isProtected =
+    (isSurveysRoute && !isPublicSurveyRoute) ||
+    isSkillsExplorerRoute ||
+    isCompetenciesRoute ||
+    isStrawManRoute ||
+    isLibraryRoute
+
+  if (isProtected && !user) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = "/login"
     loginUrl.searchParams.set("next", pathname)
@@ -63,8 +81,11 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all paths except Next.js internals and static files.
+     * Match all paths except Next.js internals, static files, and backend
+     * API proxy routes (/api/v1/*). Backend API routes handle their own auth
+     * via Bearer tokens — running the Supabase session middleware on them
+     * blocks POST/PUT requests before they reach the backend.
      */
-    "/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|api/v1|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }

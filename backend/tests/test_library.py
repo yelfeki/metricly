@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.services.library import (
+    build_batch_survey_spec,
     build_library_grouped,
     build_instrument_list_item,
     build_survey_spec,
@@ -323,3 +324,97 @@ class TestPsychometricWarning:
         # If alpha is low to start with, removing a few items is less alarming
         result = psychometric_warning(10, 9, 0.55)
         assert result is None  # below 0.7 threshold
+
+
+# ---------------------------------------------------------------------------
+# build_batch_survey_spec
+# ---------------------------------------------------------------------------
+
+
+class TestBuildBatchSurveySpec:
+    """Tests for the multi-instrument batch deployment spec builder."""
+
+    def _inst(self, short_name: str, n_items: int, response_format="likert5"):
+        inst = _make_instrument(short_name=short_name, response_format=response_format, total_items=n_items)
+        inst.items = [_make_item(i + 1, f"{short_name} Item {i+1}") for i in range(n_items)]
+        inst.subscales = []
+        return inst
+
+    def test_single_instrument_total_items(self):
+        """Single instrument: same total items as regular deploy."""
+        inst = self._inst("GSE", 10)
+        spec = build_batch_survey_spec([inst])
+        total = sum(len(f["items"]) for f in spec["factors"])
+        assert total == 10
+
+    def test_single_instrument_same_as_regular_deploy(self):
+        """Single instrument: factor count and item texts match build_survey_spec."""
+        inst = self._inst("PSS", 5)
+        batch_spec = build_batch_survey_spec([inst])
+        regular_spec = build_survey_spec(inst, inst.items, inst.subscales)
+
+        batch_texts = [it["text"] for f in batch_spec["factors"] for it in f["items"]]
+        regular_texts = [it["text"] for f in regular_spec["factors"] for it in f["items"]]
+        assert batch_texts == regular_texts
+
+    def test_two_instruments_total_items(self):
+        """Two instruments: total items is the sum of both."""
+        inst_a = self._inst("A", 5)
+        inst_b = self._inst("B", 7)
+        spec = build_batch_survey_spec([inst_a, inst_b])
+        total = sum(len(f["items"]) for f in spec["factors"])
+        assert total == 12
+
+    def test_preserves_instrument_order(self):
+        """Items from the first instrument appear before items from the second."""
+        inst_a = self._inst("First", 3)
+        inst_b = self._inst("Second", 3)
+        spec = build_batch_survey_spec([inst_a, inst_b])
+        all_texts = [it["text"] for f in spec["factors"] for it in f["items"]]
+        first_texts = [f"First Item {i}" for i in range(1, 4)]
+        second_texts = [f"Second Item {i}" for i in range(1, 4)]
+        assert all_texts[:3] == first_texts
+        assert all_texts[3:] == second_texts
+
+    def test_positions_are_sequential_across_instruments(self):
+        """Positions must be 1-based and contiguous across all instruments."""
+        inst_a = self._inst("A", 4)
+        inst_b = self._inst("B", 3)
+        spec = build_batch_survey_spec([inst_a, inst_b])
+        all_positions = [it["position"] for f in spec["factors"] for it in f["items"]]
+        assert all_positions == list(range(1, 8))
+
+    def test_factor_names_prefixed_for_multiple_instruments(self):
+        """With multiple instruments, factor names are prefixed with short_name."""
+        inst_a = self._inst("GSE", 3)
+        inst_b = self._inst("UWES", 3)
+        spec = build_batch_survey_spec([inst_a, inst_b])
+        names = [f["name"] for f in spec["factors"]]
+        assert any("GSE" in n for n in names)
+        assert any("UWES" in n for n in names)
+
+    def test_factor_names_not_prefixed_for_single_instrument(self):
+        """With a single instrument, factor names are unchanged."""
+        inst = self._inst("GSE", 3)
+        spec = build_batch_survey_spec([inst])
+        names = [f["name"] for f in spec["factors"]]
+        assert all("GSE" not in n for n in names)
+
+    def test_custom_survey_title_used(self):
+        inst = self._inst("X", 2)
+        spec = build_batch_survey_spec([inst], survey_title="My Custom Survey")
+        assert spec["survey_name"] == "My Custom Survey"
+
+    def test_default_survey_title_when_none(self):
+        inst = self._inst("X", 2)
+        spec = build_batch_survey_spec([inst])
+        assert spec["survey_name"] == "Custom Skills Assessment"
+
+    def test_question_type_per_factor(self):
+        """Each factor carries the question_type from its source instrument."""
+        inst5 = self._inst("L5", 3, response_format="likert5")
+        inst7 = self._inst("L7", 3, response_format="likert7")
+        spec = build_batch_survey_spec([inst5, inst7])
+        qtypes = [f["question_type"] for f in spec["factors"]]
+        assert "likert_5" in qtypes
+        assert "likert_7" in qtypes

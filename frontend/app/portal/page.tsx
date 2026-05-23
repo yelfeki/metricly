@@ -25,7 +25,7 @@ function MiniBar({
     score === null ? "rgba(91,33,182,0.2)"
     : benchmark === null ? "#5b21b6"
     : score >= benchmark + 10 ? "#059669"
-    : score >= benchmark ? "#2563eb"
+    : score >= benchmark ? "#3777A8"
     : score >= benchmark - 20 ? "#f59e0b"
     : "#ef4444"
 

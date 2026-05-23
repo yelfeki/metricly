@@ -1,12 +1,21 @@
 import type {
+  BatchDeployRequest,
+  ImportResult,
+  BatchDeployResponse,
   BenchmarkComparison,
   BenchmarkOut,
+  CompetencyDetail,
+  CompetencyFrameworkListItem,
+  CompetencyListItem,
   CronbachAlphaResponse,
   DashboardData,
   DeployResponse,
   FactorScoresResponse,
   GrowthProfile,
   GroupComparisonData,
+  IndustryDetailOut,
+  IndustryInstrumentOut,
+  IndustryOut,
   InstrumentCategoryOut,
   InterpretiveReportOut,
   InstrumentOut,
@@ -20,6 +29,9 @@ import type {
   RespondentsData,
   ResponseOut,
   ScoringAlgorithm,
+  SkillsChatMessage,
+  StrawManRequest,
+  StrawManResponse,
   SurveyFactor,
   SurveyInvite,
   SurveyListItem,
@@ -33,21 +45,63 @@ import type {
 export type { CronbachAlphaResponse }
 
 // ---------------------------------------------------------------------------
-// Auth token provider
-// Set once by AuthProvider; all fetch wrappers call it automatically.
+// Auth token provider + session refresher
+// Both are set once by AuthProvider on mount.
 // ---------------------------------------------------------------------------
 
 type TokenProvider = () => Promise<string | null>
 let _tokenProvider: TokenProvider | null = null
+let _sessionRefresher: TokenProvider | null = null
 
 export function setTokenProvider(provider: TokenProvider) {
   _tokenProvider = provider
 }
 
-async function authHeader(): Promise<Record<string, string>> {
-  if (!_tokenProvider) return {}
-  const token = await _tokenProvider()
-  return token ? { Authorization: `Bearer ${token}` } : {}
+/** Called by AuthProvider to register a function that forces a Supabase
+ *  token refresh. Used to recover from 401s without a page reload. */
+export function setSessionRefresher(refresher: TokenProvider) {
+  _sessionRefresher = refresher
+}
+
+async function getToken(): Promise<string | null> {
+  return _tokenProvider ? _tokenProvider() : null
+}
+
+// ---------------------------------------------------------------------------
+// Central fetch helper with automatic 401 → refresh → retry
+// ---------------------------------------------------------------------------
+
+async function apiFetch(
+  path: string,
+  init: RequestInit & { _auth?: boolean },
+): Promise<Response> {
+  const { _auth, ...fetchInit } = init
+  const auth = _auth !== false
+  const buildHeaders = async (token: string | null): Promise<Record<string, string>> => {
+    const base = (fetchInit.headers ?? {}) as Record<string, string>
+    return token ? { ...base, Authorization: `Bearer ${token}` } : base
+  }
+
+  let token = auth ? await getToken() : null
+  let res = await fetch(path, { ...fetchInit, headers: await buildHeaders(token) })
+
+  // On 401: refresh the session once and retry
+  if (res.status === 401 && auth && _sessionRefresher) {
+    token = await _sessionRefresher()
+    if (token) {
+      res = await fetch(path, { ...fetchInit, headers: await buildHeaders(token) })
+    }
+  }
+
+  return res
+}
+
+function throwOnError(res: Response, payload: Record<string, unknown>): never {
+  throw new Error(
+    typeof payload.detail === "string"
+      ? payload.detail
+      : `Request failed with status ${res.status}`
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -55,62 +109,35 @@ async function authHeader(): Promise<Record<string, string>> {
 // ---------------------------------------------------------------------------
 
 async function post<T>(path: string, body: unknown, auth = true): Promise<T> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" }
-  if (auth) Object.assign(headers, await authHeader())
-  const res = await fetch(path, {
+  const res = await apiFetch(path, {
     method: "POST",
-    headers,
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    _auth: auth,
   })
-  if (!res.ok) {
-    const payload = await res.json().catch(() => ({}))
-    throw new Error(
-      typeof payload.detail === "string"
-        ? payload.detail
-        : `Request failed with status ${res.status}`
-    )
-  }
+  if (!res.ok) throwOnError(res, await res.json().catch(() => ({})))
   return res.json() as Promise<T>
 }
 
 async function get<T>(path: string, auth = true): Promise<T> {
-  const headers: Record<string, string> = {}
-  if (auth) Object.assign(headers, await authHeader())
-  const res = await fetch(path, { cache: "no-store", headers })
-  if (!res.ok) {
-    const payload = await res.json().catch(() => ({}))
-    throw new Error(
-      typeof payload.detail === "string"
-        ? payload.detail
-        : `Request failed with status ${res.status}`
-    )
-  }
+  const res = await apiFetch(path, { cache: "no-store", _auth: auth })
+  if (!res.ok) throwOnError(res, await res.json().catch(() => ({})))
   return res.json() as Promise<T>
 }
 
 async function patch<T>(path: string, body: unknown, auth = true): Promise<T> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" }
-  if (auth) Object.assign(headers, await authHeader())
-  const res = await fetch(path, {
+  const res = await apiFetch(path, {
     method: "PATCH",
-    headers,
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    _auth: auth,
   })
-  if (!res.ok) {
-    const payload = await res.json().catch(() => ({}))
-    throw new Error(
-      typeof payload.detail === "string"
-        ? payload.detail
-        : `Request failed with status ${res.status}`
-    )
-  }
+  if (!res.ok) throwOnError(res, await res.json().catch(() => ({})))
   return res.json() as Promise<T>
 }
 
 async function del(path: string, auth = true): Promise<void> {
-  const headers: Record<string, string> = {}
-  if (auth) Object.assign(headers, await authHeader())
-  const res = await fetch(path, { method: "DELETE", headers })
+  const res = await apiFetch(path, { method: "DELETE", _auth: auth })
   if (!res.ok && res.status !== 204) {
     throw new Error(`Request failed with status ${res.status}`)
   }
@@ -555,3 +582,111 @@ export const getInterpretiveReport = (
   responseId: string
 ): Promise<InterpretiveReportOut> =>
   get(`/api/v1/surveys/${surveyId}/responses/${responseId}/interpretive-report`)
+
+// ---------------------------------------------------------------------------
+// Skills Explorer
+// ---------------------------------------------------------------------------
+
+export const chatSkillsExplorer = (
+  messages: SkillsChatMessage[]
+): Promise<{ content: string }> =>
+  post(`/api/v1/skills-explorer/chat`, { messages })
+
+export const batchDeploy = (
+  body: BatchDeployRequest
+): Promise<BatchDeployResponse> =>
+  post(`/api/v1/library/batch-deploy`, body)
+
+export const requestAssessment = (
+  skill_name: string,
+  context?: string,
+  requester_email?: string,
+): Promise<{ success: boolean; id: string }> =>
+  post(`/api/v1/skills-explorer/request-assessment`, {
+    skill_name,
+    context,
+    requester_email,
+  })
+
+// ---------------------------------------------------------------------------
+// Competency Framework Database
+// ---------------------------------------------------------------------------
+
+export const getCompetencyFrameworks = (): Promise<CompetencyFrameworkListItem[]> =>
+  get(`/api/v1/competencies/frameworks`)
+
+export const getCompetencies = (params?: {
+  framework_id?: string
+  factor?: string
+  cluster?: string
+  category?: string
+  is_leadership?: boolean
+}): Promise<CompetencyListItem[]> => {
+  const qs = new URLSearchParams()
+  if (params?.framework_id) qs.set("framework_id", params.framework_id)
+  if (params?.factor) qs.set("factor", params.factor)
+  if (params?.cluster) qs.set("cluster", params.cluster)
+  if (params?.category) qs.set("category", params.category)
+  if (params?.is_leadership !== undefined) qs.set("is_leadership", String(params.is_leadership))
+  const query = qs.toString()
+  return get(`/api/v1/competencies${query ? `?${query}` : ""}`)
+}
+
+export const getCompetency = (id: string): Promise<CompetencyDetail> =>
+  get(`/api/v1/competencies/${id}`)
+
+export const generateStrawMan = (body: StrawManRequest): Promise<StrawManResponse> =>
+  post(`/api/v1/competencies/straw-man`, body)
+
+export const exportStrawMan = async (body: StrawManRequest): Promise<Blob> => {
+  const res = await apiFetch(`/api/v1/competencies/straw-man/export`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`Export failed: ${res.status}`)
+  return res.blob()
+}
+
+// ---------------------------------------------------------------------------
+// Industry Library
+// ---------------------------------------------------------------------------
+
+export const getIndustries = (): Promise<IndustryOut[]> =>
+  get(`/api/v1/library/industries`)
+
+export const getIndustryDetail = (slug: string): Promise<IndustryDetailOut> =>
+  get(`/api/v1/library/industries/${slug}`)
+
+export const getIndustryInstruments = (slug: string): Promise<IndustryInstrumentOut[]> =>
+  get(`/api/v1/library/industries/${slug}/instruments`)
+
+// ---------------------------------------------------------------------------
+// Survey import
+// ---------------------------------------------------------------------------
+
+export async function downloadImportTemplate(): Promise<void> {
+  const res = await apiFetch("/api/v1/surveys/import/template", { cache: "no-store" })
+  if (!res.ok) throw new Error("Could not download template")
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = "Metricly_Survey_Template.xlsx"
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+export async function importSurveyFile(file: File): Promise<ImportResult> {
+  const form = new FormData()
+  form.append("file", file)
+  const token = await getToken()
+  const headers: Record<string, string> = {}
+  if (token) headers["Authorization"] = `Bearer ${token}`
+  const res = await fetch("/api/v1/surveys/import", { method: "POST", headers, body: form })
+  if (!res.ok) {
+    const payload = await res.json().catch(() => ({}))
+    throw new Error(typeof payload.detail === "string" ? payload.detail : `Import failed: ${res.status}`)
+  }
+  return res.json()
+}

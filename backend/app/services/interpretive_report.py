@@ -17,7 +17,7 @@ from ..core.config import settings
 log = logging.getLogger(__name__)
 
 _MODEL = "claude-sonnet-4-6"
-_MAX_TOKENS = 1500
+_MAX_TOKENS = 4096
 
 _SYSTEM_PROMPT = (
     "You are a senior IO psychologist writing professional assessment reports. "
@@ -176,6 +176,8 @@ async def generate_interpretive_report(
         ValueError: if Claude returns invalid JSON or is missing required fields.
         anthropic.APIError: on API-level failures (propagated to caller).
     """
+    if not settings.anthropic_api_key:
+        raise ValueError("ANTHROPIC_API_KEY is not configured. Add it to your .env file.")
     client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
     prompt = build_prompt(
         survey_title=survey_title,

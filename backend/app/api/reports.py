@@ -23,7 +23,7 @@ from ..core.auth import AuthUser, require_user
 from ..core.database import get_db
 from ..models.report import InterpretiveReport
 from ..models.survey import Answer, Question, Response, ScoringAlgorithm, Survey, SurveyFactor
-from ..services.interpretive_report import generate_interpretive_report
+from ..services.interpretive_report import _MODEL, generate_interpretive_report
 from ..services.score_normalizer import get_label, normalize
 
 log = logging.getLogger(__name__)
@@ -241,7 +241,6 @@ async def create_interpretive_report(
         raise HTTPException(status_code=502, detail="AI report generation failed. Please try again.")
 
     # 7. Persist
-    from ..services.interpretive_report import _MODEL
     row = InterpretiveReport(
         response_id=response_id,
         survey_id=survey_id,

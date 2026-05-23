@@ -4,7 +4,10 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import Header from "@/components/Header"
-import { getLibrary, getLibraryCategories, deployInstrument } from "@/lib/api"
+import CollectionTray from "@/components/CollectionTray"
+import { useCollection } from "@/lib/useCollection"
+import type { CollectionItem } from "@/lib/useCollection"
+import { deployInstrument, getLibrary, getLibraryCategories } from "@/lib/api"
 import type { CategoryGroup, InstrumentCategoryOut, InstrumentListItem, LibraryGrouped } from "@/lib/types"
 
 // ---------------------------------------------------------------------------
@@ -13,9 +16,9 @@ import type { CategoryGroup, InstrumentCategoryOut, InstrumentListItem, LibraryG
 
 function LicenseBadge({ type }: { type: string }) {
   const map: Record<string, { label: string; bg: string; color: string }> = {
-    open:          { label: "Open",           bg: "rgba(34,197,94,0.1)",    color: "#16a34a" },
-    public_domain: { label: "Public Domain",  bg: "rgba(59,130,246,0.1)",   color: "#2563eb" },
-    proprietary:   { label: "Metricly",       bg: "rgba(91,33,182,0.1)",    color: "#5b21b6" },
+    open:          { label: "Open",          bg: "rgba(34,197,94,0.1)",  color: "#16a34a" },
+    public_domain: { label: "Public Domain", bg: "rgba(59,130,246,0.1)", color: "#3777A8" },
+    proprietary:   { label: "Metricly",      bg: "rgba(91,33,182,0.1)",  color: "#5b21b6" },
   }
   const s = map[type] ?? map.open
   return (
@@ -29,30 +32,28 @@ function LicenseBadge({ type }: { type: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// Response format label
-// ---------------------------------------------------------------------------
-
-function FormatLabel({ format }: { format: string }) {
-  const labels: Record<string, string> = {
-    likert5: "Likert 1–5",
-    likert7: "Likert 1–7",
-    forced_choice: "Forced Choice",
-    other: "Mixed Format",
-  }
-  return <span>{labels[format] ?? format}</span>
-}
-
-// ---------------------------------------------------------------------------
 // Instrument card
 // ---------------------------------------------------------------------------
 
-function InstrumentCard({ instrument }: { instrument: InstrumentListItem }) {
+interface InstrumentCardProps {
+  instrument: InstrumentListItem
+  inCollection: boolean
+  onToggle: (item: CollectionItem) => void
+}
+
+function InstrumentCard({ instrument, inCollection, onToggle }: InstrumentCardProps) {
   const router = useRouter()
   const alpha = instrument.reliability_alpha
   const [deploying, setDeploying] = useState(false)
   const [deployError, setDeployError] = useState<string | null>(null)
 
-  async function handleDeploy(e: React.MouseEvent) {
+  const collectionItem: CollectionItem = {
+    id: instrument.id,
+    name: instrument.name,
+    short_name: instrument.short_name,
+  }
+
+  async function handleDeployOne(e: React.MouseEvent) {
     e.preventDefault()
     e.stopPropagation()
     setDeploying(true)
@@ -67,23 +68,34 @@ function InstrumentCard({ instrument }: { instrument: InstrumentListItem }) {
   }
 
   return (
-    <div className="card p-5 flex flex-col transition-all hover:shadow-md">
+    <div
+      className="flex flex-col rounded-[14px] p-5 transition-all hover:shadow-md"
+      style={{
+        background: inCollection ? "rgba(91,33,182,0.07)" : "rgba(255,255,255,0.65)",
+        border: inCollection ? "0.5px solid rgba(91,33,182,0.25)" : "0.5px solid rgba(255,255,255,0.85)",
+        backdropFilter: "blur(12px)",
+      }}
+    >
       <Link href={`/library/${instrument.id}`} className="block flex-1">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-semibold leading-snug" style={{ color: "#1e1b4b" }}>{instrument.name}</p>
+            <p className="text-sm font-semibold leading-snug" style={{ color: "#1e1b4b" }}>
+              {instrument.name}
+            </p>
+            <p className="mt-0.5 text-[10px] font-semibold" style={{ color: "rgba(30,27,75,0.4)" }}>
+              {instrument.short_name}
+            </p>
             {instrument.construct_measured && (
-              <p className="mt-0.5 text-[11px]" style={{ color: "rgba(30,27,75,0.5)" }}>{instrument.construct_measured}</p>
+              <p className="mt-0.5 text-[11px]" style={{ color: "rgba(30,27,75,0.5)" }}>
+                {instrument.construct_measured}
+              </p>
             )}
           </div>
           <LicenseBadge type={instrument.license_type} />
         </div>
 
         {instrument.description && (
-          <p
-            className="mb-3 text-xs line-clamp-2"
-            style={{ color: "rgba(30,27,75,0.55)" }}
-          >
+          <p className="mb-3 text-xs line-clamp-2" style={{ color: "rgba(30,27,75,0.55)" }}>
             {instrument.description}
           </p>
         )}
@@ -91,7 +103,6 @@ function InstrumentCard({ instrument }: { instrument: InstrumentListItem }) {
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]" style={{ color: "rgba(30,27,75,0.45)" }}>
           <span>{instrument.total_items} items</span>
           {instrument.estimated_minutes && <span>~{instrument.estimated_minutes} min</span>}
-          <FormatLabel format={instrument.response_format} />
           {instrument.subscale_count > 0 && <span>{instrument.subscale_count} subscales</span>}
           {alpha !== null && alpha !== undefined && (
             <span style={{ color: "#5b21b6" }}>α = {alpha.toFixed(2)}</span>
@@ -104,19 +115,34 @@ function InstrumentCard({ instrument }: { instrument: InstrumentListItem }) {
       )}
 
       <div className="mt-3 flex items-center gap-2">
+        {/* Add / remove from collection */}
         <button
-          onClick={handleDeploy}
-          disabled={deploying}
-          className="btn-primary flex-1 text-xs py-1.5 disabled:opacity-50"
+          onClick={() => onToggle(collectionItem)}
+          className="flex-1 rounded-full py-1.5 text-xs font-bold transition-all"
+          style={inCollection ? {
+            background: "rgba(34,197,94,0.12)",
+            color: "#16a34a",
+            border: "0.5px solid rgba(34,197,94,0.3)",
+          } : {
+            background: "rgba(91,33,182,0.08)",
+            color: "#5b21b6",
+          }}
         >
-          {deploying ? "Deploying…" : "Deploy Survey"}
+          {inCollection ? "✓ Added" : "+ Add to Collection"}
         </button>
-        <Link
-          href={`/library/${instrument.id}/customize`}
-          className="btn-ghost text-xs py-1.5"
+        {/* Deploy this instrument alone */}
+        <button
+          onClick={handleDeployOne}
+          disabled={deploying}
+          className="rounded-full px-3 py-1.5 text-xs font-semibold transition-all disabled:opacity-50"
+          style={{
+            background: "rgba(255,255,255,0.6)",
+            border: "0.5px solid rgba(91,33,182,0.15)",
+            color: "rgba(30,27,75,0.6)",
+          }}
         >
-          Customize
-        </Link>
+          {deploying ? "…" : "Deploy"}
+        </button>
       </div>
     </div>
   )
@@ -126,7 +152,13 @@ function InstrumentCard({ instrument }: { instrument: InstrumentListItem }) {
 // Category section
 // ---------------------------------------------------------------------------
 
-function CategorySection({ group }: { group: CategoryGroup }) {
+interface CategorySectionProps {
+  group: CategoryGroup
+  isInCollection: (id: string) => boolean
+  onToggle: (item: CollectionItem) => void
+}
+
+function CategorySection({ group, isInCollection, onToggle }: CategorySectionProps) {
   return (
     <section className="mb-10">
       <div className="mb-4 flex items-center gap-2">
@@ -139,11 +171,18 @@ function CategorySection({ group }: { group: CategoryGroup }) {
         </span>
       </div>
       {group.category.description && (
-        <p className="mb-4 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>{group.category.description}</p>
+        <p className="mb-4 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+          {group.category.description}
+        </p>
       )}
       <div className="grid gap-4 sm:grid-cols-2">
         {group.instruments.map(inst => (
-          <InstrumentCard key={inst.id} instrument={inst} />
+          <InstrumentCard
+            key={inst.id}
+            instrument={inst}
+            inCollection={isInCollection(inst.id)}
+            onToggle={onToggle}
+          />
         ))}
       </div>
     </section>
@@ -155,6 +194,8 @@ function CategorySection({ group }: { group: CategoryGroup }) {
 // ---------------------------------------------------------------------------
 
 export default function LibraryPage() {
+  const { list, toggle, remove, clear, isInCollection } = useCollection()
+
   const [library, setLibrary] = useState<LibraryGrouped | null>(null)
   const [categories, setCategories] = useState<InstrumentCategoryOut[]>([])
   const [loading, setLoading] = useState(true)
@@ -163,7 +204,8 @@ export default function LibraryPage() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
 
   async function load(searchVal = search, catId = selectedCategoryId) {
-    setLoading(true); setError(null)
+    setLoading(true)
+    setError(null)
     try {
       const data = await getLibrary({
         search: searchVal || undefined,
@@ -178,9 +220,7 @@ export default function LibraryPage() {
   }
 
   useEffect(() => {
-    getLibraryCategories()
-      .then(setCategories)
-      .catch(() => {})
+    getLibraryCategories().then(setCategories).catch(() => {})
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -201,17 +241,29 @@ export default function LibraryPage() {
     <div className="flex min-h-screen flex-col">
       <Header />
 
-      <main className="flex-1 px-6 py-10">
+      <main className="flex-1 px-6 py-10 pb-36">
         <div className="mx-auto max-w-4xl">
 
           {/* Hero */}
           <div className="mb-8">
-            <p className="eyebrow mb-1">Assessment Library</p>
+            <p className="eyebrow mb-1">Scale Library</p>
             <h1 className="page-title">Validated Psychometric Instruments</h1>
             <p className="mt-2 max-w-2xl text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
-              Browse {library?.total_instruments ?? "—"} validated instruments. Browse, review psychometric properties,
-              and deploy directly as a survey — as-is or customized.
+              Browse {library?.total_instruments ?? "—"} validated instruments. Add instruments to your collection,
+              then deploy them together as a single survey — or deploy any instrument individually.
             </p>
+            <div className="mt-4">
+              <Link
+                href="/library/industries"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold"
+                style={{ color: "#5b21b6" }}
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                Also browse 71 industry-specific instruments →
+              </Link>
+            </div>
           </div>
 
           {/* Search */}
@@ -228,11 +280,7 @@ export default function LibraryPage() {
               <button
                 type="button"
                 className="btn-ghost shrink-0"
-                onClick={() => {
-                  setSearch("")
-                  setSelectedCategoryId(null)
-                  load("", null)
-                }}
+                onClick={() => { setSearch(""); setSelectedCategoryId(null); load("", null) }}
               >
                 Clear
               </button>
@@ -273,11 +321,18 @@ export default function LibraryPage() {
             </div>
           ) : (
             visibleGroups.map(group => (
-              <CategorySection key={group.category.id || "uncategorised"} group={group} />
+              <CategorySection
+                key={group.category.id || "uncategorised"}
+                group={group}
+                isInCollection={isInCollection}
+                onToggle={toggle}
+              />
             ))
           )}
         </div>
       </main>
+
+      <CollectionTray list={list} onRemove={remove} onClear={clear} />
     </div>
   )
 }

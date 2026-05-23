@@ -265,6 +265,73 @@ def build_survey_spec(
 
 
 # ---------------------------------------------------------------------------
+# build_batch_survey_spec — merge multiple instruments into one survey spec
+# ---------------------------------------------------------------------------
+
+
+def build_batch_survey_spec(
+    instruments: list[Instrument],
+    survey_title: str | None = None,
+) -> dict[str, Any]:
+    """
+    Build a survey spec that combines items from multiple instruments.
+
+    Factor names are prefixed with the instrument short_name when more than one
+    instrument is included, preventing name collisions across instruments.
+
+    Each factor carries its own ``question_type`` so the route handler can
+    assign the correct type to each Question row even when instruments use
+    different response formats.
+
+    Returns the same shape as ``build_survey_spec`` but with:
+    - ``factors[*].question_type`` set per-factor (not at the top level)
+    - ``survey_name`` from ``survey_title`` or a default
+    """
+    combined_factors: list[dict[str, Any]] = []
+    position = 1  # 1-based across the whole survey, incremented per item
+
+    for instrument in instruments:
+        spec = build_survey_spec(
+            instrument=instrument,
+            items=instrument.items,
+            subscales=instrument.subscales,
+        )
+        multi = len(instruments) > 1
+
+        for factor in spec["factors"]:
+            raw_name: str = factor["name"]
+            factor_name = (
+                f"{instrument.short_name}: {raw_name}" if multi else raw_name
+            )
+
+            new_items: list[dict[str, Any]] = []
+            for item in factor["items"]:
+                new_items.append({**item, "position": position})
+                position += 1
+
+            combined_factors.append(
+                {
+                    **factor,
+                    "name": factor_name,
+                    "items": new_items,
+                    "question_type": spec["question_type"],
+                }
+            )
+
+    title = survey_title or "Custom Skills Assessment"
+    n = len(instruments)
+    desc = (
+        f"Composite assessment from {n} instrument{'s' if n > 1 else ''}."
+    )
+
+    return {
+        "survey_name": title,
+        "survey_description": desc,
+        "factors": combined_factors,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Psychometric warning for customized deployments
 # ---------------------------------------------------------------------------
 

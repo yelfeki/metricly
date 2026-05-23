@@ -55,7 +55,7 @@ function newQuestion(position: number, type: QuestionType = "likert_5"): Questio
 }
 
 // ---------------------------------------------------------------------------
-// Factor dropdown (shown inside each question card)
+// Factor dropdown
 // ---------------------------------------------------------------------------
 
 interface FactorSelectProps {
@@ -84,10 +84,11 @@ function FactorSelect({ value, factorNames, onChange, onCreateFactor }: FactorSe
           onChange={e => setNewName(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") saveNew(); if (e.key === "Escape") { setCreating(false); setNewName("") } }}
           placeholder="Factor name"
-          className="w-28 rounded border border-indigo-300 bg-white px-2 py-0.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+          className="w-28 rounded-lg border px-2 py-0.5 text-xs focus:outline-none"
+          style={{ background: "rgba(255,255,255,0.7)", borderColor: "rgba(91,33,182,0.3)", color: "#1e1b4b" }}
         />
-        <button type="button" onClick={saveNew} className="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Save</button>
-        <button type="button" onClick={() => { setCreating(false); setNewName("") }} className="text-xs text-slate-400 hover:text-slate-600">✕</button>
+        <button type="button" onClick={saveNew} className="text-xs font-semibold" style={{ color: "#5b21b6" }}>Save</button>
+        <button type="button" onClick={() => { setCreating(false); setNewName("") }} className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>✕</button>
       </div>
     )
   }
@@ -99,7 +100,8 @@ function FactorSelect({ value, factorNames, onChange, onCreateFactor }: FactorSe
         if (e.target.value === "__new__") { setCreating(true) }
         else { onChange(e.target.value) }
       }}
-      className="rounded border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+      className="rounded-lg border px-2 py-0.5 text-xs focus:outline-none"
+      style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
     >
       <option value="">No factor</option>
       {factorNames.map(f => <option key={f} value={f}>{f}</option>)}
@@ -166,10 +168,10 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
   const itemLabel = isFC ? "Item" : "Option"
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className="card">
       <div className="flex items-start gap-3 px-4 py-3">
-        {/* Grip dots */}
-        <div className="mt-1.5 flex cursor-grab flex-col gap-0.5 text-slate-300 hover:text-slate-500 active:cursor-grabbing">
+        {/* Grip */}
+        <div className="mt-1.5 flex cursor-grab flex-col gap-0.5 active:cursor-grabbing" style={{ color: "rgba(30,27,75,0.2)" }}>
           {[0,1,2].map(r => (
             <div key={r} className="flex gap-0.5">
               <span className="h-1 w-1 rounded-full bg-current" />
@@ -179,7 +181,10 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
         </div>
 
         {/* Number badge */}
-        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500">
+        <span
+          className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+          style={{ background: "rgba(91,33,182,0.1)", color: "#5b21b6" }}
+        >
           {index + 1}
         </span>
 
@@ -190,28 +195,31 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
             onChange={e => onChange(q.localId, { text: e.target.value })}
             placeholder={`Question ${index + 1}`}
             rows={2}
-            className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
+            className="field w-full resize-none"
           />
 
           {/* Type pills */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs text-slate-400">Type:</span>
+            <span className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Type:</span>
             {QUESTION_TYPES.map(t => (
               <button key={t.value} type="button" onClick={() => handleTypeChange(t.value)}
-                className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-                  q.question_type === t.value
-                    ? "bg-indigo-600 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}>
+                className="rounded-full px-2.5 py-0.5 text-xs font-semibold transition-all"
+                style={q.question_type === t.value
+                  ? { background: "linear-gradient(135deg,#5b21b6,#3777A8)", color: "white" }
+                  : { background: "rgba(30,27,75,0.07)", color: "rgba(30,27,75,0.6)" }
+                }>
                 {t.icon} {t.label}
               </button>
             ))}
           </div>
 
           {/* Psychometric metadata row */}
-          <div className="flex flex-wrap items-center gap-4 rounded-lg bg-slate-50 px-3 py-2">
+          <div
+            className="flex flex-wrap items-center gap-4 rounded-xl px-3 py-2"
+            style={{ background: "rgba(91,33,182,0.05)", border: "0.5px solid rgba(91,33,182,0.1)" }}
+          >
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-medium text-slate-400">Factor:</span>
+              <span className="text-[11px] font-medium" style={{ color: "rgba(30,27,75,0.4)" }}>Factor:</span>
               <FactorSelect
                 value={q.factor}
                 factorNames={factorNames}
@@ -226,19 +234,20 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
                     type="checkbox"
                     checked={q.reverse_scored}
                     onChange={e => onChange(q.localId, { reverse_scored: e.target.checked })}
-                    className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600"
+                    className="h-3.5 w-3.5 rounded"
                   />
-                  <span className="text-[11px] font-medium text-slate-500">Reverse scored</span>
+                  <span className="text-[11px] font-medium" style={{ color: "rgba(30,27,75,0.5)" }}>Reverse scored</span>
                 </label>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-medium text-slate-400">Weight:</span>
+                  <span className="text-[11px] font-medium" style={{ color: "rgba(30,27,75,0.4)" }}>Weight:</span>
                   <input
                     type="number"
                     value={q.score_weight}
                     min="0"
                     step="0.1"
                     onChange={e => onChange(q.localId, { score_weight: parseFloat(e.target.value) || 1.0 })}
-                    className="w-16 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                    className="w-16 rounded-lg border px-1.5 py-0.5 text-xs focus:outline-none"
+                    style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
                   />
                 </div>
               </>
@@ -248,18 +257,19 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
                 type="checkbox"
                 checked={q.is_demographic}
                 onChange={e => onChange(q.localId, { is_demographic: e.target.checked, demographic_key: e.target.checked ? q.demographic_key : "" })}
-                className="h-3.5 w-3.5 rounded border-slate-300 text-emerald-600"
+                className="h-3.5 w-3.5 rounded"
               />
-              <span className="text-[11px] font-medium text-slate-500">Demographic</span>
+              <span className="text-[11px] font-medium" style={{ color: "rgba(30,27,75,0.5)" }}>Demographic</span>
             </label>
             {q.is_demographic && (
               <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-medium text-slate-400">Key:</span>
+                <span className="text-[11px] font-medium" style={{ color: "rgba(30,27,75,0.4)" }}>Key:</span>
                 <input
                   value={q.demographic_key}
                   onChange={e => onChange(q.localId, { demographic_key: e.target.value })}
                   placeholder="e.g. department"
-                  className="w-32 rounded border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-300"
+                  className="w-32 rounded-lg border px-2 py-0.5 text-xs focus:outline-none"
+                  style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
                 />
               </div>
             )}
@@ -269,41 +279,47 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
           {isLikert && (
             <div className="flex gap-1.5">
               {Array.from({ length: q.question_type === "likert_5" ? 5 : 7 }, (_, i) => (
-                <div key={i} className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
-                  q.reverse_scored ? "border-amber-200 bg-amber-50 text-amber-500" : "border-slate-200 bg-slate-50 text-slate-400"
-                }`}>
+                <div key={i}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold"
+                  style={q.reverse_scored
+                    ? { background: "rgba(245,158,11,0.12)", border: "0.5px solid rgba(245,158,11,0.3)", color: "#b45309" }
+                    : { background: "rgba(91,33,182,0.07)", border: "0.5px solid rgba(91,33,182,0.12)", color: "rgba(30,27,75,0.5)" }
+                  }>
                   {q.reverse_scored
                     ? (q.question_type === "likert_5" ? 5 : 7) - i
                     : i + 1}
                 </div>
               ))}
               {q.reverse_scored && (
-                <span className="self-center text-[10px] text-amber-500 font-medium">reversed</span>
+                <span className="self-center text-[10px] font-semibold" style={{ color: "#b45309" }}>reversed</span>
               )}
             </div>
           )}
 
           {/* Forced-choice labels */}
           {isFC && (
-            <div className="grid grid-cols-2 gap-2 rounded-lg bg-indigo-50 p-3">
+            <div
+              className="grid grid-cols-2 gap-2 rounded-xl p-3"
+              style={{ background: "rgba(91,33,182,0.06)", border: "0.5px solid rgba(91,33,182,0.12)" }}
+            >
               <div>
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-indigo-500">Label A</label>
+                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider" style={{ color: "#5b21b6" }}>Label A</label>
                 <input value={q.forced_choice_labels[0]} onChange={e => setLabel(0, e.target.value)}
                   placeholder="e.g. Most like me"
-                  className="w-full rounded border border-indigo-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300" />
+                  className="field w-full" />
               </div>
               <div>
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-indigo-500">Label B</label>
+                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider" style={{ color: "#5b21b6" }}>Label B</label>
                 <input value={q.forced_choice_labels[1]} onChange={e => setLabel(1, e.target.value)}
                   placeholder="e.g. Least like me"
-                  className="w-full rounded border border-indigo-200 bg-white px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-300" />
+                  className="field w-full" />
               </div>
             </div>
           )}
 
           {/* Ranking hint */}
           {isRanking && (
-            <p className="text-[11px] text-slate-400">Respondents will drag these items into their preferred order.</p>
+            <p className="text-[11px]" style={{ color: "rgba(30,27,75,0.4)" }}>Respondents will drag these items into their preferred order.</p>
           )}
 
           {/* Options / Items list */}
@@ -311,22 +327,18 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
             <div className="space-y-2">
               {hasScores && (
                 <div className="flex items-center gap-2 px-0.5">
-                  <span className="flex-1 text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                    {isFC ? "Item" : "Option"}
-                  </span>
-                  <span className="w-16 text-right text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                    {isFC ? "Weight" : "Score"}
-                  </span>
+                  <span className="flex-1 label-caps">{isFC ? "Item" : "Option"}</span>
+                  <span className="w-16 text-right label-caps">{isFC ? "Weight" : "Score"}</span>
                 </div>
               )}
               {q.options.map((opt, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center text-xs text-slate-400 font-medium">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center text-xs font-medium" style={{ color: "rgba(30,27,75,0.4)" }}>
                     {isRanking ? i + 1 : isFC ? "·" : q.question_type === "multiple_choice" ? "☐" : "○"}
                   </span>
                   <input value={opt} onChange={e => setOption(i, e.target.value)}
                     placeholder={`${itemLabel} ${i + 1}`}
-                    className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-100" />
+                    className="field flex-1" />
                   {hasScores && (
                     <input
                       type="number"
@@ -335,12 +347,13 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
                       onChange={e => setOptionScore(i, e.target.value)}
                       placeholder="0"
                       title={isFC ? "Weight for this item" : "Score for this option"}
-                      className="w-16 rounded border border-slate-200 bg-slate-50 px-1.5 py-1 text-xs text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-100"
+                      className="w-16 rounded-lg border px-1.5 py-1 text-xs focus:outline-none"
+                      style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
                     />
                   )}
                   {q.options.length > 2 && (
                     <button type="button" onClick={() => removeOption(i)}
-                      className="text-slate-300 hover:text-red-400 transition-colors">
+                      className="transition-colors" style={{ color: "rgba(30,27,75,0.2)" }}>
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                       </svg>
@@ -349,7 +362,8 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
                 </div>
               ))}
               <button type="button" onClick={addOption}
-                className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-700 transition-colors">
+                className="flex items-center gap-1 text-xs font-semibold transition-colors"
+                style={{ color: "#5b21b6" }}>
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
@@ -362,19 +376,19 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
         {/* Up / Down / Delete */}
         <div className="flex flex-col gap-1">
           <button type="button" onClick={() => onMoveUp(q.localId)} disabled={index === 0}
-            className="rounded p-1 text-slate-300 hover:text-slate-600 disabled:opacity-20 transition-colors" title="Move up">
+            className="rounded p-1 disabled:opacity-20 transition-colors" style={{ color: "rgba(30,27,75,0.3)" }} title="Move up">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
             </svg>
           </button>
           <button type="button" onClick={() => onMoveDown(q.localId)} disabled={index === total - 1}
-            className="rounded p-1 text-slate-300 hover:text-slate-600 disabled:opacity-20 transition-colors" title="Move down">
+            className="rounded p-1 disabled:opacity-20 transition-colors" style={{ color: "rgba(30,27,75,0.3)" }} title="Move down">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
           <button type="button" onClick={() => onDelete(q.localId)}
-            className="rounded p-1 text-slate-300 hover:text-red-500 transition-colors" title="Delete">
+            className="rounded p-1 transition-colors" style={{ color: "rgba(30,27,75,0.3)" }} title="Delete">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
@@ -399,17 +413,12 @@ export default function NewSurveyPage() {
   const [saving, setSaving] = useState<"draft" | "published" | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // Drag-and-drop state
   const dragId = useRef<string | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
 
   const factorNames = localFactors.map(f => f.name).filter(Boolean)
 
-  // ── Factor management ────────────────────────────────────────────────────
-
-  function addLocalFactor() {
-    setLocalFactors(prev => [...prev, newFactor()])
-  }
+  function addLocalFactor() { setLocalFactors(prev => [...prev, newFactor()]) }
   function updateLocalFactor(localId: string, patch: Partial<LocalFactor>) {
     setLocalFactors(prev => prev.map(f => f.localId === localId ? { ...f, ...patch } : f))
   }
@@ -422,22 +431,17 @@ export default function NewSurveyPage() {
     }
   }
 
-  // ── Question management ──────────────────────────────────────────────────
-
   function addQuestion(type: QuestionType) {
     setQuestions(prev => [...prev, newQuestion(prev.length + 1, type)])
   }
-
   function onChange(localId: string, patch: Partial<QuestionDraft>) {
     setQuestions(prev => prev.map(q => q.localId === localId ? { ...q, ...patch } : q))
   }
-
   function onDelete(localId: string) {
     setQuestions(prev =>
       prev.filter(q => q.localId !== localId).map((q, i) => ({ ...q, position: i + 1 }))
     )
   }
-
   function onMoveUp(localId: string) {
     setQuestions(prev => {
       const idx = prev.findIndex(q => q.localId === localId)
@@ -447,7 +451,6 @@ export default function NewSurveyPage() {
       return next.map((q, i) => ({ ...q, position: i + 1 }))
     })
   }
-
   function onMoveDown(localId: string) {
     setQuestions(prev => {
       const idx = prev.findIndex(q => q.localId === localId)
@@ -459,8 +462,7 @@ export default function NewSurveyPage() {
   }
 
   function handleDragStart(e: React.DragEvent, localId: string) {
-    dragId.current = localId
-    e.dataTransfer.effectAllowed = "move"
+    dragId.current = localId; e.dataTransfer.effectAllowed = "move"
   }
   function handleDragOver(e: React.DragEvent, localId: string) {
     e.preventDefault(); setDragOverId(localId)
@@ -480,8 +482,6 @@ export default function NewSurveyPage() {
     dragId.current = null
   }
   function handleDragEnd() { setDragOverId(null); dragId.current = null }
-
-  // ── Build payload helpers ─────────────────────────────────────────────────
 
   function buildOptionScores(q: QuestionDraft): Record<string, number> | null {
     if (!SCORED_OPTIONS.includes(q.question_type)) return null
@@ -516,30 +516,13 @@ export default function NewSurveyPage() {
             demographic_key: q.is_demographic ? (q.demographic_key.trim() || null) : null,
           }
           if (q.question_type === "forced_choice") {
-            return {
-              ...base,
-              forced_choice_config: {
-                items: q.options.map(o => o.trim()).filter(Boolean),
-                labels: q.forced_choice_labels,
-              },
-            }
+            return { ...base, forced_choice_config: { items: q.options.map(o => o.trim()).filter(Boolean), labels: q.forced_choice_labels } }
           }
-          return {
-            ...base,
-            options: NEEDS_OPTIONS.includes(q.question_type)
-              ? q.options.map(o => o.trim()).filter(Boolean)
-              : null,
-          }
+          return { ...base, options: NEEDS_OPTIONS.includes(q.question_type) ? q.options.map(o => o.trim()).filter(Boolean) : null }
         }),
       })
-      // Create factors now that we have a survey ID
       for (const f of localFactors) {
-        if (f.name.trim()) {
-          await createFactor(survey.id, {
-            name: f.name.trim(),
-            description: f.description.trim() || null,
-          })
-        }
+        if (f.name.trim()) await createFactor(survey.id, { name: f.name.trim(), description: f.description.trim() || null })
       }
       router.push("/surveys")
     } catch (e) {
@@ -556,42 +539,40 @@ export default function NewSurveyPage() {
       <main className="flex-1 px-6 py-10">
         <div className="mx-auto max-w-2xl space-y-6">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">New Survey</h1>
-            <p className="mt-1 text-sm text-slate-500">Build your survey, then save as draft or publish.</p>
+            <h1 className="page-title">New Survey</h1>
+            <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+              Build your survey, then save as draft or publish.
+            </p>
           </div>
 
           {/* Metadata */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+          <div className="card p-5 space-y-4">
             <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Title <span className="text-red-500">*</span>
+              <label className="label-caps mb-1.5 block">
+                Title <span style={{ color: "#dc2626" }}>*</span>
               </label>
               <input value={title} onChange={e => setTitle(e.target.value)}
                 placeholder="e.g. Job Satisfaction Survey"
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition" />
+                className="field w-full" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Description <span className="text-slate-400 font-normal normal-case">(optional)</span>
+              <label className="label-caps mb-1.5 block">
+                Description <span className="normal-case font-normal" style={{ color: "rgba(30,27,75,0.35)" }}>(optional)</span>
               </label>
               <textarea value={description} onChange={e => setDescription(e.target.value)}
                 placeholder="Briefly describe the purpose of this survey…" rows={2}
-                className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition" />
+                className="field w-full resize-none" />
             </div>
           </div>
 
           {/* Tabs */}
-          <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1">
+          <div className="tab-bar">
             {([["questions", `Questions (${questions.length})`], ["factors", `Factors (${localFactors.length})`]] as const).map(([tab, label]) => (
               <button
                 key={tab}
                 type="button"
                 onClick={() => setActiveTab(tab)}
-                className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition-colors ${
-                  activeTab === tab
-                    ? "bg-white text-slate-800 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
-                }`}
+                className={`tab flex-1 ${activeTab === tab ? "active" : ""}`}
               >
                 {label}
               </button>
@@ -602,7 +583,7 @@ export default function NewSurveyPage() {
           {activeTab === "questions" && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <p className="text-xs text-slate-400">Drag ⠿ to reorder</p>
+                <p className="text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>Drag ⠿ to reorder</p>
               </div>
 
               {questions.map((q, index) => (
@@ -612,9 +593,9 @@ export default function NewSurveyPage() {
                   onDragOver={e => handleDragOver(e, q.localId)}
                   onDrop={e => handleDrop(e, q.localId)}
                   onDragEnd={handleDragEnd}
-                  className={`rounded-xl transition-all ${
+                  className={`rounded-[14px] transition-all ${
                     dragOverId === q.localId && dragId.current !== q.localId
-                      ? "ring-2 ring-indigo-400 ring-offset-1" : ""
+                      ? "ring-2 ring-violet-400 ring-offset-1" : ""
                   } ${dragId.current === q.localId ? "opacity-50" : ""}`}
                 >
                   <QuestionCard
@@ -627,12 +608,19 @@ export default function NewSurveyPage() {
               ))}
 
               {/* Add question palette */}
-              <div className="rounded-xl border-2 border-dashed border-slate-200 p-4">
-                <p className="mb-3 text-center text-xs font-medium text-slate-400">Add question</p>
+              <div
+                className="rounded-[14px] p-4"
+                style={{
+                  background: "rgba(255,255,255,0.25)",
+                  border: "1.5px dashed rgba(91,33,182,0.2)",
+                  backdropFilter: "blur(8px)",
+                }}
+              >
+                <p className="mb-3 text-center text-xs font-semibold" style={{ color: "rgba(30,27,75,0.4)" }}>Add question</p>
                 <div className="flex flex-wrap justify-center gap-2">
                   {QUESTION_TYPES.map(t => (
                     <button key={t.value} type="button" onClick={() => addQuestion(t.value)}
-                      className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700">
+                      className="btn-ghost flex items-center gap-1.5 px-3 py-1.5 text-xs">
                       <span>{t.icon}</span>{t.label}
                     </button>
                   ))}
@@ -644,35 +632,42 @@ export default function NewSurveyPage() {
           {/* Factors tab */}
           {activeTab === "factors" && (
             <div className="space-y-3">
-              <p className="text-xs text-slate-500">
+              <p className="text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>
                 Define the factors (subscales) of your instrument. Assign questions to a factor using the Factor field in each question card.
               </p>
 
               {localFactors.length === 0 && (
-                <div className="rounded-xl border-2 border-dashed border-slate-200 px-5 py-8 text-center">
-                  <p className="text-sm text-slate-400">No factors defined yet.</p>
-                  <p className="mt-1 text-xs text-slate-400">Add a factor below, or create one inline from any question card.</p>
+                <div
+                  className="rounded-[14px] px-5 py-8 text-center"
+                  style={{
+                    background: "rgba(255,255,255,0.25)",
+                    border: "1.5px dashed rgba(91,33,182,0.2)",
+                    backdropFilter: "blur(8px)",
+                  }}
+                >
+                  <p className="text-sm" style={{ color: "rgba(30,27,75,0.45)" }}>No factors defined yet.</p>
+                  <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>Add a factor below, or create one inline from any question card.</p>
                 </div>
               )}
 
               {localFactors.map(f => (
-                <div key={f.localId} className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <div key={f.localId} className="card flex items-start gap-3 px-4 py-3">
                   <div className="flex-1 space-y-2">
                     <input
                       value={f.name}
                       onChange={e => updateLocalFactor(f.localId, { name: e.target.value })}
                       placeholder="Factor name (e.g. Extraversion)"
-                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
+                      className="field w-full"
                     />
                     <input
                       value={f.description}
                       onChange={e => updateLocalFactor(f.localId, { description: e.target.value })}
                       placeholder="Description (optional)"
-                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-100 transition"
+                      className="field w-full"
                     />
                   </div>
                   <button type="button" onClick={() => removeLocalFactor(f.localId)}
-                    className="mt-1 rounded p-1 text-slate-300 hover:text-red-500 transition-colors">
+                    className="mt-1 rounded p-1 transition-colors" style={{ color: "rgba(30,27,75,0.25)" }}>
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
@@ -681,7 +676,13 @@ export default function NewSurveyPage() {
               ))}
 
               <button type="button" onClick={addLocalFactor}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 py-3 text-xs font-medium text-slate-500 transition hover:border-indigo-300 hover:text-indigo-600">
+                className="flex w-full items-center justify-center gap-2 rounded-[14px] py-3 text-xs font-semibold transition-all"
+                style={{
+                  background: "rgba(255,255,255,0.25)",
+                  border: "1.5px dashed rgba(91,33,182,0.2)",
+                  color: "rgba(30,27,75,0.5)",
+                  backdropFilter: "blur(8px)",
+                }}>
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
@@ -690,18 +691,19 @@ export default function NewSurveyPage() {
             </div>
           )}
 
-          {error && (
-            <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">{error}</p>
-          )}
+          {error && <div className="alert-error">{error}</div>}
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
+          <div
+            className="flex items-center justify-end gap-3 pt-4"
+            style={{ borderTop: "0.5px solid rgba(255,255,255,0.35)" }}
+          >
             <button type="button" onClick={() => handleSave("draft")} disabled={saving !== null}
-              className="rounded-lg border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50">
+              className="btn-ghost disabled:opacity-50">
               {saving === "draft" ? "Saving…" : "Save as Draft"}
             </button>
             <button type="button" onClick={() => handleSave("published")} disabled={saving !== null}
-              className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50">
+              className="btn-primary disabled:opacity-50">
               {saving === "published" ? "Publishing…" : "Publish"}
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5-5 5M6 12h12" />

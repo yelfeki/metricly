@@ -17,7 +17,7 @@ import type { CompetencyTrend, GrowthProfile } from "@/lib/types"
 function TrendBadge({ trend }: { trend: CompetencyTrend["trend"] }) {
   const map: Record<string, { label: string; bg: string; color: string; icon: string }> = {
     improving:          { label: "Improving",   bg: "rgba(34,197,94,0.1)",   color: "#16a34a", icon: "↑" },
-    stable:             { label: "Stable",      bg: "rgba(59,130,246,0.1)",  color: "#2563eb", icon: "→" },
+    stable:             { label: "Stable",      bg: "rgba(59,130,246,0.1)",  color: "#3777A8", icon: "→" },
     declining:          { label: "Declining",   bg: "rgba(239,68,68,0.1)",   color: "#dc2626", icon: "↓" },
     insufficient_data:  { label: "No trend",   bg: "rgba(30,27,75,0.07)",   color: "rgba(30,27,75,0.4)", icon: "—" },
   }
@@ -40,7 +40,7 @@ function BenchmarkBadge({ status }: { status: CompetencyTrend["benchmark_status"
   if (!status) return null
   const map: Record<string, { label: string; bg: string; color: string }> = {
     exceeding: { label: "Exceeding target", bg: "rgba(34,197,94,0.1)", color: "#16a34a" },
-    meeting:   { label: "Meeting target",   bg: "rgba(59,130,246,0.1)", color: "#2563eb" },
+    meeting:   { label: "Meeting target",   bg: "rgba(59,130,246,0.1)", color: "#3777A8" },
     below:     { label: "Below target",     bg: "rgba(239,68,68,0.1)", color: "#dc2626" },
   }
   const s = map[status]
@@ -232,7 +232,7 @@ export default function GrowthPage() {
             {hasBenchmarks ? (
               <div className="card p-4 text-center">
                 <p className="label-caps mb-1">On Target</p>
-                <p className="metric-value text-2xl font-bold" style={{ color: meeting > 0 ? "#2563eb" : "rgba(30,27,75,0.3)" }}>
+                <p className="metric-value text-2xl font-bold" style={{ color: meeting > 0 ? "#3777A8" : "rgba(30,27,75,0.3)" }}>
                   {meeting}
                 </p>
               </div>

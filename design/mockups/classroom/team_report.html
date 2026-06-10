@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Metricly Classroom — combined team report mock</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{
+  --mx-forest:#0F2841; --mx-forest-2:#1A4068; --mx-cobalt:#2A5BA8; --mx-clay:#DD6334; --mx-butter:#E2B146;
+  --mx-sage:#7E8A55; --mx-mauve:#8C4D5B;
+  --mx-paper:#FAF7F2; --mx-paper-2:#F2EEE5; --mx-paper-3:#E8E2D5; --mx-surface:#FFFCF6;
+  --mx-ink:#0A1E33; --mx-ink-2:#364668; --mx-ink-3:#8590A8; --mx-line:#DDD3C0; --mx-line-2:#C5B89C;
+  --mx-accent-soft:#E8E2D0; --mx-leaf:#0F2841;
+  --mx-grad-hero:radial-gradient(120% 140% at 0% 0%, #1A4068 0%, #0F2841 35%, #061A2D 75%, #03101E 100%);
+  --mx-grad-cool:linear-gradient(135deg, #2A5BA8 0%, #0F2841 100%);
+  --mx-grad-ribbon:linear-gradient(90deg, #DD6334 0%, #E2B146 26%, #E8E2D5 48%, #2A5BA8 75%, #0F2841 100%);
+  --mx-grad-numeral-cool:linear-gradient(135deg, #0F2841 0%, #1A4068 55%, #2A5BA8 100%);
+  --mx-grad-numeral-warm:linear-gradient(135deg, #C24232 0%, #DD6334 55%, #E2B146 100%);
+  --mx-font-display:'Instrument Serif',Georgia,serif; --mx-font-sans:'DM Sans',system-ui,sans-serif; --mx-font-mono:'JetBrains Mono',monospace;
+  --mx-r-md:10px; --mx-r-lg:14px; --mx-r-pill:999px;
+  --mx-shadow-card:0 1px 0 rgba(10,30,51,.04),0 1px 2px rgba(10,30,51,.04);
+  --mx-shadow-pop:0 18px 48px rgba(10,30,51,.18),0 2px 6px rgba(10,30,51,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EDE7DC;font-family:var(--mx-font-sans);color:var(--mx-ink);-webkit-font-smoothing:antialiased;padding:26px 0 70px}
+.mx-display{font-family:var(--mx-font-display);font-weight:400;letter-spacing:-.018em;line-height:1.04}
+.mx-eyebrow{font-size:10.5px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--mx-ink-3)}
+.mx-num{font-family:var(--mx-font-display);font-weight:400;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.mx-mono{font-family:var(--mx-font-mono);font-variant-numeric:tabular-nums}
+.mx-text-grad-warm{background:var(--mx-grad-numeral-warm);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.mx-card{background:var(--mx-surface);border:1px solid var(--mx-line);border-radius:var(--mx-r-lg);padding:22px;box-shadow:var(--mx-shadow-card)}
+.mx-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--mx-forest);background:var(--mx-grad-cool);color:var(--mx-paper);font-size:13px;font-weight:500;padding:9px 16px;border-radius:var(--mx-r-pill);cursor:pointer}
+.mx-btn--ghost{background:transparent;color:var(--mx-ink);border:1px solid var(--mx-line)}
+.mx-btn--paper{background:var(--mx-paper);color:var(--mx-forest);border-color:var(--mx-paper)}
+.mx-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:3px 10px;border-radius:var(--mx-r-pill);background:var(--mx-paper-2);color:var(--mx-ink-2);border:1px solid var(--mx-line)}
+.chip{display:inline-flex;align-items:center;font-size:11.5px;font-weight:500;padding:4px 11px;border-radius:var(--mx-r-pill);background:var(--mx-paper-2);color:var(--mx-ink-2);border:1px solid var(--mx-line)}
+hr.dv{border:none;border-top:1px solid var(--mx-line);margin:0}
+.av{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:600;font-size:10.5px;flex:0 0 auto;border:2px solid var(--mx-surface)}
+.device{max-width:1180px;margin:0 auto;border-radius:18px;overflow:hidden;box-shadow:var(--mx-shadow-pop);border:1px solid var(--mx-line-2)}
+.app{display:grid;grid-template-columns:196px 1fr;background:var(--mx-paper)}
+aside.side{background:var(--mx-paper-2);border-right:1px solid var(--mx-line);padding:22px 15px;display:flex;flex-direction:column;gap:18px}
+.brand{display:inline-flex;align-items:center;gap:9px}.brand .wm{font-family:var(--mx-font-display);font-size:20px;font-style:italic;letter-spacing:-.018em;line-height:1}
+.navrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;color:var(--mx-ink-2);font-size:13px;border:1px solid transparent}
+.navrow.on{background:var(--mx-paper);color:var(--mx-forest);border-color:var(--mx-line);font-weight:500}.navrow.on .tick{margin-left:auto;width:4px;height:4px;border-radius:999px;background:var(--mx-clay)}
+main.body{display:flex;flex-direction:column;min-width:0}
+header.top{height:58px;padding:0 26px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--mx-line);background:var(--mx-paper)}
+.crumbs{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--mx-ink-2)}.crumbs .mut{color:var(--mx-ink-3)}
+.content{flex:1;padding:22px 26px;display:flex;flex-direction:column;gap:18px}
+/* topic stepper */
+.tcontents{display:flex;gap:8px}
+.tnode{flex:1;border:1px solid var(--mx-line);border-radius:var(--mx-r-md);padding:9px 11px;background:var(--mx-surface)}
+.tnode.done{background:var(--mx-paper-2)} .tnode.cur{border-color:var(--mx-clay);box-shadow:0 0 0 3px rgba(221,99,52,.12)} .tnode.lock{opacity:.6}
+.tnode .wk{font-family:var(--mx-font-mono);font-size:9.5px;color:var(--mx-ink-3)}
+.tnode .nm{font-size:12px;font-weight:500;color:var(--mx-ink);margin-top:2px;line-height:1.2}
+.tnode .st{font-size:10px;margin-top:5px;display:inline-flex;align-items:center;gap:4px}
+/* topic section */
+.topic{border:1px solid var(--mx-line);border-radius:var(--mx-r-lg);background:var(--mx-surface);overflow:hidden}
+.topic .head{display:flex;align-items:center;gap:12px;padding:15px 20px;border-bottom:1px solid var(--mx-line);background:var(--mx-paper-2)}
+.topic .head .wkbadge{font-family:var(--mx-font-mono);font-size:10px;color:var(--mx-ink-3);border:1px solid var(--mx-line);border-radius:var(--mx-r-pill);padding:2px 9px}
+.topic .head .tt{font-family:var(--mx-font-display);font-size:21px}
+.topic .inner{padding:20px;display:grid;grid-template-columns:1fr 1.25fr;gap:20px}
+.subh{font-size:10.5px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--mx-ink-3);margin-bottom:10px}
+/* team spread */
+.spread{position:relative;height:14px;border-radius:7px;background:var(--mx-paper-2);box-shadow:inset 0 0 0 1px rgba(20,35,64,.06)}
+.spread .seg{position:absolute;top:0;bottom:0;border-radius:7px;background:linear-gradient(90deg,rgba(42,91,168,.18),rgba(42,91,168,.30))}
+.spread .mk{position:absolute;top:50%;width:11px;height:11px;border-radius:50%;background:var(--mx-cobalt);border:2px solid var(--mx-surface);transform:translate(-50%,-50%)}
+.spread .you{background:var(--mx-clay);width:14px;height:14px;z-index:3}
+.spread .avg{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--mx-ink)}
+.axis{display:flex;justify-content:space-between;font-family:var(--mx-font-mono);font-size:10px;color:var(--mx-ink-3);margin-top:7px}
+.metric{display:flex;align-items:flex-end;gap:10px;margin-bottom:14px}
+/* co-edit text */
+.doc{border:1px solid var(--mx-line);border-radius:var(--mx-r-md);background:var(--mx-surface);padding:14px 15px;font-size:13.5px;color:var(--mx-ink);line-height:1.6;position:relative}
+.doc.active{border-color:var(--mx-cobalt);box-shadow:0 0 0 3px rgba(42,91,168,.10)}
+.caret{display:inline-block;width:2px;height:16px;background:var(--mx-clay);vertical-align:-3px;animation:bl 1s steps(2) infinite;position:relative}
+.caret .tag{position:absolute;top:-17px;left:-2px;background:var(--mx-clay);color:#fff;font-size:9px;font-weight:600;padding:1px 5px;border-radius:4px;white-space:nowrap}
+@keyframes bl{0%{opacity:1}50%{opacity:0}}
+.recbox{border:1px solid var(--mx-line);border-radius:var(--mx-r-md);overflow:hidden}
+.recrow{display:grid;grid-template-columns:130px 1fr;gap:0}
+.recrow .k{background:var(--mx-paper-2);padding:9px 12px;font-size:10.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--mx-ink-3);border-right:1px solid var(--mx-line);border-bottom:1px solid var(--mx-line)}
+.recrow .vv{padding:9px 12px;font-size:12.5px;color:var(--mx-ink);border-bottom:1px solid var(--mx-line);line-height:1.5}
+.recrow:last-child .k,.recrow:last-child .vv{border-bottom:none}
+.inp,select,.ta{width:100%;border:1px solid var(--mx-line);border-radius:var(--mx-r-md);background:var(--mx-surface);font-family:var(--mx-font-sans);font-size:13px;color:var(--mx-ink);padding:9px 11px;outline:none}
+.cap{max-width:1180px;margin:14px auto 0;font-size:12px;color:#7c7464;text-align:center;font-style:italic}
+svg{display:block}
+</style>
+</head>
+<body>
+<div class="device"><div class="app">
+  <aside class="side">
+    <div>
+      <div class="brand">
+        <svg width="32" height="23" viewBox="0 0 50 36" fill="none"><defs><linearGradient id="mk" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0F2841"/><stop offset="55%" stop-color="#8C4D5B"/><stop offset="100%" stop-color="#DD6334"/></linearGradient></defs><path d="M 2 30 C 6 30, 8 6, 14 6 C 20 6, 22 30, 25 30 C 28 30, 30 6, 36 6 C 42 6, 44 30, 48 30" stroke="url(#mk)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/><line x1="2" y1="32.5" x2="48" y2="32.5" stroke="#0A1E33" stroke-width="1" opacity="0.35"/></svg>
+        <span class="wm">metricly<span style="color:var(--mx-clay)">.</span></span>
+      </div>
+      <div class="mx-eyebrow" style="margin-top:9px;font-size:9px;opacity:.75">Classroom · Student</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div class="navrow"><svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10 L11 3 L19 10 L19 19 L3 19 Z"/><path d="M9 19 L9 13 L13 13 L13 19"/></svg><span>This week</span></div>
+      <div class="navrow"><svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="3" y1="11" x2="19" y2="11"/><line x1="11" y1="3" x2="11" y2="19"/></svg><span>My reports</span></div>
+      <div class="navrow on"><svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="8" r="3"/><path d="M4 19 c1-4 5-5 7-5 s6 1 7 5"/></svg><span>My team</span><span class="tick"></span></div>
+      <div class="navrow"><svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4 h9 a3 3 0 0 1 3 3 v11 l-3-2 H7 a2 2 0 0 1-2-2 z"/><line x1="8" y1="9" x2="13" y2="9"/></svg><span>Concepts</span></div>
+    </div>
+    <div style="margin-top:auto;display:flex;align-items:center;gap:10px;padding:2px">
+      <span class="av" style="background:var(--mx-accent-soft);color:var(--mx-forest)">MA</span>
+      <div><div style="font-weight:500;font-size:12.5px">Maya Adeyemi</div><div style="color:var(--mx-ink-3);font-size:11px">PSY 272 · 002</div></div>
+    </div>
+  </aside>
+
+  <main class="body">
+    <header class="top">
+      <div class="crumbs"><span class="mut">My team</span><span class="mut">·</span><span>Integrated report</span></div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <!-- presence -->
+        <div style="display:flex;align-items:center;gap:7px">
+          <div style="display:flex">
+            <span class="av" style="background:#EEDDB6;color:#7A5A1F;margin-right:-8px">DR</span>
+            <span class="av" style="background:#F1D5CE;color:#7E2E2E;margin-right:-8px">SK</span>
+            <span class="av" style="background:var(--mx-accent-soft);color:var(--mx-forest)">MA</span>
+          </div>
+          <span style="font-size:11.5px;color:var(--mx-ink-3)">3 editing now</span>
+        </div>
+        <button class="mx-btn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1 V9"/><polyline points="4 6 7 9 10 6"/><path d="M2 12 H12"/></svg>Download my copy</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- title + download explainer -->
+      <div class="mx-card" style="color:var(--mx-paper);border:1px solid var(--mx-forest);background:var(--mx-grad-hero);position:relative;overflow:hidden">
+        <div style="position:absolute;inset:auto -10% -40% auto;width:55%;height:80%;background:radial-gradient(50% 50% at 50% 50%, rgba(226,177,70,.4) 0%, transparent 72%);pointer-events:none"></div>
+        <div style="position:relative;display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap">
+          <div>
+            <div class="mx-eyebrow" style="color:var(--mx-butter)">Team Lighthouse · integrated report</div>
+            <div class="mx-display" style="font-size:32px;margin-top:7px;color:#FBF5E6">Measuring the <span class="mx-text-grad-warm" style="font-style:italic">modern workplace</span></div>
+            <div style="margin-top:10px;font-size:13px;color:#F4ECD8;max-width:480px;line-height:1.55">Five topics, interpreted with I-O theory, one evidence-based recommendation each. You all edit this together — then everyone downloads their own copy.</div>
+          </div>
+          <div style="text-align:right">
+            <div class="mx-num" style="font-size:40px;color:#fff">2<span style="font-size:20px;color:var(--mx-butter)"> / 5</span></div>
+            <div style="font-size:11px;color:#F4ECD8">topics written · due Dec 10</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- download note -->
+      <div class="mx-card" style="padding:14px 18px;background:var(--mx-paper-2);display:flex;align-items:center;gap:14px">
+        <svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="var(--mx-clay)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8.5"/><path d="M11 7.5 v4.5"/><circle cx="11" cy="15" r=".6" fill="currentColor"/></svg>
+        <div style="font-size:12.5px;color:var(--mx-ink-2);line-height:1.5">
+          <b style="color:var(--mx-ink)">Your copy is personal.</b> When you download, the PDF includes <b style="color:var(--mx-ink)">your own results</b> on each measure <i>plus</i> the team's combined results and everything written here. Each member downloads and submits their own PDF on Brightspace.
+        </div>
+      </div>
+
+      <!-- contents -->
+      <div class="tcontents">
+        <div class="tnode done"><div class="wk">WK 11</div><div class="nm">Job attitudes</div><div class="st" style="color:var(--mx-sage)"><svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 7.5 5.5 11 12 3.5"/></svg>Written</div></div>
+        <div class="tnode cur"><div class="wk">WK 12</div><div class="nm">Stress &amp; well-being</div><div class="st" style="color:var(--mx-clay)">● In progress</div></div>
+        <div class="tnode lock"><div class="wk">WK 13</div><div class="nm">Work teams</div><div class="st" style="color:var(--mx-ink-3)">Locked</div></div>
+        <div class="tnode lock"><div class="wk">WK 15</div><div class="nm">Leadership</div><div class="st" style="color:var(--mx-ink-3)">Locked</div></div>
+        <div class="tnode lock"><div class="wk">WK 16</div><div class="nm">Diversity &amp; inclusion</div><div class="st" style="color:var(--mx-ink-3)">Locked</div></div>
+      </div>
+
+      <!-- ===== TOPIC: JOB ATTITUDES (complete) ===== -->
+      <div class="topic">
+        <div class="head"><span class="wkbadge">WK 11</span><span class="tt">Job attitudes</span><span class="mx-pill" style="margin-left:auto;background:#E7EFE2;border-color:#cfe0c5;color:#4a5e3a">Written · 5 of 5 in</span></div>
+        <div class="inner">
+          <div>
+            <div class="subh">Team results · UWES-9 engagement</div>
+            <div class="metric"><span class="mx-num" style="font-size:40px;color:var(--mx-ink)">63</span><span style="font-size:12px;color:var(--mx-ink-2);padding-bottom:7px">team avg · moderate-high</span></div>
+            <div class="spread"><div class="seg" style="left:44%;right:18%"></div><div class="avg" style="left:63%"></div><div class="mk" style="left:40%"></div><div class="mk" style="left:55%"></div><div class="mk you" style="left:68%"></div><div class="mk" style="left:72%"></div><div class="mk" style="left:82%"></div></div>
+            <div class="axis"><span>0</span><span>team spread</span><span>100</span></div>
+            <div style="margin-top:12px;font-size:11.5px;color:var(--mx-ink-3);line-height:1.5"><span style="color:var(--mx-clay)">●</span> you (68) &nbsp; <span style="color:var(--mx-cobalt)">●</span> teammates &nbsp; <span style="color:var(--mx-ink)">|</span> team avg</div>
+          </div>
+          <div>
+            <div class="subh">Your team's reading</div>
+            <div class="doc" style="margin-bottom:14px">Engagement ran moderate-to-high across the team, strongest on <b>vigor</b> and weakest on <b>dedication</b>. Through the <b>Job Characteristics Model</b>, the pattern points to solid task energy but thinner sense of meaning — most of us reported low <i>task significance</i> in our jobs.</div>
+            <div class="subh">Recommendation</div>
+            <div class="recbox">
+              <div class="recrow"><div class="k">Observation</div><div class="vv">Dedication trailed vigor; task significance rated lowest.</div></div>
+              <div class="recrow"><div class="k">I-O concept</div><div class="vv">Job Characteristics Model — low task significance</div></div>
+              <div class="recrow"><div class="k">Action</div><div class="vv">Managers connect routine tasks to the end customer in 1:1s.</div></div>
+              <div class="recrow"><div class="k">Why realistic</div><div class="vv">No cost; significance reliably lifts meaningfulness &amp; engagement.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TOPIC: STRESS (active co-edit) ===== -->
+      <div class="topic" style="border-color:var(--mx-clay);box-shadow:0 0 0 3px rgba(221,99,52,.10)">
+        <div class="head" style="background:#FBF1E9"><span class="wkbadge">WK 12</span><span class="tt">Stress &amp; well-being</span>
+          <span style="margin-left:auto;display:flex;align-items:center;gap:7px"><span class="av" style="background:#EEDDB6;color:#7A5A1F;width:22px;height:22px;font-size:9px">DR</span><span style="font-size:11.5px;color:var(--mx-ink-3)">Diego is editing</span></span>
+        </div>
+        <div class="inner">
+          <div>
+            <div class="subh">Team results · PSS-10 perceived stress</div>
+            <div class="metric"><span class="mx-num" style="font-size:40px;color:var(--mx-ink)">18</span><span style="font-size:12px;color:var(--mx-ink-2);padding-bottom:7px">team avg · moderate (0–40)</span></div>
+            <div class="spread"><div class="seg" style="left:28%;right:30%"></div><div class="avg" style="left:45%"></div><div class="mk" style="left:30%"></div><div class="mk" style="left:38%"></div><div class="mk you" style="left:52%"></div><div class="mk" style="left:58%"></div><div class="mk" style="left:66%"></div></div>
+            <div class="axis"><span>0</span><span>team spread</span><span>40</span></div>
+            <div style="margin-top:12px;font-size:11.5px;color:var(--mx-ink-3);line-height:1.5"><span style="color:var(--mx-clay)">●</span> you (21) &nbsp; <span style="color:var(--mx-cobalt)">●</span> teammates &nbsp; <span style="color:var(--mx-ink)">|</span> team avg</div>
+            <div class="mx-card" style="padding:12px 13px;margin-top:14px;background:var(--mx-paper-2)">
+              <div class="mx-eyebrow" style="font-size:9px;margin-bottom:5px">Use these lenses</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip">Job Demands–Resources</span><span class="chip">Demand–Control</span><span class="chip">Recovery</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="subh">Your team's reading · co-writing now</div>
+            <div class="doc active" style="margin-bottom:14px">Across the team, perceived stress sat in the <b>moderate</b> band, with most of the spread coming from items about workload piling up faster than people could handle. Through the <b>Demand–Control</b> model this looks less like raw overload and more like low control over <span class="caret"><span class="tag">Diego</span></span>
+            </div>
+            <div class="subh">Recommendation · one per topic</div>
+            <div class="recbox">
+              <div class="recrow"><div class="k">Observation</div><div class="vv"><input class="inp" style="border:none;padding:0;background:transparent" value="Workload-pileup items drove most of the team's stress." /></div></div>
+              <div class="recrow"><div class="k">I-O concept</div><div class="vv"><select style="border:none;padding:0;background:transparent"><option>Demand–Control (Karasek)</option><option>Job Demands–Resources</option><option>Recovery &amp; detachment</option><option>Social support</option></select></div></div>
+              <div class="recrow"><div class="k">Action</div><div class="vv"><input class="inp" style="border:none;padding:0;background:transparent" placeholder="Type the team's recommended action…" /></div></div>
+              <div class="recrow"><div class="k">Why realistic</div><div class="vv"><input class="inp" style="border:none;padding:0;background:transparent" placeholder="Cost, feasibility, evidence…" /></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- locked upcoming -->
+      <div class="topic" style="opacity:.7">
+        <div class="head"><span class="wkbadge">WK 13</span><span class="tt">Work teams</span>
+          <span class="mx-pill" style="margin-left:auto"><svg width="12" height="12" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="12" height="8" rx="2"/><path d="M8 10 V8 a3 3 0 0 1 6 0 v2"/></svg> Opens after the Week 13 measure</span></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <div class="topic" style="flex:1;opacity:.6"><div class="head"><span class="wkbadge">WK 15</span><span class="tt" style="font-size:18px">Leadership</span></div></div>
+        <div class="topic" style="flex:1;opacity:.6"><div class="head"><span class="wkbadge">WK 16</span><span class="tt" style="font-size:18px">Diversity &amp; inclusion</span></div></div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 2px 8px">
+        <span style="font-size:12px;color:var(--mx-ink-3)">Everything here saves for the whole team as you type.</span>
+        <div style="display:flex;gap:10px">
+          <button class="mx-btn--ghost mx-btn">Preview my PDF</button>
+          <button class="mx-btn"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1 V9"/><polyline points="4 6 7 9 10 6"/><path d="M2 12 H12"/></svg>Download my copy for Brightspace</button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div></div>
+<div class="cap">Combined team report — one co-edited document growing across the six weeks. Team figures + co-written synthesis + one recommendation per topic. Each member downloads a personalized PDF (their results + the team's) to submit on Brightspace.</div>
+</body>
+</html>

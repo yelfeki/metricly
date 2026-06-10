@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Metricly Classroom — report workbook mock</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{
+  --mx-forest:#0F2841; --mx-forest-2:#1A4068; --mx-cobalt:#2A5BA8; --mx-clay:#DD6334; --mx-butter:#E2B146;
+  --mx-sage:#7E8A55; --mx-mauve:#8C4D5B;
+  --mx-paper:#FAF7F2; --mx-paper-2:#F2EEE5; --mx-paper-3:#E8E2D5; --mx-surface:#FFFCF6;
+  --mx-ink:#0A1E33; --mx-ink-2:#364668; --mx-ink-3:#8590A8; --mx-line:#DDD3C0; --mx-line-2:#C5B89C;
+  --mx-accent-soft:#E8E2D0; --mx-leaf:#0F2841; --mx-rose:#C24E4E;
+  --mx-grad-hero:radial-gradient(120% 140% at 0% 0%, #1A4068 0%, #0F2841 35%, #061A2D 75%, #03101E 100%);
+  --mx-grad-cool:linear-gradient(135deg, #2A5BA8 0%, #0F2841 100%);
+  --mx-grad-ribbon:linear-gradient(90deg, #DD6334 0%, #E2B146 26%, #E8E2D5 48%, #2A5BA8 75%, #0F2841 100%);
+  --mx-grad-numeral-cool:linear-gradient(135deg, #0F2841 0%, #1A4068 55%, #2A5BA8 100%);
+  --mx-grad-numeral-warm:linear-gradient(135deg, #C24232 0%, #DD6334 55%, #E2B146 100%);
+  --mx-font-display:'Instrument Serif',Georgia,serif; --mx-font-sans:'DM Sans',system-ui,sans-serif; --mx-font-mono:'JetBrains Mono',monospace;
+  --mx-r-md:10px; --mx-r-lg:14px; --mx-r-pill:999px;
+  --mx-shadow-card:0 1px 0 rgba(10,30,51,.04),0 1px 2px rgba(10,30,51,.04);
+  --mx-shadow-pop:0 18px 48px rgba(10,30,51,.18),0 2px 6px rgba(10,30,51,.08);
+  --mx-ease:cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EDE7DC;font-family:var(--mx-font-sans);color:var(--mx-ink);-webkit-font-smoothing:antialiased;padding:26px 0 70px}
+.mx-display{font-family:var(--mx-font-display);font-weight:400;letter-spacing:-.018em;line-height:1.04}
+.mx-eyebrow{font-size:10.5px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--mx-ink-3)}
+.mx-num{font-family:var(--mx-font-display);font-weight:400;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.mx-mono{font-family:var(--mx-font-mono);font-variant-numeric:tabular-nums}
+.mx-text-grad-cool{background:var(--mx-grad-numeral-cool);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.mx-text-grad-warm{background:var(--mx-grad-numeral-warm);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.mx-card{background:var(--mx-surface);border:1px solid var(--mx-line);border-radius:var(--mx-r-lg);padding:22px;box-shadow:var(--mx-shadow-card)}
+.mx-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--mx-forest);background:var(--mx-grad-cool);color:var(--mx-paper);font-size:13px;font-weight:500;padding:9px 16px;border-radius:var(--mx-r-pill);cursor:pointer}
+.mx-btn--ghost{background:transparent;color:var(--mx-ink);border:1px solid var(--mx-line)}
+.mx-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:3px 10px;border-radius:var(--mx-r-pill);background:var(--mx-paper-2);color:var(--mx-ink-2);border:1px solid var(--mx-line)}
+.chip{display:inline-flex;align-items:center;font-size:11.5px;font-weight:500;padding:4px 11px;border-radius:var(--mx-r-pill);background:var(--mx-paper-2);color:var(--mx-ink-2);border:1px solid var(--mx-line)}
+hr.dv{border:none;border-top:1px solid var(--mx-line);margin:0}
+.device{max-width:1180px;margin:0 auto;border-radius:18px;overflow:hidden;box-shadow:var(--mx-shadow-pop);border:1px solid var(--mx-line-2)}
+.app{display:grid;grid-template-columns:196px 1fr;background:var(--mx-paper)}
+aside.side{background:var(--mx-paper-2);border-right:1px solid var(--mx-line);padding:22px 15px;display:flex;flex-direction:column;gap:18px}
+.brand{display:inline-flex;align-items:center;gap:9px}
+.brand .wm{font-family:var(--mx-font-display);font-size:20px;font-style:italic;letter-spacing:-.018em;line-height:1}
+.navrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;color:var(--mx-ink-2);font-size:13px;border:1px solid transparent}
+.navrow.on{background:var(--mx-paper);color:var(--mx-forest);border-color:var(--mx-line);font-weight:500}
+.navrow.on .tick{margin-left:auto;width:4px;height:4px;border-radius:999px;background:var(--mx-clay)}
+main.body{display:flex;flex-direction:column;min-width:0}
+header.top{height:58px;padding:0 26px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--mx-line);background:var(--mx-paper)}
+.crumbs{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--mx-ink-2)} .crumbs .mut{color:var(--mx-ink-3)}
+.content{flex:1;padding:22px 26px;display:flex;flex-direction:column;gap:18px}
+.sec-label{display:flex;align-items:center;gap:12px;margin:6px 2px 0}
+.sec-label .ix{width:24px;height:24px;border-radius:50%;background:var(--mx-forest);color:var(--mx-paper);display:inline-flex;align-items:center;justify-content:center;font-family:var(--mx-font-display);font-size:14px;flex:0 0 auto}
+.sec-label .ti{font-family:var(--mx-font-display);font-size:23px}
+.sec-label .hint{margin-left:auto;font-size:11.5px;color:var(--mx-ink-3);font-style:italic}
+/* viz */
+.ribbon{position:relative;height:12px;border-radius:6px;overflow:hidden;background:var(--mx-grad-ribbon);box-shadow:inset 0 0 0 1px rgba(20,35,64,.06)}
+.ribbon .pin{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:var(--mx-paper);border:2px solid var(--mx-ink);transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(20,35,64,.22),0 0 0 3px rgba(250,247,242,.5)}
+.ribbon .avg{position:absolute;top:-3px;bottom:-3px;width:2px;background:rgba(20,35,64,.55)}
+.scale{margin-top:6px;display:flex;justify-content:space-between;font-family:var(--mx-font-mono);font-size:10px;color:var(--mx-ink-3)}
+.fbar{display:grid;grid-template-columns:150px 1fr 30px;gap:12px;align-items:center;padding:7px 0}
+.fbar .lbl{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--mx-ink-2)}
+.track{position:relative;height:9px;border-radius:5px;background:var(--mx-paper-2);overflow:hidden}
+.track .fill{position:absolute;left:0;top:0;bottom:0;border-radius:5px}
+.itemgrid{display:grid;grid-template-columns:repeat(10,1fr);gap:6px}
+.icell{text-align:center}
+.icell .bar{height:54px;display:flex;align-items:flex-end;justify-content:center}
+.icell .bar i{width:13px;border-radius:3px 3px 0 0;display:block}
+.icell .q{font-family:var(--mx-font-mono);font-size:9px;color:var(--mx-ink-3);margin-top:4px}
+.icell .v{font-family:var(--mx-font-mono);font-size:10px;color:var(--mx-ink-2)}
+/* writing */
+.scaffold{background:var(--mx-paper-2);border:1px solid var(--mx-line);border-radius:var(--mx-r-md);padding:14px 15px}
+.qline{display:flex;gap:9px;align-items:flex-start;padding:6px 0;font-size:13px;color:var(--mx-ink-2);line-height:1.5}
+.qline .n{font-family:var(--mx-font-mono);font-size:11px;color:var(--mx-clay);margin-top:1px;flex:0 0 auto}
+textarea{width:100%;border:1px solid var(--mx-line);border-radius:var(--mx-r-md);background:var(--mx-surface);font-family:var(--mx-font-sans);font-size:13.5px;color:var(--mx-ink);padding:12px 14px;resize:vertical;outline:none;line-height:1.55}
+textarea::placeholder{color:var(--mx-ink-3)}
+.recgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field label{font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--mx-ink-3);display:block;margin-bottom:5px}
+.inp,select{width:100%;border:1px solid var(--mx-line);border-radius:var(--mx-r-md);background:var(--mx-surface);font-family:var(--mx-font-sans);font-size:13px;color:var(--mx-ink);padding:9px 11px;outline:none}
+.example{background:var(--mx-paper-2);border:1px dashed var(--mx-line-2);border-radius:var(--mx-r-md);padding:13px 15px}
+.example .et{font-size:11px;color:var(--mx-sage);font-weight:600;letter-spacing:.04em;margin-bottom:8px;text-transform:uppercase}
+.example .er{font-size:12.5px;color:var(--mx-ink-2);line-height:1.55}
+.example .er b{color:var(--mx-ink)}
+.cap{max-width:1180px;margin:14px auto 0;font-size:12px;color:#7c7464;text-align:center;font-style:italic}
+svg{display:block}
+</style>
+</head>
+<body>
+<div class="device"><div class="app">
+  <aside class="side">
+    <div>
+      <div class="brand">
+        <svg width="32" height="23" viewBox="0 0 50 36" fill="none"><defs><linearGradient id="mk" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0F2841"/><stop offset="55%" stop-color="#8C4D5B"/><stop offset="100%" stop-color="#DD6334"/></linearGradient></defs><path d="M 2 30 C 6 30, 8 6, 14 6 C 20 6, 22 30, 25 30 C 28 30, 30 6, 36 6 C 42 6, 44 30, 48 30" stroke="url(#mk)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/><line x1="2" y1="32.5" x2="48" y2="32.5" stroke="#0A1E33" stroke-width="1" opacity="0.35"/></svg>
+        <span class="wm">metricly<span style="color:var(--mx-clay)">.</span></span>
+      </div>
+      <div class="mx-eyebrow" style="margin-top:9px;font-size:9px;opacity:.75">Classroom · Student</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div class="navrow"><svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10 L11 3 L19 10 L19 19 L3 19 Z"/><path d="M9 19 L9 13 L13 13 L13 19"/></svg><span>This week</span></div>
+      <div class="navrow on"><svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="3" y1="11" x2="19" y2="11"/><line x1="11" y1="3" x2="11" y2="19"/></svg><span>My reports</span><span class="tick"></span></div>
+      <div class="navrow"><svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="8" r="3"/><path d="M4 19 c1-4 5-5 7-5 s6 1 7 5"/></svg><span>My team</span></div>
+      <div class="navrow"><svg width="18" height="18" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4 h9 a3 3 0 0 1 3 3 v11 l-3-2 H7 a2 2 0 0 1-2-2 z"/><line x1="8" y1="9" x2="13" y2="9"/></svg><span>Concepts</span></div>
+    </div>
+    <div style="margin-top:auto;display:flex;align-items:center;gap:10px;padding:2px">
+      <span style="width:26px;height:26px;border-radius:50%;background:var(--mx-accent-soft);color:var(--mx-forest);display:inline-flex;align-items:center;justify-content:center;font-weight:600;font-size:10.5px">MA</span>
+      <div><div style="font-weight:500;font-size:12.5px">Maya Adeyemi</div><div style="color:var(--mx-ink-3);font-size:11px">PSY 272 · 002</div></div>
+    </div>
+  </aside>
+
+  <main class="body">
+    <header class="top">
+      <div class="crumbs"><span class="mut">My reports</span><span class="mut">·</span><span class="mut">Week 12</span><span class="mut">·</span><span>Stress &amp; well-being</span></div>
+      <div style="display:flex;align-items:center;gap:9px">
+        <span class="mx-pill">Draft · saved 2m ago</span>
+        <button class="mx-btn--ghost mx-btn" style="padding:7px 12px;font-size:12px">Export PDF</button>
+        <button class="mx-btn" style="padding:7px 14px;font-size:12px">Mark complete</button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- intro strip -->
+      <div class="mx-card" style="padding:16px 20px;background:var(--mx-paper-2);display:flex;align-items:center;gap:16px">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="var(--mx-clay)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1 L8.3 5.7 L13 7 L8.3 8.3 L7 13 L5.7 8.3 L1 7 L5.7 5.7 Z" transform="translate(0,0)"/></svg>
+        <div style="font-size:13px;color:var(--mx-ink-2);line-height:1.5">
+          The figures below are <b style="color:var(--mx-ink)">yours to read</b> — Metricly won't interpret them for you. Study the data, then write your own synthesis and recommendations using the I-O concepts from this week. <span style="color:var(--mx-ink-3)">This is exactly what your team report will ask of you Friday.</span>
+        </div>
+      </div>
+
+      <!-- ============ SECTION 1 · THE DATA ============ -->
+      <div class="sec-label"><span class="ix">1</span><span class="ti">The data</span><span class="hint">read only · these are your figures</span></div>
+
+      <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:18px">
+        <!-- score + distribution -->
+        <div class="mx-card" style="position:relative;overflow:hidden">
+          <div style="position:absolute;top:-60px;left:-40px;width:280px;height:200px;background:radial-gradient(50% 50% at 50% 50%, rgba(226,177,70,.30) 0%, rgba(221,99,52,.07) 50%, transparent 80%);pointer-events:none"></div>
+          <div style="position:relative">
+            <div class="mx-eyebrow">Perceived stress · PSS-10</div>
+            <div style="display:flex;align-items:flex-end;gap:16px;margin-top:4px">
+              <span class="mx-num mx-text-grad-cool" style="font-size:78px">21</span>
+              <div style="padding-bottom:13px">
+                <div class="mx-display" style="font-size:21px;font-style:italic;color:var(--mx-butter)">Moderate</div>
+                <div style="font-size:12px;color:var(--mx-ink-2)">raw 0–40 · band 14–26</div>
+              </div>
+              <div style="margin-left:auto;padding-bottom:12px;text-align:right">
+                <div class="mx-mono" style="font-size:12px;color:var(--mx-ink-2)">62<sup style="font-size:8px">nd</sup> pctile</div>
+                <div style="font-size:11px;color:var(--mx-ink-3)">in your class · n=38</div>
+              </div>
+            </div>
+            <!-- distribution -->
+            <div style="margin-top:16px">
+              <div class="mx-eyebrow" style="font-size:9.5px;margin-bottom:6px">Where you sit in the class distribution</div>
+              <svg id="dist" width="100%" height="92" viewBox="0 0 520 92" preserveAspectRatio="none"></svg>
+              <div style="display:flex;justify-content:space-between;font-family:var(--mx-font-mono);font-size:10px;color:var(--mx-ink-3);margin-top:2px"><span>0 · no stress</span><span>class avg 18</span><span>40 · high</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- two facets -->
+        <div class="mx-card">
+          <div class="mx-eyebrow">Two sides of the scale</div>
+          <div style="font-size:12px;color:var(--mx-ink-2);margin-top:6px;line-height:1.5">PSS-10 blends feeling <b style="color:var(--mx-ink)">overwhelmed</b> with feeling <b style="color:var(--mx-ink)">in control</b> (reverse-scored). Yours split unevenly:</div>
+          <div style="margin-top:14px">
+            <div class="fbar" style="grid-template-columns:1fr 30px"><div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11.5px;font-weight:500;color:var(--mx-ink)">Feeling overwhelmed</span><span class="mx-mono" style="font-size:11px;color:var(--mx-ink-3)">high</span></div><div class="track" style="height:11px"><div class="fill" style="width:72%;background:var(--mx-clay)"></div></div></div></div>
+            <div class="fbar" style="grid-template-columns:1fr 30px"><div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11.5px;font-weight:500;color:var(--mx-ink)">Feeling in control</span><span class="mx-mono" style="font-size:11px;color:var(--mx-ink-3)">mid</span></div><div class="track" style="height:11px"><div class="fill" style="width:48%;background:var(--mx-cobalt)"></div></div></div></div>
+          </div>
+          <hr class="dv" style="margin:14px 0"/>
+          <div style="font-size:11.5px;color:var(--mx-ink-3);line-height:1.5">A factual split, not a verdict. <span style="font-style:italic">You</span> decide what it means below.</div>
+        </div>
+      </div>
+
+      <!-- item-level + vs team -->
+      <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:18px">
+        <div class="mx-card">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div class="mx-eyebrow">Item by item · your answers</div>
+            <span style="font-size:11px;color:var(--mx-ink-3)">0 never → 4 very often · <span style="color:var(--mx-clay)">R</span> = reverse-scored</span>
+          </div>
+          <div class="itemgrid" style="margin-top:14px" id="items"></div>
+        </div>
+        <div class="mx-card">
+          <div class="mx-eyebrow">You vs. your team</div>
+          <div style="margin-top:14px;display:flex;flex-direction:column;gap:13px">
+            <div><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:6px"><span style="font-weight:500">Your score</span><span class="mx-mono">21</span></div><div class="ribbon"><span class="avg" style="left:45%"></span><span class="pin" style="left:52%"></span></div></div>
+          </div>
+          <div style="margin-top:14px;font-size:12px;color:var(--mx-ink-2);line-height:1.5">Pin = you. Bar = Team Lighthouse average (18). The full team distribution unlocks in your <b style="color:var(--mx-ink)">team report</b> once everyone submits.</div>
+          <hr class="dv" style="margin:14px 0"/>
+          <div style="display:flex;gap:7px;flex-wrap:wrap"><span class="chip">5 of 5 teammates in</span><span class="chip">team avg 18 · moderate</span></div>
+        </div>
+      </div>
+
+      <!-- ============ SECTION 2 · YOUR READ ============ -->
+      <div class="sec-label"><span class="ix">2</span><span class="ti">Your read</span><span class="hint">you write this — not Metricly</span></div>
+
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:18px;align-items:start">
+        <div class="mx-card">
+          <div style="font-size:13px;color:var(--mx-ink-2);line-height:1.55;margin-bottom:14px">Write a short synthesis of what your figures show. Work through the prompts — they walk you from <i>what you see</i> to <i>what the theory says</i>.</div>
+          <div class="scaffold" style="margin-bottom:14px">
+            <div class="mx-eyebrow" style="color:var(--mx-clay);margin-bottom:6px">Guiding questions</div>
+            <div class="qline"><span class="n">01</span><span>What's the headline pattern? Name the band, and which side (overwhelmed vs. in control) is driving it.</span></div>
+            <div class="qline"><span class="n">02</span><span>Through the <b style="color:var(--mx-ink)">Job Demands–Resources</b> lens — are your <i>demands</i> outrunning your <i>resources</i>, or is it a <i>control</i> problem (<b style="color:var(--mx-ink)">Demand–Control</b>)?</span></div>
+            <div class="qline"><span class="n">03</span><span>How does your score sit against your team — typical, higher, lower? What might explain the gap?</span></div>
+          </div>
+          <textarea rows="7" placeholder="Start writing your synthesis here…  Try a sentence starter: “My perceived stress landed in the ___ band, driven mostly by items about ___. Through the JD-R model this suggests my ___…”"></textarea>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+            <span style="font-size:11px;color:var(--mx-ink-3)">Aim for 4–6 sentences · saved automatically</span>
+            <span class="mx-mono" style="font-size:11px;color:var(--mx-ink-3)">0 / 800</span>
+          </div>
+        </div>
+
+        <!-- concept reminders sidebar -->
+        <div class="mx-card" style="background:var(--mx-paper-2)">
+          <div class="mx-eyebrow" style="margin-bottom:10px">Concept reminders · week 12</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div><div style="font-size:12.5px;font-weight:600;color:var(--mx-ink)">Job Demands–Resources</div><div style="font-size:12px;color:var(--mx-ink-2);line-height:1.45">Demands cost effort and cause <i>strain</i>; resources buffer demands and fuel motivation.</div></div>
+            <div><div style="font-size:12.5px;font-weight:600;color:var(--mx-ink)">Demand–Control (Karasek)</div><div style="font-size:12px;color:var(--mx-ink-2);line-height:1.45">Strain is worst when demands are high and <i>control</i> is low.</div></div>
+            <div><div style="font-size:12.5px;font-weight:600;color:var(--mx-ink)">Appraisal &amp; coping</div><div style="font-size:12px;color:var(--mx-ink-2);line-height:1.45">Stress is the gap you <i>perceive</i> between demands and your ability to cope.</div></div>
+            <div><div style="font-size:12.5px;font-weight:600;color:var(--mx-ink)">Recovery</div><div style="font-size:12px;color:var(--mx-ink-2);line-height:1.45">Detachment and rest replenish drained resources.</div></div>
+          </div>
+          <hr class="dv" style="margin:13px 0"/>
+          <a style="font-size:12px;color:var(--mx-forest);text-decoration:none;display:inline-flex;align-items:center;gap:5px">Open Levy ch. 11 notes
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 3 10 7 5 11"/></svg></a>
+        </div>
+      </div>
+
+      <!-- ============ SECTION 3 · RECOMMENDATIONS ============ -->
+      <div class="sec-label"><span class="ix">3</span><span class="ti">Recommended actions</span><span class="hint">evidence-based · you propose them</span></div>
+
+      <div class="mx-card" style="background:var(--mx-paper-2);padding:16px 18px">
+        <div class="mx-eyebrow" style="color:var(--mx-clay);margin-bottom:7px">What makes a recommendation evidence-based?</div>
+        <div style="font-size:12.5px;color:var(--mx-ink-2);line-height:1.55">A consultant doesn't just say "reduce stress." Tie each action to <b style="color:var(--mx-ink)">something in your data</b>, name the <b style="color:var(--mx-ink)">I-O concept</b> behind it, and make it <b style="color:var(--mx-ink)">realistic for an employer</b> to actually do. Build each one with the four fields below.</div>
+      </div>
+
+      <!-- example (worked, from the curriculum) -->
+      <div class="example">
+        <div class="et">Worked example — how yours should read</div>
+        <div class="er"><b>Observation:</b> My highest items were about feeling unable to control work and things piling up faster than I could handle. &nbsp;·&nbsp; <b>I-O concept:</b> Low job control — a missing <i>resource</i> in the Demand–Control model. &nbsp;·&nbsp; <b>Recommended action:</b> A weekly 30-min planning block where employees set and reorder their own priorities. &nbsp;·&nbsp; <b>Why it's realistic:</b> Near-zero cost, and autonomy is one of the most consistent buffers against strain (Karasek).</div>
+      </div>
+
+      <!-- the builder (empty, student fills) -->
+      <div class="mx-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:9px"><span class="mx-pill" style="background:var(--mx-forest);color:var(--mx-paper);border-color:var(--mx-forest)">Recommendation 1</span><span style="font-size:11.5px;color:var(--mx-ink-3)">your turn</span></div>
+        </div>
+        <div class="recgrid">
+          <div class="field"><label>Observation — what in your data?</label><input class="inp" placeholder="e.g. items on workload pile-up scored highest…"/></div>
+          <div class="field"><label>I-O concept it draws on</label>
+            <select><option>Choose a concept from week 12…</option><option>Job Demands–Resources</option><option>Demand–Control (Karasek)</option><option>Appraisal &amp; coping</option><option>Recovery &amp; detachment</option><option>Social support</option><option>Job design (JCM)</option></select>
+          </div>
+          <div class="field" style="grid-column:1 / -1"><label>Recommended action — specific &amp; doable</label><input class="inp" placeholder="e.g. introduce a protected weekly planning block…"/></div>
+          <div class="field" style="grid-column:1 / -1"><label>Why an employer could realistically do it (evidence + feasibility)</label><textarea rows="2" placeholder="Cost, effort, and the evidence or theory that backs it…"></textarea></div>
+        </div>
+        <div style="margin-top:14px;display:flex;align-items:center;gap:12px">
+          <button class="mx-btn--ghost mx-btn" style="font-size:12.5px"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="7" y1="2" x2="7" y2="12"/><line x1="2" y1="7" x2="12" y2="7"/></svg>Add another recommendation</button>
+          <span style="font-size:11.5px;color:var(--mx-ink-3)">The group project asks for <b style="color:var(--mx-ink-2)">one per topic</b> — add more if you see them.</span>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px;padding:4px 2px 8px">
+        <button class="mx-btn--ghost mx-btn">Save draft</button>
+        <button class="mx-btn">Mark report complete
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 7.5 6 10.5 11 4"/></svg></button>
+      </div>
+
+    </div>
+  </main>
+</div></div>
+<div class="cap">Report = a consultant's workbook: rich figures (section 1), the student's own synthesis (section 2, scaffolded by week-12 theory), and student-authored evidence-based recommendations (section 3). No AI writes the interpretation.</div>
+
+<script>
+// distribution bell with class avg + you
+(function(){
+  const W=520,H=92, mean=0.45, sd=0.17; // normalized positions
+  const f=x=>Math.exp(-0.5*Math.pow((x-mean)/sd,2));
+  let d='';
+  for(let i=0;i<=W;i+=4){const x=i/W;const y=H-8-f(x)*(H-22);d+=(i===0?'M':'L')+i+' '+y.toFixed(1)+' ';}
+  const area=d+`L ${W} ${H} L 0 ${H} Z`;
+  const svg=document.getElementById('dist');
+  const youX=0.52*W, avgX=0.45*W;
+  const yt=t=>H-8-f(t)*(H-22);
+  svg.innerHTML=`
+    <path d="${area}" fill="var(--mx-forest)" opacity="0.08"/>
+    <path d="${d}" fill="none" stroke="var(--mx-cobalt)" stroke-width="1.4"/>
+    <line x1="${avgX}" y1="${yt(0.45)}" x2="${avgX}" y2="${H-4}" stroke="var(--mx-ink-3)" stroke-width="1.3" stroke-dasharray="3 3"/>
+    <line x1="${youX}" y1="${yt(0.52)}" x2="${youX}" y2="${H-4}" stroke="var(--mx-ink)" stroke-width="1.6"/>
+    <circle cx="${youX}" cy="${yt(0.52)}" r="4" fill="var(--mx-paper)" stroke="var(--mx-ink)" stroke-width="2"/>
+    <text x="${youX}" y="${yt(0.52)-9}" text-anchor="middle" font-family="var(--mx-font-mono)" font-size="10" fill="var(--mx-ink)">you</text>`;
+})();
+// item bars
+(function(){
+  // value 0-4, R=reverse
+  const items=[{q:1,v:3},{q:2,v:3},{q:3,v:2,R:1},{q:4,v:1,R:1},{q:5,v:2},{q:6,v:3},{q:7,v:2,R:1},{q:8,v:1,R:1},{q:9,v:3},{q:10,v:1}];
+  const wrap=document.getElementById('items');
+  wrap.innerHTML=items.map(it=>{
+    const h=8+it.v*11; const col=it.R?'var(--mx-cobalt)':'var(--mx-forest)';
+    return `<div class="icell"><div class="bar"><i style="height:${h}px;background:${col}"></i></div><div class="q">Q${it.q}${it.R?'<span style="color:var(--mx-clay)">R</span>':''}</div><div class="v">${it.v}</div></div>`;
+  }).join('');
+})();
+</script>
+</body>
+</html>

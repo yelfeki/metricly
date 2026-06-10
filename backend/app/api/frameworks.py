@@ -1,6 +1,7 @@
 """Competency framework CRUD, employee profiles, gap analysis, benchmarks, and pulse schedules."""
 
 import calendar
+import json
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -10,6 +11,11 @@ from sqlalchemy.orm import selectinload
 
 from ..core.auth import AuthUser, require_user
 from ..core.database import get_db
+from ..models.competency import (
+    CompetencyDefinition,
+    CompetencyFramework,
+    CompetencyProficiencyLevel,
+)
 from ..models.framework import (
     Benchmark,
     Competency,
@@ -26,6 +32,8 @@ from ..schemas.framework import (
     BenchmarkOut,
     BenchmarkUpdate,
     CompetencyCreate,
+    CompetencyDetailView,
+    CompetencyLevelView,
     CompetencyOut,
     CompetencyScoreCreate,
     CompetencyScoreOut,
@@ -33,12 +41,16 @@ from ..schemas.framework import (
     EmployeeProfileCreate,
     EmployeeProfileOut,
     FrameworkCreate,
+    FrameworkFromLibraryRequest,
     FrameworkListItem,
     FrameworkOut,
     FrameworkSurveyOut,
     FrameworkUpdate,
     GapReport,
+    ImportFromLibraryRequest,
+    LinkedSurveyView,
     LinkSurveyRequest,
+    PickerCandidate,
     ProficiencyLevelCreate,
     ProficiencyLevelOut,
     ProficiencyLevelUpdate,
@@ -201,6 +213,7 @@ async def add_competency(
         name=body.name,
         description=body.description,
         order_index=body.order_index,
+        cluster=body.cluster,
     )
     db.add(comp)
     await db.commit()
@@ -232,6 +245,8 @@ async def update_competency(
         comp.description = body.description
     if body.order_index is not None:
         comp.order_index = body.order_index
+    if body.cluster is not None:
+        comp.cluster = body.cluster
     await db.commit()
     await db.refresh(comp)
     return comp
@@ -254,6 +269,360 @@ async def delete_competency(
         raise HTTPException(status_code=404, detail="Competency not found")
     await db.delete(comp)
     await db.commit()
+
+
+# ---------------------------------------------------------------------------
+# Library import / dashboard helpers
+# ---------------------------------------------------------------------------
+
+
+# Defaults match the existing wizard at frontend/app/frameworks/new/page.tsx
+_DEFAULT_PROFICIENCY_LEVELS: list[dict] = [
+    {"level": 1, "label": "Novice", "description": "Limited exposure; needs close guidance.", "color": "#ef4444"},
+    {"level": 2, "label": "Developing", "description": "Basic understanding; can perform with support.", "color": "#f59e0b"},
+    {"level": 3, "label": "Proficient", "description": "Solid competency; works independently.", "color": "#3b82f6"},
+    {"level": 4, "label": "Advanced", "description": "Deep expertise; guides others.", "color": "#8b5cf6"},
+    {"level": 5, "label": "Expert", "description": "Mastery; recognized authority; drives best practice.", "color": "#059669"},
+]
+
+
+def _parse_json_list(raw: str | None) -> list[str]:
+    """Parse a TEXT-stored JSON array; return [] on any error."""
+    if not raw:
+        return []
+    try:
+        val = json.loads(raw)
+        return val if isinstance(val, list) else []
+    except (ValueError, TypeError):
+        return []
+
+
+async def _seed_default_proficiency_levels(db: AsyncSession, framework_id: str) -> None:
+    """Seed the framework with the standard Novice–Expert 5-level scale."""
+    for lvl in _DEFAULT_PROFICIENCY_LEVELS:
+        db.add(
+            ProficiencyLevel(
+                framework_id=framework_id,
+                level=lvl["level"],
+                label=lvl["label"],
+                description=lvl["description"],
+                color=lvl["color"],
+            )
+        )
+
+
+async def _load_library_competency(
+    db: AsyncSession, library_competency_id: str
+) -> CompetencyDefinition:
+    """Load a library CompetencyDefinition with its proficiency levels eager-loaded."""
+    stmt = (
+        select(CompetencyDefinition)
+        .where(CompetencyDefinition.id == library_competency_id)
+        .options(
+            selectinload(CompetencyDefinition.proficiency_levels),
+            selectinload(CompetencyDefinition.framework),
+        )
+    )
+    lib = (await db.execute(stmt)).scalar_one_or_none()
+    if lib is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Library competency {library_competency_id} not found",
+        )
+    return lib
+
+
+# Benchmark seed defaults
+# - Used when a library import flow doesn't pass a per-competency suggested level.
+# - 3 matches the guided-flow "Team Lead" / IC mid mapping in competency_ranker.SUGGESTED_LEVEL.
+_DEFAULT_BENCHMARK_LEVEL = 3
+_MAX_PROFICIENCY_LEVELS = 5  # matches _DEFAULT_PROFICIENCY_LEVELS above
+
+
+def _level_to_required_score(level: int) -> float:
+    """Map a 1..N proficiency level to a 0–100 required_score band."""
+    return round(level * (100.0 / _MAX_PROFICIENCY_LEVELS), 2)
+
+
+@framework_router.post("/from-library", response_model=FrameworkOut, status_code=201)
+async def create_framework_from_library(
+    body: FrameworkFromLibraryRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> FrameworkOut:
+    """Create a new framework and bulk-import library competencies into it.
+
+    Used by the guided-flow proposal screen's "Continue to dashboard" button.
+    Seeds the default 5-level proficiency scale AND a Benchmark per competency
+    using item.suggested_proficiency_level (falling back to L3 if unset).
+    """
+    fw = Framework(
+        title=body.title,
+        description=body.description,
+        role_title=body.role_title,
+        user_id=current_user.user_id,
+    )
+    db.add(fw)
+    await db.flush()  # get fw.id
+
+    # Seed the default scale
+    await _seed_default_proficiency_levels(db, fw.id)
+
+    # Import each library competency + seed its benchmark
+    for item in body.competencies:
+        lib = await _load_library_competency(db, item.library_competency_id)
+        comp = Competency(
+            framework_id=fw.id,
+            name=lib.name,
+            description=lib.definition,
+            order_index=item.order_index,
+            cluster=lib.cluster,
+            library_competency_id=lib.id,
+        )
+        db.add(comp)
+        await db.flush()  # get comp.id
+
+        target_level = item.suggested_proficiency_level or _DEFAULT_BENCHMARK_LEVEL
+        db.add(
+            Benchmark(
+                framework_id=fw.id,
+                competency_id=comp.id,
+                required_level=target_level,
+                required_score=_level_to_required_score(target_level),
+            )
+        )
+
+    await db.commit()
+    return await _get_framework_or_404(fw.id, db)
+
+
+@framework_router.post(
+    "/{framework_id}/competencies/import-from-library",
+    response_model=CompetencyOut,
+    status_code=201,
+)
+async def import_competency_from_library(
+    framework_id: str,
+    body: ImportFromLibraryRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> CompetencyOut:
+    """Add a single library competency to an existing framework (picker write path)."""
+    fw = await _get_framework_or_404(framework_id, db)
+    _assert_owner(fw, current_user.user_id)
+
+    # Reject if this library competency is already in the framework
+    dup_stmt = select(Competency).where(
+        Competency.framework_id == framework_id,
+        Competency.library_competency_id == body.library_competency_id,
+    )
+    dup = (await db.execute(dup_stmt)).scalar_one_or_none()
+    if dup is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="This library competency is already in the framework.",
+        )
+
+    lib = await _load_library_competency(db, body.library_competency_id)
+    comp = Competency(
+        framework_id=framework_id,
+        name=lib.name,
+        description=lib.definition,
+        order_index=body.order_index,
+        cluster=lib.cluster,
+        library_competency_id=lib.id,
+    )
+    db.add(comp)
+    await db.flush()  # get comp.id
+
+    # Seed benchmark — uses caller-provided suggested level, else neutral L3 default
+    target_level = body.suggested_proficiency_level or _DEFAULT_BENCHMARK_LEVEL
+    db.add(
+        Benchmark(
+            framework_id=framework_id,
+            competency_id=comp.id,
+            required_level=target_level,
+            required_score=_level_to_required_score(target_level),
+        )
+    )
+
+    await db.commit()
+    await db.refresh(comp)
+    return comp
+
+
+@framework_router.get(
+    "/{framework_id}/competencies/picker-candidates",
+    response_model=list[PickerCandidate],
+)
+async def picker_candidates(
+    framework_id: str,
+    role_family: str | None = Query(None),
+    cluster: str | None = Query(None),
+    q: str | None = Query(None, description="Substring search on name + definition"),
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> list[PickerCandidate]:
+    """Library competencies eligible to add to this framework.
+
+    Excludes competencies whose library_competency_id is already present in the
+    framework. Supports filtering by role_family / cluster and a substring
+    search (case-insensitive) on name + definition.
+    """
+    fw = await _get_framework_or_404(framework_id, db)
+    _assert_owner(fw, current_user.user_id)
+
+    # IDs of library competencies already in this framework
+    existing_stmt = select(Competency.library_competency_id).where(
+        Competency.framework_id == framework_id,
+        Competency.library_competency_id.is_not(None),
+    )
+    existing_ids = {
+        row[0] for row in (await db.execute(existing_stmt)).all() if row[0]
+    }
+
+    # Filtered library query — visibility helper applied so user sees seeded
+    # competencies + custom competencies their org has created.
+    from ..services.competency_visibility import visible_competencies_stmt
+
+    stmt = visible_competencies_stmt(current_user.user_id).options(
+        selectinload(CompetencyDefinition.framework)
+    )
+    if existing_ids:
+        stmt = stmt.where(CompetencyDefinition.id.not_in(existing_ids))
+    if role_family:
+        stmt = stmt.where(CompetencyDefinition.role_family == role_family)
+    if cluster:
+        stmt = stmt.where(CompetencyDefinition.cluster == cluster)
+    if q:
+        pattern = f"%{q.lower()}%"
+        # SQLite lacks ILIKE; SQLAlchemy's .ilike maps to LOWER(col) LIKE in that case.
+        stmt = stmt.where(
+            CompetencyDefinition.name.ilike(pattern)
+            | CompetencyDefinition.definition.ilike(pattern)
+        )
+
+    rows = (await db.execute(stmt)).scalars().all()
+    return [
+        PickerCandidate(
+            library_competency_id=c.id,
+            name=c.name,
+            definition=c.definition,
+            role_family=c.role_family,
+            cluster=c.cluster,
+            framework_source=c.framework_source,
+            framework_name=c.framework.name if c.framework else "",
+            is_custom=c.is_custom,
+            status=c.status,
+        )
+        for c in rows
+    ]
+
+
+@framework_router.get(
+    "/{framework_id}/competencies/{competency_id}/detail",
+    response_model=CompetencyDetailView,
+)
+async def get_competency_detail(
+    framework_id: str,
+    competency_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: AuthUser = Depends(require_user),
+) -> CompetencyDetailView:
+    """Full detail for the side panel: 5 levels with descriptors + indicators,
+    library provenance, linked survey. Read-only — editing lands in a later task.
+
+    Level data is sourced from the library when this competency was imported
+    (descriptor + indicators per-level). For from-scratch competencies, falls
+    back to the framework-level ProficiencyLevel descriptors with empty
+    indicator lists.
+    """
+    fw = await _get_framework_or_404(framework_id, db)
+    _assert_owner(fw, current_user.user_id)
+
+    stmt = (
+        select(Competency)
+        .where(Competency.id == competency_id, Competency.framework_id == framework_id)
+        .options(selectinload(Competency.survey_links))
+    )
+    comp = (await db.execute(stmt)).scalar_one_or_none()
+    if comp is None:
+        raise HTTPException(status_code=404, detail="Competency not found")
+
+    # Library overlay (if imported)
+    library_framework_source: str | None = None
+    library_role_family: str | None = None
+    library_framework_name: str | None = None
+    library_is_custom: bool = False
+    library_status: str = "active"
+    library_organization_id: str | None = None
+    levels: list[CompetencyLevelView] = []
+
+    if comp.library_competency_id:
+        lib_stmt = (
+            select(CompetencyDefinition)
+            .where(CompetencyDefinition.id == comp.library_competency_id)
+            .options(
+                selectinload(CompetencyDefinition.proficiency_levels),
+                selectinload(CompetencyDefinition.framework),
+            )
+        )
+        lib = (await db.execute(lib_stmt)).scalar_one_or_none()
+        if lib is not None:
+            library_framework_source = lib.framework_source
+            library_role_family = lib.role_family
+            library_framework_name = lib.framework.name if lib.framework else None
+            library_is_custom = lib.is_custom
+            library_status = lib.status
+            library_organization_id = lib.organization_id
+            for pl in sorted(lib.proficiency_levels, key=lambda p: p.level):
+                levels.append(
+                    CompetencyLevelView(
+                        level=pl.level,
+                        label=pl.label,
+                        descriptor=pl.descriptor,
+                        behavioral_indicators=_parse_json_list(pl.behavioral_indicators),
+                        example_behaviors=_parse_json_list(pl.example_behaviors),
+                    )
+                )
+
+    # Fall back to the framework-level proficiency scale if no library data
+    if not levels:
+        fw_levels = sorted(fw.proficiency_levels, key=lambda p: p.level)
+        levels = [
+            CompetencyLevelView(
+                level=pl.level,
+                label=pl.label,
+                descriptor=pl.description,
+                behavioral_indicators=[],
+                example_behaviors=[],
+            )
+            for pl in fw_levels
+        ]
+
+    # Linked survey (at most one per competency by FrameworkSurvey upsert design)
+    linked_survey: LinkedSurveyView | None = None
+    if comp.survey_links:
+        sl = comp.survey_links[0]
+        linked_survey = LinkedSurveyView(survey_id=sl.survey_id, survey_name=None)
+
+    return CompetencyDetailView(
+        id=comp.id,
+        framework_id=comp.framework_id,
+        name=comp.name,
+        description=comp.description,
+        cluster=comp.cluster,
+        order_index=comp.order_index,
+        library_competency_id=comp.library_competency_id,
+        library_framework_source=library_framework_source,
+        library_role_family=library_role_family,
+        library_framework_name=library_framework_name,
+        library_is_custom=library_is_custom,
+        library_status=library_status,
+        library_organization_id=library_organization_id,
+        levels=levels,
+        linked_survey=linked_survey,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -349,6 +718,34 @@ async def link_survey(
 ) -> FrameworkSurveyOut:
     fw = await _get_framework_or_404(framework_id, db)
     _assert_owner(fw, current_user.user_id)
+
+    # Block linking when the underlying library competency is still a draft.
+    # Drafts ARE usable in frameworks (per product spec) but cannot be wired
+    # to an assessment until they reach status='active'.
+    target_comp = (
+        await db.execute(
+            select(Competency).where(
+                Competency.id == body.competency_id,
+                Competency.framework_id == framework_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if target_comp is not None and target_comp.library_competency_id is not None:
+        lib = (
+            await db.execute(
+                select(CompetencyDefinition).where(
+                    CompetencyDefinition.id == target_comp.library_competency_id
+                )
+            )
+        ).scalar_one_or_none()
+        if lib is not None and lib.status == "draft":
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Cannot link an assessment to a draft competency. "
+                    "Complete the competency (add proficiency levels and indicators) first."
+                ),
+            )
 
     # Upsert — remove existing link for this competency first
     existing_stmt = select(FrameworkSurvey).where(

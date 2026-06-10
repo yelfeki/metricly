@@ -1,0 +1,397 @@
+<div style="background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1.25rem; font-family: var(--font-sans);">
+
+<h2 class="sr-only">Interactive competency relationship network showing how competencies connect across clusters. Click nodes to reveal details.</h2>
+
+<!-- Header -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; gap: 12px;">
+  <div>
+    <div style="font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 4px; letter-spacing: 0.5px;">METRICLY · RELATIONAL VIEW</div>
+    <div style="font-size: 18px; font-weight: 500;">Competency relationship network</div>
+    <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 2px;">Hover to highlight connections · click any node to see details</div>
+  </div>
+  <div style="display: flex; gap: 6px; align-items: center;">
+    <button id="layoutBtn" style="font-size: 12px;"><i class="ti ti-affiliate" style="font-size: 13px; vertical-align: -2px;" aria-hidden="true"></i> Network</button>
+    <button id="radialBtn" style="font-size: 12px;"><i class="ti ti-target" style="font-size: 13px; vertical-align: -2px;" aria-hidden="true"></i> Radial</button>
+  </div>
+</div>
+
+<!-- Cluster legend -->
+<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; padding: 10px 12px; background: var(--color-background-primary); border-radius: var(--border-radius-md);">
+  <div style="display: flex; align-items: center; gap: 5px; font-size: 11px;"><span style="width: 10px; height: 10px; background: #534AB7; border-radius: 50%;"></span><span style="color: var(--color-text-secondary);">Leadership</span></div>
+  <div style="display: flex; align-items: center; gap: 5px; font-size: 11px;"><span style="width: 10px; height: 10px; background: #0F6E56; border-radius: 50%;"></span><span style="color: var(--color-text-secondary);">Strategic</span></div>
+  <div style="display: flex; align-items: center; gap: 5px; font-size: 11px;"><span style="width: 10px; height: 10px; background: #993556; border-radius: 50%;"></span><span style="color: var(--color-text-secondary);">Interpersonal</span></div>
+  <div style="display: flex; align-items: center; gap: 5px; font-size: 11px;"><span style="width: 10px; height: 10px; background: #185FA5; border-radius: 50%;"></span><span style="color: var(--color-text-secondary);">Execution</span></div>
+  <div style="display: flex; align-items: center; gap: 5px; font-size: 11px;"><span style="width: 10px; height: 10px; background: #854F0B; border-radius: 50%;"></span><span style="color: var(--color-text-secondary);">Adaptability</span></div>
+  <div style="display: flex; align-items: center; gap: 5px; font-size: 11px;"><span style="width: 10px; height: 10px; background: #993C1D; border-radius: 50%;"></span><span style="color: var(--color-text-secondary);">Business</span></div>
+</div>
+
+<!-- Main canvas + detail panel -->
+<div style="display: grid; grid-template-columns: 1fr 240px; gap: 12px; margin-bottom: 1rem;">
+
+  <!-- SVG network -->
+  <div style="background: var(--color-background-primary); border-radius: var(--border-radius-lg); padding: 8px; position: relative; min-height: 480px; overflow: hidden;">
+    <svg id="netSvg" viewBox="0 0 480 480" style="width: 100%; height: 480px; display: block;" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="hoverHint" style="position: absolute; top: 12px; left: 12px; font-size: 10px; color: var(--color-text-tertiary); pointer-events: none;"><i class="ti ti-hand-finger" style="font-size: 11px; vertical-align: -1px;" aria-hidden="true"></i> click to explore</div>
+  </div>
+
+  <!-- Detail panel -->
+  <div id="detailPanel" style="background: var(--color-background-primary); border-radius: var(--border-radius-lg); padding: 14px; min-height: 480px; position: relative; overflow: hidden;">
+    <div id="emptyState" style="text-align: center; padding-top: 100px; color: var(--color-text-tertiary);">
+      <i class="ti ti-pointer" style="font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.5;" aria-hidden="true"></i>
+      <div style="font-size: 12px;">Select a competency</div>
+      <div style="font-size: 11px; margin-top: 4px; opacity: 0.7;">to see its connections, behavioural indicators, and related skills</div>
+    </div>
+    <div id="detailContent" style="opacity: 0; transform: translateY(8px); transition: opacity 0.35s ease, transform 0.35s ease;"></div>
+  </div>
+</div>
+
+<!-- Connection strength chart + stats -->
+<div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px;">
+  <div style="background: var(--color-background-primary); border-radius: var(--border-radius-lg); padding: 14px;">
+    <div style="font-size: 13px; font-weight: 500; margin-bottom: 4px;">Cross-cluster dependency strength</div>
+    <div style="font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 10px;">Higher score = competency clusters reinforce each other more often in role profiles</div>
+    <div id="depBars"></div>
+  </div>
+  <div style="background: var(--color-background-primary); border-radius: var(--border-radius-lg); padding: 14px;">
+    <div style="font-size: 13px; font-weight: 500; margin-bottom: 4px;">Network density</div>
+    <div style="font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 12px;">How interconnected this framework is</div>
+    <div style="position: relative; height: 110px; display: flex; align-items: center; justify-content: center;">
+      <svg viewBox="0 0 120 120" style="width: 110px; height: 110px;">
+        <circle cx="60" cy="60" r="48" fill="none" stroke="rgba(125,125,125,0.15)" stroke-width="8"/>
+        <circle id="densityArc" cx="60" cy="60" r="48" fill="none" stroke="#534AB7" stroke-width="8" stroke-dasharray="0 999" stroke-linecap="round" transform="rotate(-90 60 60)" style="transition: stroke-dasharray 1.2s cubic-bezier(0.4, 0, 0.2, 1);"/>
+        <text x="60" y="58" text-anchor="middle" font-size="22" font-weight="500" fill="var(--color-text-primary)">68%</text>
+        <text x="60" y="74" text-anchor="middle" font-size="9" fill="var(--color-text-secondary)">density</text>
+      </svg>
+    </div>
+    <div style="display: flex; justify-content: space-around; margin-top: 8px; font-size: 11px; color: var(--color-text-secondary);">
+      <div style="text-align: center;"><div style="font-size: 14px; font-weight: 500; color: var(--color-text-primary);">24</div>nodes</div>
+      <div style="text-align: center;"><div style="font-size: 14px; font-weight: 500; color: var(--color-text-primary);">42</div>edges</div>
+      <div style="text-align: center;"><div style="font-size: 14px; font-weight: 500; color: var(--color-text-primary);">6</div>clusters</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<style>
+.node-circle { cursor: pointer; transition: r 0.25s ease, opacity 0.25s ease; }
+.node-circle:hover { opacity: 0.85; }
+.node-label { font-size: 9px; font-weight: 500; pointer-events: none; transition: opacity 0.25s ease; }
+.edge-line { transition: opacity 0.25s ease, stroke-width 0.25s ease; }
+.node-group.dim .node-circle { opacity: 0.18; }
+.node-group.dim .node-label { opacity: 0.25; }
+.edge-line.dim { opacity: 0.06; }
+.edge-line.highlight { opacity: 0.85; stroke-width: 2; }
+.node-group.active .node-circle { stroke: var(--color-text-primary); stroke-width: 2.5; }
+.dep-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 11px; }
+.dep-label { width: 110px; color: var(--color-text-secondary); }
+.dep-track { flex: 1; height: 6px; background: var(--color-background-secondary); border-radius: 3px; overflow: hidden; }
+.dep-fill { height: 100%; border-radius: 3px; width: 0; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); }
+.dep-val { width: 24px; text-align: right; font-weight: 500; font-size: 11px; }
+.detail-bar { height: 6px; background: var(--color-background-secondary); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+.detail-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+@keyframes pulse-ring { 0% { r: 12; opacity: 0.6; } 100% { r: 28; opacity: 0; } }
+.pulse { animation: pulse-ring 1.2s ease-out infinite; }
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.indicator-chip { animation: fadeSlide 0.4s ease both; }
+</style>
+
+<script>
+(function() {
+  const clusters = {
+    leadership:    { color: '#534AB7', bg: '#EEEDFE', text: '#26215C' },
+    strategic:     { color: '#0F6E56', bg: '#E1F5EE', text: '#04342C' },
+    interpersonal: { color: '#993556', bg: '#FBEAF0', text: '#4B1528' },
+    execution:     { color: '#185FA5', bg: '#E6F1FB', text: '#042C53' },
+    adaptability:  { color: '#854F0B', bg: '#FAEEDA', text: '#412402' },
+    business:      { color: '#993C1D', bg: '#FAECE7', text: '#4A1B0C' }
+  };
+
+  const competencies = [
+    { id: 'vision', name: 'Vision setting', cluster: 'leadership', target: 5, indicators: ['Articulates 3-year future state', 'Inspires action through narrative', 'Connects vision to daily work'] },
+    { id: 'coach', name: 'Coaching', cluster: 'leadership', target: 4, indicators: ['Asks powerful questions', 'Gives timely feedback', 'Builds development plans'] },
+    { id: 'decide', name: 'Decision making', cluster: 'leadership', target: 4, indicators: ['Weighs trade-offs explicitly', 'Decides with incomplete data', 'Owns decision outcomes'] },
+    { id: 'account', name: 'Accountability', cluster: 'leadership', target: 5, indicators: ['Sets clear expectations', 'Follows through on commitments', 'Holds others to standard'] },
+    { id: 'systems', name: 'Systems thinking', cluster: 'strategic', target: 4, indicators: ['Maps cause and effect', 'Identifies leverage points', 'Anticipates second-order effects'] },
+    { id: 'plan', name: 'Strategic planning', cluster: 'strategic', target: 5, indicators: ['Translates vision to roadmap', 'Sequences initiatives', 'Defines success metrics'] },
+    { id: 'innov', name: 'Innovation', cluster: 'strategic', target: 3, indicators: ['Generates novel options', 'Challenges status quo', 'Prototypes rapidly'] },
+    { id: 'market', name: 'Market awareness', cluster: 'strategic', target: 4, indicators: ['Tracks industry signals', 'Reads competitor moves', 'Spots emerging trends'] },
+    { id: 'listen', name: 'Active listening', cluster: 'interpersonal', target: 4, indicators: ['Reflects back accurately', 'Asks clarifying questions', 'Suspends judgment'] },
+    { id: 'conflict', name: 'Conflict resolution', cluster: 'interpersonal', target: 3, indicators: ['Names tension openly', 'Finds common ground', 'Mediates without taking sides'] },
+    { id: 'influ', name: 'Influence', cluster: 'interpersonal', target: 4, indicators: ['Tailors message to audience', 'Builds coalitions', 'Persuades with evidence'] },
+    { id: 'culture', name: 'Cultural agility', cluster: 'interpersonal', target: 3, indicators: ['Adapts communication style', 'Reads cultural cues', 'Works across geographies'] },
+    { id: 'deliver', name: 'Project delivery', cluster: 'execution', target: 4, indicators: ['Plans backwards from outcomes', 'Removes blockers', 'Ships on time'] },
+    { id: 'prio', name: 'Prioritisation', cluster: 'execution', target: 4, indicators: ['Distinguishes urgent vs important', 'Says no constructively', 'Reallocates as context shifts'] },
+    { id: 'quality', name: 'Quality focus', cluster: 'execution', target: 4, indicators: ['Defines quality criteria', 'Inspects rigorously', 'Drives continuous improvement'] },
+    { id: 'resource', name: 'Resource mgmt', cluster: 'execution', target: 3, indicators: ['Forecasts capacity', 'Balances workloads', 'Protects team focus'] },
+    { id: 'resil', name: 'Resilience', cluster: 'adaptability', target: 4, indicators: ['Recovers from setbacks', 'Maintains composure under pressure', 'Reframes obstacles'] },
+    { id: 'learn', name: 'Learning agility', cluster: 'adaptability', target: 4, indicators: ['Seeks feedback actively', 'Experiments with new approaches', 'Updates beliefs on evidence'] },
+    { id: 'change', name: 'Change leadership', cluster: 'adaptability', target: 4, indicators: ['Builds case for change', 'Manages transition curve', 'Sustains momentum'] },
+    { id: 'ambig', name: 'Ambiguity tolerance', cluster: 'adaptability', target: 3, indicators: ['Acts without full information', 'Holds multiple hypotheses', 'Adjusts as clarity emerges'] },
+    { id: 'finance', name: 'Financial acumen', cluster: 'business', target: 4, indicators: ['Reads P&L drivers', 'Builds business cases', 'Tracks unit economics'] },
+    { id: 'customer', name: 'Customer focus', cluster: 'business', target: 5, indicators: ['Anchors to customer outcomes', 'Listens to direct feedback', 'Closes loop on issues'] },
+    { id: 'commerce', name: 'Commercial judgment', cluster: 'business', target: 4, indicators: ['Balances risk and reward', 'Negotiates effectively', 'Spots commercial opportunity'] },
+    { id: 'data', name: 'Data literacy', cluster: 'business', target: 3, indicators: ['Reads metrics in context', 'Distinguishes signal from noise', 'Asks for the right data'] }
+  ];
+
+  // Edges encode meaningful psychometric/IO relationships
+  const edges = [
+    ['vision','plan'], ['vision','influ'], ['vision','change'], ['vision','account'],
+    ['coach','listen'], ['coach','learn'], ['coach','account'],
+    ['decide','systems'], ['decide','ambig'], ['decide','data'], ['decide','account'],
+    ['account','deliver'], ['account','quality'],
+    ['systems','plan'], ['systems','data'], ['systems','market'],
+    ['plan','prio'], ['plan','resource'], ['plan','finance'],
+    ['innov','ambig'], ['innov','learn'], ['innov','market'],
+    ['market','customer'], ['market','commerce'],
+    ['listen','conflict'], ['listen','influ'], ['listen','customer'],
+    ['conflict','influ'], ['conflict','culture'],
+    ['influ','change'], ['influ','commerce'],
+    ['culture','change'],
+    ['deliver','prio'], ['deliver','quality'], ['deliver','resource'],
+    ['quality','customer'],
+    ['resource','finance'],
+    ['resil','ambig'], ['resil','change'],
+    ['learn','ambig'], ['learn','data'],
+    ['finance','commerce'], ['finance','data'],
+    ['customer','commerce']
+  ];
+
+  const svg = document.getElementById('netSvg');
+  const W = 480, H = 480;
+  const cx = W/2, cy = H/2;
+  let currentLayout = 'network';
+  let positions = {};
+  let activeId = null;
+
+  // Compute network layout: cluster centroids around a circle, nodes around their centroid
+  function computeNetworkPositions() {
+    const clusterKeys = Object.keys(clusters);
+    const clusterAngles = {};
+    clusterKeys.forEach((k, i) => {
+      const a = (i / clusterKeys.length) * Math.PI * 2 - Math.PI/2;
+      clusterAngles[k] = { x: cx + Math.cos(a) * 140, y: cy + Math.sin(a) * 140 };
+    });
+    const grouped = {};
+    competencies.forEach(c => { (grouped[c.cluster] = grouped[c.cluster] || []).push(c); });
+    const pos = {};
+    clusterKeys.forEach(k => {
+      const ctr = clusterAngles[k];
+      const members = grouped[k] || [];
+      members.forEach((c, i) => {
+        const a = (i / members.length) * Math.PI * 2;
+        pos[c.id] = { x: ctr.x + Math.cos(a) * 52, y: ctr.y + Math.sin(a) * 52 };
+      });
+    });
+    return pos;
+  }
+
+  function computeRadialPositions() {
+    const clusterKeys = Object.keys(clusters);
+    const grouped = {};
+    competencies.forEach(c => { (grouped[c.cluster] = grouped[c.cluster] || []).push(c); });
+    const pos = {};
+    let idx = 0;
+    clusterKeys.forEach((k, ki) => {
+      const members = grouped[k] || [];
+      const startA = (ki / clusterKeys.length) * Math.PI * 2 - Math.PI/2;
+      const spread = (Math.PI * 2) / clusterKeys.length * 0.85;
+      members.forEach((c, i) => {
+        const a = startA - spread/2 + (i / Math.max(1, members.length-1)) * spread;
+        const r = 175;
+        pos[c.id] = { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r };
+      });
+    });
+    return pos;
+  }
+
+  function render() {
+    positions = currentLayout === 'network' ? computeNetworkPositions() : computeRadialPositions();
+    svg.innerHTML = '';
+
+    // Edges first
+    const edgesGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+    edgesGroup.setAttribute('id','edgesGroup');
+    edges.forEach(([a,b]) => {
+      const p1 = positions[a], p2 = positions[b];
+      if (!p1 || !p2) return;
+      const ca = competencies.find(c=>c.id===a).cluster;
+      const cb = competencies.find(c=>c.id===b).cluster;
+      const sameCluster = ca === cb;
+      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+      line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+      line.setAttribute('stroke', sameCluster ? clusters[ca].color : 'rgba(125,125,125,0.35)');
+      line.setAttribute('stroke-width', sameCluster ? 1.2 : 0.7);
+      line.setAttribute('opacity', sameCluster ? 0.5 : 0.35);
+      line.classList.add('edge-line');
+      line.dataset.a = a; line.dataset.b = b;
+      edgesGroup.appendChild(line);
+    });
+    svg.appendChild(edgesGroup);
+
+    // Nodes
+    const nodesGroup = document.createElementNS('http://www.w3.org/2000/svg','g');
+    nodesGroup.setAttribute('id','nodesGroup');
+    competencies.forEach(c => {
+      const p = positions[c.id];
+      const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+      g.classList.add('node-group');
+      g.dataset.id = c.id;
+      g.setAttribute('transform', `translate(${p.x},${p.y})`);
+
+      const radius = 7 + c.target * 1.5;
+      const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      circle.setAttribute('r', radius);
+      circle.setAttribute('fill', clusters[c.cluster].color);
+      circle.setAttribute('stroke', clusters[c.cluster].bg);
+      circle.setAttribute('stroke-width', 1.5);
+      circle.classList.add('node-circle');
+      g.appendChild(circle);
+
+      const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+      label.setAttribute('y', radius + 11);
+      label.setAttribute('text-anchor','middle');
+      label.setAttribute('fill','var(--color-text-secondary)');
+      label.classList.add('node-label');
+      label.textContent = c.name;
+      g.appendChild(label);
+
+      g.addEventListener('mouseenter', () => highlight(c.id, true));
+      g.addEventListener('mouseleave', () => { if (!activeId) clearHighlight(); else highlight(activeId, false); });
+      g.addEventListener('click', () => selectNode(c.id));
+
+      nodesGroup.appendChild(g);
+    });
+    svg.appendChild(nodesGroup);
+
+    if (activeId) highlight(activeId, false);
+  }
+
+  function getNeighbors(id) {
+    const set = new Set([id]);
+    edges.forEach(([a,b]) => {
+      if (a === id) set.add(b);
+      if (b === id) set.add(a);
+    });
+    return set;
+  }
+
+  function highlight(id, isHover) {
+    const neighbors = getNeighbors(id);
+    document.querySelectorAll('.node-group').forEach(g => {
+      const isNear = neighbors.has(g.dataset.id);
+      g.classList.toggle('dim', !isNear);
+      g.classList.toggle('active', g.dataset.id === id);
+    });
+    document.querySelectorAll('.edge-line').forEach(l => {
+      const connects = l.dataset.a === id || l.dataset.b === id;
+      l.classList.toggle('highlight', connects);
+      l.classList.toggle('dim', !connects);
+    });
+  }
+
+  function clearHighlight() {
+    document.querySelectorAll('.node-group').forEach(g => { g.classList.remove('dim','active'); });
+    document.querySelectorAll('.edge-line').forEach(l => { l.classList.remove('dim','highlight'); });
+  }
+
+  function selectNode(id) {
+    activeId = id;
+    highlight(id, false);
+    showDetail(id);
+  }
+
+  function showDetail(id) {
+    const c = competencies.find(x => x.id === id);
+    const cl = clusters[c.cluster];
+    const neighbors = Array.from(getNeighbors(id)).filter(n => n !== id).map(n => competencies.find(x => x.id === n));
+    const empty = document.getElementById('emptyState');
+    const content = document.getElementById('detailContent');
+    empty.style.display = 'none';
+
+    const targetPct = (c.target / 5) * 100;
+    const clusterLabelMap = { leadership:'Leadership', strategic:'Strategic', interpersonal:'Interpersonal', execution:'Execution', adaptability:'Adaptability', business:'Business' };
+
+    content.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+        <div style="width: 28px; height: 28px; border-radius: 50%; background: ${cl.bg}; display: flex; align-items: center; justify-content: center;">
+          <div style="width: 12px; height: 12px; border-radius: 50%; background: ${cl.color};"></div>
+        </div>
+        <div>
+          <div style="font-size: 13px; font-weight: 500;">${c.name}</div>
+          <div style="font-size: 10px; color: ${cl.color}; font-weight: 500;">${clusterLabelMap[c.cluster]}</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--color-text-secondary); margin-bottom: 2px;">
+          <span>Target proficiency</span><span style="font-weight: 500; color: ${cl.color};">L${c.target} of 5</span>
+        </div>
+        <div class="detail-bar"><div class="detail-bar-fill" style="background: ${cl.color}; width: 0;"></div></div>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <div style="font-size: 10px; color: var(--color-text-secondary); margin-bottom: 6px; font-weight: 500; letter-spacing: 0.4px;">BEHAVIOURAL INDICATORS</div>
+        ${c.indicators.map((ind, i) => `
+          <div class="indicator-chip" style="animation-delay: ${i * 0.08}s; font-size: 11px; padding: 6px 8px; background: ${cl.bg}; color: ${cl.text}; border-radius: var(--border-radius-md); margin-bottom: 4px; display: flex; align-items: flex-start; gap: 6px;">
+            <i class="ti ti-check" style="font-size: 12px; margin-top: 1px; flex-shrink: 0;" aria-hidden="true"></i>
+            <span>${ind}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <div style="margin-bottom: 10px;">
+        <div style="font-size: 10px; color: var(--color-text-secondary); margin-bottom: 6px; font-weight: 500; letter-spacing: 0.4px;">CONNECTED COMPETENCIES (${neighbors.length})</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+          ${neighbors.map((n, i) => {
+            const nc = clusters[n.cluster];
+            return `<span class="indicator-chip" style="animation-delay: ${(c.indicators.length + i) * 0.05}s; font-size: 10px; padding: 3px 7px; background: ${nc.bg}; color: ${nc.text}; border-radius: var(--border-radius-md); cursor: pointer;" onclick="window._mc_select('${n.id}')">${n.name}</span>`;
+          }).join('')}
+        </div>
+      </div>
+    `;
+
+    content.style.opacity = '0';
+    content.style.transform = 'translateY(8px)';
+    requestAnimationFrame(() => {
+      content.style.opacity = '1';
+      content.style.transform = 'translateY(0)';
+      setTimeout(() => {
+        const fill = content.querySelector('.detail-bar-fill');
+        if (fill) fill.style.width = targetPct + '%';
+      }, 100);
+    });
+  }
+
+  window._mc_select = selectNode;
+
+  // Dependency bars
+  const deps = [
+    { label: 'Leadership ↔ Strategic', val: 88, color: '#534AB7' },
+    { label: 'Execution ↔ Business', val: 76, color: '#185FA5' },
+    { label: 'Leadership ↔ Interpersonal', val: 72, color: '#993556' },
+    { label: 'Strategic ↔ Business', val: 68, color: '#0F6E56' },
+    { label: 'Adaptability ↔ Leadership', val: 64, color: '#854F0B' },
+    { label: 'Interpersonal ↔ Adaptability', val: 52, color: '#993C1D' }
+  ];
+  const depHtml = deps.map(d => `
+    <div class="dep-row">
+      <span class="dep-label">${d.label}</span>
+      <div class="dep-track"><div class="dep-fill" data-val="${d.val}" style="background: ${d.color};"></div></div>
+      <span class="dep-val" style="color: var(--color-text-secondary);">${d.val}</span>
+    </div>
+  `).join('');
+  document.getElementById('depBars').innerHTML = depHtml;
+
+  setTimeout(() => {
+    document.querySelectorAll('.dep-fill').forEach(el => { el.style.width = el.dataset.val + '%'; });
+    document.getElementById('densityArc').setAttribute('stroke-dasharray', `${0.68 * 2 * Math.PI * 48} 999`);
+  }, 200);
+
+  document.getElementById('layoutBtn').addEventListener('click', () => { currentLayout = 'network'; render(); });
+  document.getElementById('radialBtn').addEventListener('click', () => { currentLayout = 'radial'; render(); });
+
+  render();
+})();
+</script>

@@ -42,8 +42,8 @@ function fmtDate(iso: string | null): string {
 }
 
 const GROUP_COLORS = [
-  "#7c3aed", "#f59e0b", "#10b981", "#ef4444",
-  "#06b6d4", "#f97316", "#84cc16", "#ec4899",
+  "#0F2841", "#E2B146", "#7E8A55", "#DD6334",
+  "#2A5BA8", "#f97316", "#84cc16", "#ec4899",
 ]
 
 // ---------------------------------------------------------------------------
@@ -55,7 +55,7 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
     <section className="card p-6">
       <div className="mb-5">
         <h2 className="section-heading">{title}</h2>
-        {subtitle && <p className="mt-0.5 text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>{subtitle}</p>}
+        {subtitle && <p className="mt-0.5 text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>{subtitle}</p>}
       </div>
       {children}
     </section>
@@ -72,7 +72,7 @@ function OverviewCards({ data }: { data: DashboardData }) {
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
       <div className="card p-5">
         <p className="label-caps">Responses</p>
-        <p className="metric-value mt-2 text-4xl font-black tabular-nums" style={{ color: "#1e1b4b" }}>
+        <p className="metric-value mt-2 text-4xl font-black tabular-nums" style={{ color: "#0A1E33" }}>
           {data.response_count}
         </p>
       </div>
@@ -86,14 +86,14 @@ function OverviewCards({ data }: { data: DashboardData }) {
         <p className="label-caps">Avg. Score</p>
         <p
           className="metric-value mt-2 text-4xl font-black tabular-nums"
-          style={{ color: data.composite_color ?? "#5b21b6" }}
+          style={{ color: data.composite_color ?? "#0F2841" }}
         >
           {fmt(data.average_composite)}
         </p>
         {data.composite_label && (
           <span
             className="mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-            style={{ backgroundColor: data.composite_color ?? "#5b21b6" }}
+            style={{ backgroundColor: data.composite_color ?? "#0F2841" }}
           >
             {data.composite_label}
           </span>
@@ -102,14 +102,14 @@ function OverviewCards({ data }: { data: DashboardData }) {
 
       <div className="card p-5">
         <p className="label-caps">First Response</p>
-        <p className="metric-value mt-2 text-sm font-semibold" style={{ color: "rgba(30,27,75,0.7)" }}>
+        <p className="metric-value mt-2 text-sm font-semibold" style={{ color: "rgba(10,30,51,0.7)" }}>
           {fmtDate(data.date_range_start)}
         </p>
       </div>
 
       <div className="card p-5">
         <p className="label-caps">Latest Response</p>
-        <p className="metric-value mt-2 text-sm font-semibold" style={{ color: "rgba(30,27,75,0.7)" }}>
+        <p className="metric-value mt-2 text-sm font-semibold" style={{ color: "rgba(10,30,51,0.7)" }}>
           {fmtDate(data.date_range_end)}
         </p>
       </div>
@@ -123,7 +123,7 @@ function OverviewCards({ data }: { data: DashboardData }) {
 
 function FactorPerformance({ factors }: { factors: FactorDistribution[] }) {
   if (factors.filter(f => f.mean !== null).length === 0) {
-    return <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>No factor scores available yet.</p>
+    return <p className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>No factor scores available yet.</p>
   }
 
   return (
@@ -131,40 +131,40 @@ function FactorPerformance({ factors }: { factors: FactorDistribution[] }) {
       {factors.filter(f => f.mean !== null).map(f => (
         <div key={f.factor_name}>
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-sm font-medium" style={{ color: "rgba(30,27,75,0.75)" }}>{f.factor_name}</span>
+            <span className="text-sm font-medium" style={{ color: "rgba(10,30,51,0.75)" }}>{f.factor_name}</span>
             <div className="flex items-center gap-2">
               {f.label && (
                 <span
                   className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-                  style={{ backgroundColor: f.color ?? "#5b21b6" }}
+                  style={{ backgroundColor: f.color ?? "#0F2841" }}
                 >
                   {f.label}
                 </span>
               )}
-              <span className="text-xs tabular-nums" style={{ color: "rgba(30,27,75,0.45)" }}>
-                {fmt(f.mean)} <span style={{ color: "rgba(30,27,75,0.3)" }}>± {fmt(f.sd)}</span>
-                <span className="ml-1" style={{ color: "rgba(30,27,75,0.25)" }}>n={f.n}</span>
+              <span className="text-xs tabular-nums" style={{ color: "rgba(10,30,51,0.45)" }}>
+                {fmt(f.mean)} <span style={{ color: "rgba(10,30,51,0.3)" }}>± {fmt(f.sd)}</span>
+                <span className="ml-1" style={{ color: "rgba(10,30,51,0.25)" }}>n={f.n}</span>
               </span>
             </div>
           </div>
           {/* Bar with SD range */}
-          <div className="relative h-6 w-full overflow-hidden rounded-full" style={{ background: "rgba(91,33,182,0.06)" }}>
+          <div className="relative h-6 w-full overflow-hidden rounded-full" style={{ background: "rgba(15,40,65,0.06)" }}>
             {f.sd !== null && f.mean !== null && (
               <div
                 className="absolute top-1.5 h-3 rounded-full opacity-20"
                 style={{
                   left: `${Math.max(0, f.mean - f.sd)}%`,
                   width: `${Math.min(100, f.mean + f.sd) - Math.max(0, f.mean - f.sd)}%`,
-                  backgroundColor: f.color ?? "#5b21b6",
+                  backgroundColor: f.color ?? "#0F2841",
                 }}
               />
             )}
             <div
               className="absolute top-0 h-full rounded-full transition-all duration-500"
-              style={{ width: `${f.mean ?? 0}%`, backgroundColor: f.color ?? "#5b21b6", opacity: 0.8 }}
+              style={{ width: `${f.mean ?? 0}%`, backgroundColor: f.color ?? "#0F2841", opacity: 0.8 }}
             />
           </div>
-          <div className="mt-0.5 flex justify-between text-[10px]" style={{ color: "rgba(30,27,75,0.25)" }}>
+          <div className="mt-0.5 flex justify-between text-[10px]" style={{ color: "rgba(10,30,51,0.25)" }}>
             <span>0</span><span>100</span>
           </div>
         </div>
@@ -184,22 +184,22 @@ function ScoreDistribution({ data }: { data: DashboardData }) {
   }))
 
   if (data.composite_histogram.every(b => b.count === 0)) {
-    return <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>No composite scores yet.</p>
+    return <p className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>No composite scores yet.</p>
   }
 
   return (
     <ResponsiveContainer width="100%" height={200}>
       <BarChart data={histData} margin={{ top: 4, right: 8, bottom: 20, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(91,33,182,0.07)" vertical={false} />
-        <XAxis dataKey="name" tick={{ fontSize: 10, fill: "rgba(30,27,75,0.4)" }} angle={-35} textAnchor="end" interval={0} />
-        <YAxis tick={{ fontSize: 10, fill: "rgba(30,27,75,0.4)" }} allowDecimals={false} width={24} />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,40,65,0.07)" vertical={false} />
+        <XAxis dataKey="name" tick={{ fontSize: 10, fill: "rgba(10,30,51,0.4)" }} angle={-35} textAnchor="end" interval={0} />
+        <YAxis tick={{ fontSize: 10, fill: "rgba(10,30,51,0.4)" }} allowDecimals={false} width={24} />
         <Tooltip
           formatter={(v: unknown) => { const n = v as number; return [`${n} respondent${n !== 1 ? "s" : ""}`, "Count"] }}
           contentStyle={{ fontSize: 11, borderRadius: 12, border: "0.5px solid rgba(255,255,255,0.8)", background: "rgba(240,238,255,0.9)", backdropFilter: "blur(12px)" }}
         />
         <Bar dataKey="count" radius={[4, 4, 0, 0]}>
           {histData.map((_, i) => (
-            <Cell key={i} fill="#7c3aed" fillOpacity={0.7} />
+            <Cell key={i} fill="#0F2841" fillOpacity={0.7} />
           ))}
         </Bar>
       </BarChart>
@@ -216,7 +216,7 @@ function SignificanceBadge({ fc }: { fc: FactorGroupComparison }) {
     return (
       <span
         className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-        style={{ background: "rgba(30,27,75,0.07)", color: "rgba(30,27,75,0.5)" }}
+        style={{ background: "rgba(10,30,51,0.07)", color: "rgba(10,30,51,0.5)" }}
       >
         No significant difference
       </span>
@@ -226,7 +226,7 @@ function SignificanceBadge({ fc }: { fc: FactorGroupComparison }) {
   return (
     <span
       className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-      style={{ backgroundColor: isLarge ? "#dc2626" : "#d97706" }}
+      style={{ backgroundColor: isLarge ? "#DD6334" : "#E2B146" }}
     >
       {fc.effect_size_type === "cohen_d"
         ? `Cohen's d = ${fmt(fc.effect_size, 2)}`
@@ -254,7 +254,7 @@ function DemographicBreakdown({ surveyId, demographicKeys }: { surveyId: string;
 
   if (demographicKeys.length === 0) {
     return (
-      <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>
+      <p className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>
         No demographic questions found. Mark questions as demographic in the survey editor to enable group comparison.
       </p>
     )
@@ -263,7 +263,7 @@ function DemographicBreakdown({ surveyId, demographicKeys }: { surveyId: string;
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <label className="text-xs font-semibold" style={{ color: "rgba(30,27,75,0.5)" }}>Compare by:</label>
+        <label className="text-xs font-semibold" style={{ color: "rgba(10,30,51,0.5)" }}>Compare by:</label>
         <select
           value={selectedKey}
           onChange={e => setSelectedKey(e.target.value)}
@@ -274,11 +274,11 @@ function DemographicBreakdown({ surveyId, demographicKeys }: { surveyId: string;
         </select>
       </div>
 
-      {loading && <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Loading…</p>}
-      {error && <p className="text-xs" style={{ color: "#dc2626" }}>{error}</p>}
+      {loading && <p className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>Loading…</p>}
+      {error && <p className="text-xs" style={{ color: "#DD6334" }}>{error}</p>}
 
       {compData && compData.factors.length === 0 && (
-        <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>
+        <p className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>
           No factor scores available for comparison. Assign scoring algorithms to factors first.
         </p>
       )}
@@ -292,17 +292,17 @@ function DemographicBreakdown({ surveyId, demographicKeys }: { surveyId: string;
         return (
           <div key={fc.factor_name} className="space-y-2">
             <div className="flex items-center gap-3 flex-wrap">
-              <h4 className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>{fc.factor_name}</h4>
+              <h4 className="text-sm font-semibold" style={{ color: "#0A1E33" }}>{fc.factor_name}</h4>
               <SignificanceBadge fc={fc} />
-              <div className="flex gap-2 text-[10px]" style={{ color: "rgba(30,27,75,0.35)" }}>
+              <div className="flex gap-2 text-[10px]" style={{ color: "rgba(10,30,51,0.35)" }}>
                 {fc.groups.map(g => <span key={g.group_value}>{g.group_value}: n={g.n}</span>)}
               </div>
             </div>
             <ResponsiveContainer width="100%" height={160}>
               <BarChart data={chartData} margin={{ top: 4, right: 8, bottom: 4, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(91,33,182,0.07)" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "rgba(30,27,75,0.4)" }} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "rgba(30,27,75,0.4)" }} width={24} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,40,65,0.07)" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "rgba(10,30,51,0.4)" }} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: "rgba(10,30,51,0.4)" }} width={24} />
                 <Tooltip
                   formatter={(v: unknown, _n: unknown, props: { payload?: { n: number } }) => [
                     `${(v as number).toFixed(1)} (n=${props.payload?.n ?? "?"})`,
@@ -349,7 +349,7 @@ function RespondentsTable({ surveyId, factorNames }: { surveyId: string; factorN
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs" style={{ color: "rgba(30,27,75,0.45)" }}>
+        <p className="text-xs" style={{ color: "rgba(10,30,51,0.45)" }}>
           {data ? `${data.total} respondent${data.total !== 1 ? "s" : ""}` : ""}
         </p>
         <button
@@ -360,11 +360,11 @@ function RespondentsTable({ surveyId, factorNames }: { surveyId: string; factorN
         </button>
       </div>
 
-      {loading && <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Loading…</p>}
-      {error && <p className="text-xs" style={{ color: "#dc2626" }}>{error}</p>}
+      {loading && <p className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>Loading…</p>}
+      {error && <p className="text-xs" style={{ color: "#DD6334" }}>{error}</p>}
 
       {data && data.rows.length === 0 && (
-        <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>No responses yet.</p>
+        <p className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>No responses yet.</p>
       )}
 
       {data && data.rows.length > 0 && (
@@ -390,21 +390,21 @@ function RespondentsTable({ surveyId, factorNames }: { surveyId: string; factorN
               <tbody>
                 {data.rows.map((row: RespondentRow) => (
                   <tr key={row.response_id} style={{ borderTop: "0.5px solid rgba(255,255,255,0.3)" }}>
-                    <td className="px-3 py-2 font-mono" style={{ color: "rgba(30,27,75,0.6)" }}>
+                    <td className="px-3 py-2 font-mono" style={{ color: "rgba(10,30,51,0.6)" }}>
                       {row.respondent_ref ?? row.response_id.slice(0, 8)}
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap" style={{ color: "rgba(30,27,75,0.45)" }}>
+                    <td className="px-3 py-2 whitespace-nowrap" style={{ color: "rgba(10,30,51,0.45)" }}>
                       {new Date(row.submitted_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </td>
                     <td className="px-3 py-2 text-right">
                       <div className="flex flex-col items-end gap-0.5">
-                        <span className="tabular-nums font-semibold" style={{ color: row.composite_color ?? "rgba(30,27,75,0.5)" }}>
+                        <span className="tabular-nums font-semibold" style={{ color: row.composite_color ?? "rgba(10,30,51,0.5)" }}>
                           {fmt(row.composite_score)}
                         </span>
                         {row.composite_label && (
                           <span
                             className="rounded-full px-1.5 py-0.5 text-[9px] font-bold text-white"
-                            style={{ backgroundColor: row.composite_color ?? "#5b21b6" }}
+                            style={{ backgroundColor: row.composite_color ?? "#0F2841" }}
                           >
                             {row.composite_label}
                           </span>
@@ -414,23 +414,23 @@ function RespondentsTable({ surveyId, factorNames }: { surveyId: string; factorN
                     {factorNames.map(f => {
                       const entry = row.factor_scores[f]
                       return (
-                        <td key={f} className="px-3 py-2 text-right tabular-nums" style={{ color: "rgba(30,27,75,0.6)" }}>
+                        <td key={f} className="px-3 py-2 text-right tabular-nums" style={{ color: "rgba(10,30,51,0.6)" }}>
                           {entry?.normalized !== null && entry?.normalized !== undefined
                             ? fmt(entry.normalized)
-                            : <span style={{ color: "rgba(30,27,75,0.2)" }}>—</span>}
+                            : <span style={{ color: "rgba(10,30,51,0.2)" }}>—</span>}
                         </td>
                       )
                     })}
                     {Object.entries(data.rows[0].demographics).map(([k]) => (
-                      <td key={k} className="px-3 py-2" style={{ color: "rgba(30,27,75,0.6)" }}>
-                        {row.demographics[k] ?? <span style={{ color: "rgba(30,27,75,0.2)" }}>—</span>}
+                      <td key={k} className="px-3 py-2" style={{ color: "rgba(10,30,51,0.6)" }}>
+                        {row.demographics[k] ?? <span style={{ color: "rgba(10,30,51,0.2)" }}>—</span>}
                       </td>
                     ))}
                     <td className="px-3 py-2">
                       <Link
                         href={`/surveys/${surveyId}/responses/${row.response_id}/report`}
                         className="rounded-full px-1.5 py-0.5 text-[10px] font-bold transition-colors whitespace-nowrap"
-                        style={{ color: "#5b21b6", background: "rgba(91,33,182,0.08)" }}
+                        style={{ color: "#0F2841", background: "rgba(15,40,65,0.08)" }}
                       >
                         Report →
                       </Link>
@@ -450,7 +450,7 @@ function RespondentsTable({ surveyId, factorNames }: { surveyId: string; factorN
               >
                 ← Prev
               </button>
-              <span className="text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>{page} / {totalPages}</span>
+              <span className="text-xs" style={{ color: "rgba(10,30,51,0.5)" }}>{page} / {totalPages}</span>
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage(p => p + 1)}
@@ -494,7 +494,7 @@ export default function DashboardPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="page-title">Company Dashboard</h1>
-              <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+              <p className="mt-1 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>
                 Cohort analytics and demographic breakdown
               </p>
             </div>
@@ -504,7 +504,7 @@ export default function DashboardPage() {
           </div>
 
           {loading && (
-            <div className="flex justify-center py-20 text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
+            <div className="flex justify-center py-20 text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>
               Loading dashboard…
             </div>
           )}

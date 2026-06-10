@@ -35,6 +35,7 @@ competencies_router = APIRouter(prefix="/competencies", tags=["competencies"])
 class ProficiencyLevelOut(BaseModel):
     level: int
     label: str
+    descriptor: str | None = None  # free-text per-level descriptor (custom competencies)
     behavioral_indicators: list[str]
     example_behaviors: list[str]
 
@@ -60,8 +61,15 @@ class CompetencyListItem(BaseModel):
     factor: str | None
     cluster: str | None
     category: str | None
+    role_family: str | None
+    framework_source: str | None
     is_leadership: bool
     is_technical: bool
+    # Custom-competency fields (see CompetencyDefinition docstring)
+    is_custom: bool = False
+    status: str = "active"
+    organization_id: str | None = None
+    created_by_user_id: str | None = None
     primary_instrument: str | None  # short name of primary instrument if any
 
 
@@ -74,10 +82,61 @@ class CompetencyDetail(BaseModel):
     factor: str | None
     cluster: str | None
     category: str | None
+    role_family: str | None
+    framework_source: str | None
     is_leadership: bool
     is_technical: bool
+    # Custom-competency fields
+    is_custom: bool = False
+    status: str = "active"
+    organization_id: str | None = None
+    created_by_user_id: str | None = None
     proficiency_levels: list[ProficiencyLevelOut]
     instrument_mappings: list[InstrumentMappingOut]
+
+
+# ---------------------------------------------------------------------------
+# Custom competency schemas
+# ---------------------------------------------------------------------------
+
+
+class CustomCompetencyLevelInput(BaseModel):
+    level: int  # 1..5
+    label: str | None = None  # defaults to LEVEL_LABELS[level]
+    descriptor: str | None = None
+    behavioral_indicators: list[str] = []
+    example_behaviors: list[str] = []
+
+
+class CustomCompetencyCreate(BaseModel):
+    name: str
+    definition: str  # description
+    role_family: str
+    cluster: str
+    framework_source: str | None = None
+    levels: list[CustomCompetencyLevelInput] = []
+
+
+class CustomCompetencyUpdate(BaseModel):
+    name: str | None = None
+    definition: str | None = None
+    role_family: str | None = None
+    cluster: str | None = None
+    framework_source: str | None = None
+    # When provided, ALL existing levels are deleted and replaced with these.
+    # When None, levels are left untouched.
+    levels: list[CustomCompetencyLevelInput] | None = None
+
+
+class FrameworkUsageOut(BaseModel):
+    competency_id: str
+    framework_count: int
+    framework_titles: list[str]  # capped at 5
+
+
+class ClusterOptionsResponse(BaseModel):
+    # role_family -> sorted unique cluster names
+    options: dict[str, list[str]]
 
 
 class FrameworkListItem(BaseModel):
@@ -87,6 +146,38 @@ class FrameworkListItem(BaseModel):
     description: str | None
     version: str | None
     competency_count: int
+
+
+# ---------------------------------------------------------------------------
+# Guided-flow ranker schemas
+# ---------------------------------------------------------------------------
+
+
+class RankRequest(BaseModel):
+    role: str
+    level: str  # "IC" | "Team Lead" | "Manager" | "Director+"
+    outcome: str  # captured but not yet scored (see competency_ranker.py)
+    gaps: list[str] = []  # gap-concern labels from GAP_KEYWORDS in the ranker
+    size: str  # "lean" | "standard" | "comprehensive"
+    required_ids: list[str] | None = None
+
+
+class RankedItem(BaseModel):
+    competency_id: str
+    name: str
+    definition: str | None
+    cluster: str | None
+    role_family: str | None
+    framework_id: str
+    framework_name: str
+    score: int
+    rationale: str
+    suggested_proficiency_level: int
+
+
+class RankResponse(BaseModel):
+    role_family_inferred: str | None
+    ranked: list[RankedItem]
 
 
 # ---------------------------------------------------------------------------
@@ -154,6 +245,7 @@ def _proficiency_out(pl: CompetencyProficiencyLevel) -> ProficiencyLevelOut:
     return ProficiencyLevelOut(
         level=pl.level,
         label=pl.label,
+        descriptor=pl.descriptor,
         behavioral_indicators=_parse_json_field(pl.behavioral_indicators),
         example_behaviors=_parse_json_field(pl.example_behaviors),
     )
@@ -366,6 +458,50 @@ LEVEL_LABELS = {1: "Novice", 2: "Developing", 3: "Proficient", 4: "Advanced", 5:
 # ---------------------------------------------------------------------------
 
 
+@competencies_router.post("/rank-for-framework", response_model=RankResponse)
+async def rank_for_framework(
+    body: RankRequest,
+    _: AuthUser = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+) -> RankResponse:
+    """Read-only ranker — produces a proposal for the guided-flow screen.
+
+    Scoring (in services/competency_ranker.py): +3 role_family match,
+    +2 gap concern match, +1 cluster diversity bonus applied during greedy
+    selection. Required IDs are guaranteed-included. Size cap defined by
+    SIZE_CAPS (lean=6, standard=10, comprehensive=15).
+    """
+    from ..services.competency_ranker import infer_role_family, rank_competencies
+
+    ranked = await rank_competencies(
+        db,
+        role=body.role,
+        level=body.level,
+        outcome=body.outcome,
+        gaps=body.gaps,
+        size=body.size,
+        required_ids=body.required_ids,
+    )
+    return RankResponse(
+        role_family_inferred=infer_role_family(body.role),
+        ranked=[
+            RankedItem(
+                competency_id=r.competency_id,
+                name=r.name,
+                definition=r.definition,
+                cluster=r.cluster,
+                role_family=r.role_family,
+                framework_id=r.framework_id,
+                framework_name=r.framework_name,
+                score=r.score,
+                rationale=r.rationale,
+                suggested_proficiency_level=r.suggested_proficiency_level,
+            )
+            for r in ranked
+        ],
+    )
+
+
 @competencies_router.get("/frameworks", response_model=list[FrameworkListItem])
 async def list_frameworks(
     _: AuthUser = Depends(require_user),
@@ -392,16 +528,16 @@ async def list_competencies(
     factor: str | None = Query(None),
     cluster: str | None = Query(None),
     category: str | None = Query(None),
+    role_family: str | None = Query(None),
     is_leadership: bool | None = Query(None),
-    _: AuthUser = Depends(require_user),
+    current_user: AuthUser = Depends(require_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[CompetencyListItem]:
-    stmt = (
-        select(CompetencyDefinition)
-        .options(
-            selectinload(CompetencyDefinition.framework),
-            selectinload(CompetencyDefinition.instrument_mappings),
-        )
+    from ..services.competency_visibility import visible_competencies_stmt
+
+    stmt = visible_competencies_stmt(current_user.user_id).options(
+        selectinload(CompetencyDefinition.framework),
+        selectinload(CompetencyDefinition.instrument_mappings),
     )
     if framework_id:
         stmt = stmt.where(CompetencyDefinition.framework_id == framework_id)
@@ -411,6 +547,8 @@ async def list_competencies(
         stmt = stmt.where(CompetencyDefinition.cluster == cluster)
     if category:
         stmt = stmt.where(CompetencyDefinition.category == category)
+    if role_family:
+        stmt = stmt.where(CompetencyDefinition.role_family == role_family)
     if is_leadership is not None:
         stmt = stmt.where(CompetencyDefinition.is_leadership == is_leadership)
 
@@ -440,8 +578,14 @@ async def list_competencies(
             factor=c.factor,
             cluster=c.cluster,
             category=c.category,
+            role_family=c.role_family,
+            framework_source=c.framework_source,
             is_leadership=c.is_leadership,
             is_technical=c.is_technical,
+            is_custom=c.is_custom,
+            status=c.status,
+            organization_id=c.organization_id,
+            created_by_user_id=c.created_by_user_id,
             primary_instrument=next(
                 (insts[m.instrument_id] for m in c.instrument_mappings
                  if m.mapping_strength == "primary" and m.instrument_id in insts),
@@ -452,26 +596,10 @@ async def list_competencies(
     ]
 
 
-@competencies_router.get("/{competency_id}", response_model=CompetencyDetail)
-async def get_competency(
-    competency_id: str,
-    _: AuthUser = Depends(require_user),
-    db: AsyncSession = Depends(get_db),
+async def _build_competency_detail(
+    db: AsyncSession, comp: CompetencyDefinition
 ) -> CompetencyDetail:
-    stmt = (
-        select(CompetencyDefinition)
-        .where(CompetencyDefinition.id == competency_id)
-        .options(
-            selectinload(CompetencyDefinition.framework),
-            selectinload(CompetencyDefinition.proficiency_levels),
-            selectinload(CompetencyDefinition.instrument_mappings),
-        )
-    )
-    comp = (await db.execute(stmt)).scalar_one_or_none()
-    if comp is None:
-        raise HTTPException(status_code=404, detail="Competency not found.")
-
-    # Load instruments for mappings
+    """Shape a CompetencyDefinition into the API response (loads instruments)."""
     inst_ids = [m.instrument_id for m in comp.instrument_mappings]
     insts: dict[str, Instrument] = {}
     if inst_ids:
@@ -489,14 +617,310 @@ async def get_competency(
         factor=comp.factor,
         cluster=comp.cluster,
         category=comp.category,
+        role_family=comp.role_family,
+        framework_source=comp.framework_source,
         is_leadership=comp.is_leadership,
         is_technical=comp.is_technical,
-        proficiency_levels=[_proficiency_out(pl) for pl in comp.proficiency_levels],
+        is_custom=comp.is_custom,
+        status=comp.status,
+        organization_id=comp.organization_id,
+        created_by_user_id=comp.created_by_user_id,
+        proficiency_levels=[
+            _proficiency_out(pl) for pl in sorted(comp.proficiency_levels, key=lambda p: p.level)
+        ],
         instrument_mappings=[
             _mapping_out(m, insts[m.instrument_id])
             for m in comp.instrument_mappings
             if m.instrument_id in insts
         ],
+    )
+
+
+# NOTE: keep `/cluster-options` BEFORE `/{competency_id}` — FastAPI matches
+# routes in declaration order, and "cluster-options" would otherwise be
+# captured as a competency_id path parameter and return 404.
+@competencies_router.get("/cluster-options", response_model=ClusterOptionsResponse)
+async def get_cluster_options(
+    current_user: AuthUser = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+) -> ClusterOptionsResponse:
+    """Return role_family → sorted unique cluster names visible to this user.
+
+    Visibility helper applied so a user sees seeded clusters plus any their
+    org has introduced via custom competencies.
+    """
+    from ..services.competency_visibility import visible_competencies_stmt
+
+    rows = (
+        await db.execute(visible_competencies_stmt(current_user.user_id))
+    ).scalars().all()
+
+    grouped: dict[str, set[str]] = {}
+    for c in rows:
+        if not c.role_family or not c.cluster:
+            continue
+        grouped.setdefault(c.role_family, set()).add(c.cluster)
+
+    return ClusterOptionsResponse(
+        options={rf: sorted(clusters) for rf, clusters in sorted(grouped.items())}
+    )
+
+
+@competencies_router.get("/{competency_id}", response_model=CompetencyDetail)
+async def get_competency(
+    competency_id: str,
+    current_user: AuthUser = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+) -> CompetencyDetail:
+    from ..services.competency_visibility import visible_competencies_stmt
+
+    stmt = (
+        visible_competencies_stmt(current_user.user_id)
+        .where(CompetencyDefinition.id == competency_id)
+        .options(
+            selectinload(CompetencyDefinition.framework),
+            selectinload(CompetencyDefinition.proficiency_levels),
+            selectinload(CompetencyDefinition.instrument_mappings),
+        )
+    )
+    comp = (await db.execute(stmt)).scalar_one_or_none()
+    if comp is None:
+        # Either doesn't exist or isn't visible to this user — same response.
+        raise HTTPException(status_code=404, detail="Competency not found.")
+    return await _build_competency_detail(db, comp)
+
+
+# ---------------------------------------------------------------------------
+# Custom-competency endpoints
+# ---------------------------------------------------------------------------
+
+_CUSTOM_FRAMEWORK_NAME = "Custom Competencies"
+
+
+async def _get_or_create_custom_framework(db: AsyncSession) -> CompetencyFramework:
+    """Lazy-init the single global parent framework for all custom competencies.
+
+    Custom rows still need a non-null framework_id (the existing schema), but
+    the org boundary lives on the row, not on the parent. One row in
+    competency_frameworks named "Custom Competencies" serves as the parent for
+    every org's custom rows.
+    """
+    fw = (
+        await db.execute(
+            select(CompetencyFramework).where(
+                CompetencyFramework.name == _CUSTOM_FRAMEWORK_NAME
+            )
+        )
+    ).scalar_one_or_none()
+    if fw is not None:
+        return fw
+    fw = CompetencyFramework(
+        name=_CUSTOM_FRAMEWORK_NAME,
+        source="Custom (org-created)",
+        description=(
+            "Parent framework for organisation-created competencies. Org scope is "
+            "enforced on each CompetencyDefinition.organization_id; this framework "
+            "is shared across all orgs as a logical container."
+        ),
+        version="1.0",
+    )
+    db.add(fw)
+    await db.flush()
+    return fw
+
+
+def _level_has_indicators(indicators_json: str | None) -> bool:
+    parsed = _parse_json_field(indicators_json)
+    return any(isinstance(s, str) and s.strip() for s in parsed)
+
+
+async def _compute_status_from_db(db: AsyncSession, competency_id: str) -> str:
+    """Re-derive status from the persisted level rows. Call after writes."""
+    from ..services.competency_visibility import derive_status
+
+    levels = (
+        await db.execute(
+            select(CompetencyProficiencyLevel).where(
+                CompetencyProficiencyLevel.competency_id == competency_id
+            )
+        )
+    ).scalars().all()
+    level_count = len(levels)
+    with_inds = sum(1 for lv in levels if _level_has_indicators(lv.behavioral_indicators))
+    return derive_status(level_count=level_count, levels_with_indicators=with_inds)
+
+
+async def _write_levels(
+    db: AsyncSession,
+    competency_id: str,
+    inputs: list[CustomCompetencyLevelInput],
+) -> None:
+    """Insert proficiency level rows. Caller must delete prior rows first if updating."""
+    for lvl in inputs:
+        db.add(
+            CompetencyProficiencyLevel(
+                competency_id=competency_id,
+                level=lvl.level,
+                label=lvl.label or LEVEL_LABELS.get(lvl.level, f"Level {lvl.level}"),
+                descriptor=lvl.descriptor,
+                behavioral_indicators=json.dumps(lvl.behavioral_indicators),
+                example_behaviors=json.dumps(lvl.example_behaviors),
+            )
+        )
+
+
+@competencies_router.post("/custom", response_model=CompetencyDetail, status_code=201)
+async def create_custom_competency(
+    body: CustomCompetencyCreate,
+    current_user: AuthUser = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+) -> CompetencyDetail:
+    """Create an organisation-scoped custom competency.
+
+    Sets organization_id = created_by_user_id = current_user.user_id (until the
+    Organization model ships, see services.competency_visibility). Computes
+    status from the supplied levels via derive_status — clients cannot lie
+    about completeness.
+    """
+    fw = await _get_or_create_custom_framework(db)
+    comp = CompetencyDefinition(
+        framework_id=fw.id,
+        name=body.name,
+        definition=body.definition,
+        role_family=body.role_family,
+        cluster=body.cluster,
+        framework_source=body.framework_source,
+        organization_id=current_user.user_id,
+        created_by_user_id=current_user.user_id,
+        is_custom=True,
+        status="draft",  # provisional — recomputed below
+    )
+    db.add(comp)
+    await db.flush()  # get comp.id
+
+    if body.levels:
+        await _write_levels(db, comp.id, body.levels)
+        await db.flush()
+
+    comp.status = await _compute_status_from_db(db, comp.id)
+    await db.commit()
+
+    # Reload with relationships for response
+    refreshed = (
+        await db.execute(
+            select(CompetencyDefinition)
+            .where(CompetencyDefinition.id == comp.id)
+            .options(
+                selectinload(CompetencyDefinition.framework),
+                selectinload(CompetencyDefinition.proficiency_levels),
+                selectinload(CompetencyDefinition.instrument_mappings),
+            )
+        )
+    ).scalar_one()
+    return await _build_competency_detail(db, refreshed)
+
+
+@competencies_router.patch("/custom/{competency_id}", response_model=CompetencyDetail)
+async def update_custom_competency(
+    competency_id: str,
+    body: CustomCompetencyUpdate,
+    current_user: AuthUser = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+) -> CompetencyDetail:
+    """Update a custom competency. 403 unless is_editable_by(comp, user)."""
+    from ..services.competency_visibility import is_editable_by
+
+    comp = (
+        await db.execute(
+            select(CompetencyDefinition)
+            .where(CompetencyDefinition.id == competency_id)
+            .options(
+                selectinload(CompetencyDefinition.proficiency_levels),
+            )
+        )
+    ).scalar_one_or_none()
+    if comp is None:
+        raise HTTPException(status_code=404, detail="Competency not found.")
+    if not is_editable_by(comp, current_user.user_id):
+        raise HTTPException(
+            status_code=403,
+            detail="Only custom competencies owned by your organisation can be edited.",
+        )
+
+    if body.name is not None:
+        comp.name = body.name
+    if body.definition is not None:
+        comp.definition = body.definition
+    if body.role_family is not None:
+        comp.role_family = body.role_family
+    if body.cluster is not None:
+        comp.cluster = body.cluster
+    if body.framework_source is not None:
+        comp.framework_source = body.framework_source
+
+    if body.levels is not None:
+        # Replace all existing levels with the new set (atomic semantic)
+        for existing in list(comp.proficiency_levels):
+            await db.delete(existing)
+        await db.flush()
+        await _write_levels(db, comp.id, body.levels)
+        await db.flush()
+
+    comp.status = await _compute_status_from_db(db, comp.id)
+    await db.commit()
+
+    # populate_existing=True forces the relationship cache on the identity-mapped
+    # comp object to be rebuilt — otherwise selectinload skips the refresh and
+    # returns whatever was loaded at the start of the request.
+    refreshed = (
+        await db.execute(
+            select(CompetencyDefinition)
+            .where(CompetencyDefinition.id == comp.id)
+            .execution_options(populate_existing=True)
+            .options(
+                selectinload(CompetencyDefinition.framework),
+                selectinload(CompetencyDefinition.proficiency_levels),
+                selectinload(CompetencyDefinition.instrument_mappings),
+            )
+        )
+    ).scalar_one()
+    return await _build_competency_detail(db, refreshed)
+
+
+@competencies_router.get(
+    "/custom/{competency_id}/framework-usage", response_model=FrameworkUsageOut
+)
+async def get_framework_usage(
+    competency_id: str,
+    current_user: AuthUser = Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+) -> FrameworkUsageOut:
+    """How many frameworks import this competency? Drives the edit-confirmation modal."""
+    from ..models.framework import Competency as UserCompetency, Framework as UserFramework
+    from ..services.competency_visibility import visible_competencies_stmt
+
+    # Visibility check — only the competency's owner (or seeded competencies) can read usage.
+    visible = (
+        await db.execute(
+            visible_competencies_stmt(current_user.user_id).where(
+                CompetencyDefinition.id == competency_id
+            )
+        )
+    ).scalar_one_or_none()
+    if visible is None:
+        raise HTTPException(status_code=404, detail="Competency not found.")
+
+    stmt = (
+        select(UserFramework.title)
+        .join(UserCompetency, UserCompetency.framework_id == UserFramework.id)
+        .where(UserCompetency.library_competency_id == competency_id)
+        .where(UserFramework.user_id == current_user.user_id)
+    )
+    titles = [row[0] for row in (await db.execute(stmt)).all()]
+    return FrameworkUsageOut(
+        competency_id=competency_id,
+        framework_count=len(titles),
+        framework_titles=titles[:5],
     )
 
 

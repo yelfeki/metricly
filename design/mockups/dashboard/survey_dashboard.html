@@ -1,0 +1,571 @@
+<div style="--mx-bg: #FAF7F2; --mx-surface: #FFFCF6; --mx-surface-2: #F2EEE5; --mx-ink: #0A1E33; --mx-navy: #0F2841; --mx-navy-2: #1A4068; --mx-blue: #2A5BA8; --mx-clay: #C24232; --mx-orange: #DD6334; --mx-amber: #E2B146; --mx-cream: #DDD3C0; --mx-mute: #364668; --mx-border: rgba(15, 40, 65, 0.1); background: var(--mx-bg); border-radius: 14px; font-family: 'Manrope', 'Inter', system-ui, sans-serif; color: var(--mx-ink); overflow: hidden; min-height: 700px; display: grid; grid-template-columns: 220px 1fr;">
+
+<h2 class="sr-only">Survey dashboard application with sidebar navigation, sticky cohort filter, and seven sections covering overview, factor analysis, items, demographics, trends, qualitative themes, and psychometric quality.</h2>
+
+<aside style="background: var(--mx-navy); color: white; padding: 22px 16px; display: flex; flex-direction: column; position: relative; overflow: hidden;">
+  <div style="position: absolute; bottom: -60px; left: -60px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(226,177,70,0.08) 0%, transparent 70%); pointer-events: none;"></div>
+
+  <div style="margin-bottom: 22px; position: relative;">
+    <div style="font-family: 'Instrument Serif', Georgia, serif; font-size: 22px; line-height: 1; letter-spacing: -0.02em;">metricly</div>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.2em; color: rgba(226,177,70,0.9); margin-top: 2px;">SURVEY DASHBOARD</div>
+  </div>
+
+  <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 12px; margin-bottom: 22px; position: relative;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.16em; color: var(--mx-amber); margin-bottom: 4px;">ACTIVE SURVEY</div>
+    <div style="font-family: 'Instrument Serif', serif; font-size: 15px; line-height: 1.2;">Psychological safety pulse</div>
+    <div style="font-size: 10px; color: rgba(255,255,255,0.6); margin-top: 4px; font-family: 'JetBrains Mono', monospace;">Q1 2026 \u00b7 n=247</div>
+  </div>
+
+  <nav style="display: flex; flex-direction: column; gap: 1px; position: relative;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em; color: rgba(255,255,255,0.4); margin: 0 8px 8px; text-transform: uppercase;">PAGES</div>
+    <button class="nav-item active" data-page="overview"><i class="ti ti-layout-dashboard" aria-hidden="true"></i><span>Overview</span></button>
+    <button class="nav-item" data-page="factors"><i class="ti ti-chart-radar" aria-hidden="true"></i><span>Factors</span></button>
+    <button class="nav-item" data-page="items"><i class="ti ti-list-details" aria-hidden="true"></i><span>By item</span></button>
+    <button class="nav-item" data-page="demo"><i class="ti ti-users-group" aria-hidden="true"></i><span>Demographics</span></button>
+    <button class="nav-item" data-page="trends"><i class="ti ti-trending-up" aria-hidden="true"></i><span>Over time</span></button>
+    <button class="nav-item" data-page="qual"><i class="ti ti-message-circle" aria-hidden="true"></i><span>Qualitative</span></button>
+    <button class="nav-item" data-page="psycho"><i class="ti ti-shield-check" aria-hidden="true"></i><span>Psychometrics</span></button>
+    <button class="nav-item" data-page="solutions"><i class="ti ti-bulb" aria-hidden="true"></i><span>Recommendations</span></button>
+  </nav>
+
+  <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); position: relative;">
+    <button onclick="sendPrompt('Export survey dashboard as PDF')" style="width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: white; font-size: 11px; padding: 8px 12px; border-radius: 8px; font-family: inherit; cursor: pointer; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;"><i class="ti ti-download" aria-hidden="true"></i> Export PDF</button>
+    <button onclick="sendPrompt('Share survey dashboard')" style="width: 100%; background: linear-gradient(135deg, #C24232 0%, #DD6334 55%, #E2B146 100%); border: none; color: white; font-size: 11px; padding: 8px 12px; border-radius: 8px; font-family: inherit; cursor: pointer; font-weight: 500; display: flex; align-items: center; gap: 8px;"><i class="ti ti-share" aria-hidden="true"></i> Share with team</button>
+  </div>
+</aside>
+
+<main style="overflow: hidden; display: flex; flex-direction: column; max-height: 1400px;">
+
+  <div style="background: var(--mx-surface); border-bottom: 1px solid var(--mx-border); padding: 12px 24px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; position: sticky; top: 0; z-index: 10;">
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em; color: var(--mx-mute);">FILTER COHORT</span>
+
+    <div style="display: flex; gap: 4px; align-items: center;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: var(--mx-mute); margin-right: 4px;">ROLE</span>
+      <button class="chip active" data-dim="role" data-v="all">All</button>
+      <button class="chip" data-dim="role" data-v="ic">IC</button>
+      <button class="chip" data-dim="role" data-v="manager">Manager</button>
+      <button class="chip" data-dim="role" data-v="senior">Senior</button>
+    </div>
+
+    <div style="width: 1px; height: 18px; background: var(--mx-border);"></div>
+
+    <div style="display: flex; gap: 4px; align-items: center;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: var(--mx-mute); margin-right: 4px;">TENURE</span>
+      <button class="chip active" data-dim="tenure" data-v="all">All</button>
+      <button class="chip" data-dim="tenure" data-v="under1">&lt; 1y</button>
+      <button class="chip" data-dim="tenure" data-v="1to3">1\u20133y</button>
+      <button class="chip" data-dim="tenure" data-v="3plus">3y+</button>
+    </div>
+
+    <div style="width: 1px; height: 18px; background: var(--mx-border);"></div>
+
+    <div style="display: flex; gap: 4px; align-items: center;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: var(--mx-mute); margin-right: 4px;">LOCATION</span>
+      <button class="chip active" data-dim="loc" data-v="all">All</button>
+      <button class="chip" data-dim="loc" data-v="dubai">Dubai</button>
+      <button class="chip" data-dim="loc" data-v="riyadh">Riyadh</button>
+      <button class="chip" data-dim="loc" data-v="cairo">Cairo</button>
+    </div>
+
+    <div style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--mx-mute);">SHOWING <span style="color: var(--mx-orange); font-weight: 600;" id="cohortN">247</span> / 247</span>
+      <button onclick="document.querySelectorAll('.chip').forEach(c => { c.classList.remove('active'); if (c.dataset.v === 'all') c.classList.add('active'); }); document.getElementById('cohortN').textContent = '247';" style="background: transparent; border: 1px solid var(--mx-border); color: var(--mx-mute); font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 9px; border-radius: 4px; cursor: pointer;">Clear</button>
+    </div>
+  </div>
+
+  <div style="overflow-y: auto; flex: 1;">
+
+  <section class="page active" id="page-overview" style="padding: 24px 28px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 22px; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: var(--mx-orange); text-transform: uppercase;">01 \u00b7 OVERVIEW</div>
+        <div style="font-family: 'Instrument Serif', serif; font-size: 30px; line-height: 1.1; letter-spacing: -0.018em; margin-top: 4px;">Psychological safety pulse</div>
+        <div style="font-size: 12px; color: var(--mx-mute); margin-top: 4px;">7-item Edmondson scale \u00b7 fielded 12\u201318 March \u00b7 n=247 of 312 invited</div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; margin-bottom: 18px;">
+      <div style="background: linear-gradient(135deg, #0F2841 0%, #1A4068 55%, #2A5BA8 100%); color: white; border-radius: 14px; padding: 22px; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -40px; right: -30px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(226,177,70,0.18) 0%, transparent 65%); pointer-events: none;"></div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: var(--mx-amber); text-transform: uppercase; margin-bottom: 10px; position: relative;">OVERALL INDEX</div>
+        <div style="display: flex; align-items: baseline; gap: 14px; position: relative;">
+          <div style="font-family: 'Instrument Serif', serif; font-size: 64px; line-height: 0.95; letter-spacing: -0.025em; background: linear-gradient(135deg, #E2B146 0%, #DD6334 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">4.12</div>
+          <div style="font-size: 13px; opacity: 0.7;">/ 5.00</div>
+          <div style="margin-left: auto; text-align: right; font-size: 11px; opacity: 0.85;">
+            <div><i class="ti ti-arrow-up-right" style="color: var(--mx-amber);" aria-hidden="true"></i> +0.18 vs Q4</div>
+            <div style="margin-top: 3px;">79th percentile sector</div>
+          </div>
+        </div>
+        <div style="margin-top: 16px; height: 6px; background: rgba(255,255,255,0.12); border-radius: 3px; overflow: hidden;">
+          <div style="width: 82.4%; height: 100%; background: linear-gradient(90deg, #C24232 0%, #DD6334 40%, #E2B146 100%);"></div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <div class="stat-card"><div class="stat-label">RESPONSE RATE</div><div class="stat-val">79%</div><div class="stat-sub">247 / 312</div></div>
+        <div class="stat-card"><div class="stat-label">CRONBACH'S \u03b1</div><div class="stat-val">0.89</div><div class="stat-sub">High</div></div>
+        <div class="stat-card"><div class="stat-label">COMPLETION</div><div class="stat-val">97%</div><div class="stat-sub">Of starters</div></div>
+        <div class="stat-card"><div class="stat-label">MEDIAN TIME</div><div class="stat-val">3'40"</div><div class="stat-sub">To complete</div></div>
+      </div>
+    </div>
+
+    <div style="height: 4px; background: linear-gradient(90deg, #DD6334 0%, #E2B146 26%, #E8E2D5 48%, #2A5BA8 75%, #0F2841 100%); border-radius: 2px; margin-bottom: 22px;"></div>
+
+    <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; margin-bottom: 18px;">
+      <div style="background: var(--mx-surface); border: 1px solid var(--mx-border); border-radius: 14px; padding: 18px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: var(--mx-mute); margin-bottom: 4px;">FACTOR LANDSCAPE</div>
+        <div style="font-family: 'Instrument Serif', serif; font-size: 18px; margin-bottom: 14px;">Polar of factor scores</div>
+        <div style="display: flex; justify-content: center;"><svg id="polarSvg" viewBox="-200 -200 400 400" style="width: 100%; max-width: 380px; height: auto;" aria-label="Polar chart showing scores across four factors as concentric segments."></svg></div>
+        <div id="polarLegend" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; font-size: 11px;"></div>
+      </div>
+
+      <div style="background: var(--mx-surface); border: 1px solid var(--mx-border); border-radius: 14px; padding: 18px; display: flex; flex-direction: column;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: var(--mx-mute); margin-bottom: 4px;">DISTRIBUTION</div>
+        <div style="font-family: 'Instrument Serif', serif; font-size: 18px; margin-bottom: 14px;">How responses spread</div>
+        <div style="position: relative; height: 180px;"><canvas id="distChart"></canvas></div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--mx-border);">
+          <div style="text-align: center;"><div style="font-family: 'Instrument Serif', serif; font-size: 18px;">12%</div><div style="font-size: 9px; color: var(--mx-mute);">disagree</div></div>
+          <div style="text-align: center;"><div style="font-family: 'Instrument Serif', serif; font-size: 18px;">18%</div><div style="font-size: 9px; color: var(--mx-mute);">neutral</div></div>
+          <div style="text-align: center;"><div style="font-family: 'Instrument Serif', serif; font-size: 18px;">70%</div><div style="font-size: 9px; color: var(--mx-mute);">agree</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background: var(--mx-navy); color: white; border-radius: 12px; padding: 18px 20px; position: relative; overflow: hidden;">
+      <div style="position: absolute; top: -20px; right: -20px; width: 140px; height: 140px; background: radial-gradient(circle, rgba(226,177,70,0.15) 0%, transparent 70%);"></div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.16em; color: var(--mx-amber); margin-bottom: 8px;">ANALYST COMMENTARY</div>
+      <div style="font-family: 'Instrument Serif', serif; font-size: 16px; line-height: 1.5;">Overall psychological safety has improved meaningfully this quarter, driven by gains in <em style="color: var(--mx-amber); font-style: italic;">speaking up</em> and <em style="color: var(--mx-amber); font-style: italic;">valuing differences</em>. Mistake tolerance remains the lowest-scoring factor and warrants targeted intervention.</div>
+    </div>
+  </section>
+
+  <section class="page" id="page-factors" style="padding: 24px 28px; display: none;">
+    <div style="margin-bottom: 22px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: var(--mx-orange); text-transform: uppercase;">02 \u00b7 FACTORS</div>
+      <div style="font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1.1; letter-spacing: -0.018em; margin-top: 4px;">Four dimensions, scored on a band gauge</div>
+    </div>
+    <div id="factorList" style="display: flex; flex-direction: column; gap: 14px;"></div>
+  </section>
+
+  <section class="page" id="page-items" style="padding: 24px 28px; display: none;">
+    <div style="margin-bottom: 22px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: var(--mx-orange); text-transform: uppercase;">03 \u00b7 BY ITEM</div>
+      <div style="font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1.1; letter-spacing: -0.018em; margin-top: 4px;">Question-level breakdown</div>
+    </div>
+    <div style="background: var(--mx-surface); border: 1px solid var(--mx-border); border-radius: 12px; padding: 4px;">
+      <div id="itemList"></div>
+    </div>
+  </section>
+
+  <section class="page" id="page-demo" style="padding: 24px 28px; display: none;">
+    <div style="margin-bottom: 22px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: var(--mx-orange); text-transform: uppercase;">04 \u00b7 DEMOGRAPHICS</div>
+      <div style="font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1.1; letter-spacing: -0.018em; margin-top: 4px;">Where scores diverge across the organisation</div>
+    </div>
+
+    <div style="background: var(--mx-surface); border: 1px solid var(--mx-border); border-radius: 14px; padding: 18px; margin-bottom: 14px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: var(--mx-mute); margin-bottom: 4px;">HEATMAP</div>
+      <div style="font-family: 'Instrument Serif', serif; font-size: 18px; margin-bottom: 14px;">Factors \u00d7 demographics</div>
+      <div id="heatmap" style="overflow-x: auto;"></div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div style="background: var(--mx-surface); border: 1px solid var(--mx-border); border-radius: 12px; padding: 16px;">
+        <div style="font-size: 12px; color: var(--mx-mute); margin-bottom: 10px; font-weight: 500;">By function</div>
+        <div id="byFunction"></div>
+      </div>
+      <div style="background: var(--mx-surface); border: 1px solid var(--mx-border); border-radius: 12px; padding: 16px;">
+        <div style="font-size: 12px; color: var(--mx-mute); margin-bottom: 10px; font-weight: 500;">By tenure</div>
+        <div id="byTenure"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="page-trends" style="padding: 24px 28px; display: none;">
+    <div style="margin-bottom: 22px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: var(--mx-orange); text-transform: uppercase;">05 \u00b7 OVER TIME</div>
+      <div style="font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1.1; letter-spacing: -0.018em; margin-top: 4px;">Trajectory across pulse cycles</div>
+    </div>
+    <div style="background: var(--mx-surface); border: 1px solid var(--mx-border); border-radius: 12px; padding: 18px;">
+      <div style="position: relative; height: 280px;"><canvas id="trendChart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="page" id="page-qual" style="padding: 24px 28px; display: none;">
+    <div style="margin-bottom: 22px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: var(--mx-orange); text-transform: uppercase;">06 \u00b7 QUALITATIVE</div>
+      <div style="font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1.1; letter-spacing: -0.018em; margin-top: 4px;">Themes in what people said</div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px;">
+      <div style="background: var(--mx-surface); border: 1px solid var(--mx-border); border-radius: 12px; padding: 16px;">
+        <div style="font-size: 12px; color: var(--mx-mute); margin-bottom: 12px; font-weight: 500;">Most-mentioned themes <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; opacity: 0.7;">\u00b7 184 open responses</span></div>
+        <div id="themesList"></div>
+      </div>
+      <div style="background: var(--mx-navy); color: white; border-radius: 12px; padding: 16px; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: -20px; right: -20px; width: 120px; height: 120px; background: radial-gradient(circle, rgba(226,177,70,0.15) 0%, transparent 70%);"></div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.16em; color: var(--mx-amber); margin-bottom: 10px;">REPRESENTATIVE QUOTE</div>
+        <div style="font-family: 'Instrument Serif', serif; font-size: 16px; line-height: 1.4; font-style: italic; margin-bottom: 12px;">"It's easier to surface issues now than it was a year ago. The Monday standup has become a real place to flag risk."</div>
+        <div style="font-size: 10px; opacity: 0.7; font-family: 'JetBrains Mono', monospace;">\u2014 ANONYMOUS, ENGINEERING, 2\u20135 YRS</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="page-psycho" style="padding: 24px 28px; display: none;">
+    <div style="margin-bottom: 22px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: var(--mx-orange); text-transform: uppercase;">07 \u00b7 PSYCHOMETRICS</div>
+      <div style="font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1.1; letter-spacing: -0.018em; margin-top: 4px;">Scale reliability and item statistics</div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+      <div class="stat-card"><div class="stat-label">CRONBACH'S \u03b1</div><div class="stat-val">0.89</div><div class="stat-sub">95% CI [0.86, 0.91]</div></div>
+      <div class="stat-card"><div class="stat-label">MCDONALD'S \u03c9</div><div class="stat-val">0.91</div><div class="stat-sub">Composite reliability</div></div>
+      <div class="stat-card"><div class="stat-label">KMO</div><div class="stat-val">0.84</div><div class="stat-sub">Sampling adequacy</div></div>
+    </div>
+
+    <div style="background: var(--mx-surface); border: 1px solid var(--mx-border); border-radius: 12px; padding: 4px;">
+      <div id="psychoTable"></div>
+    </div>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--mx-mute); margin-top: 10px; line-height: 1.5;">Item-total r = corrected item-total correlation \u00b7 \u03b1-if-deleted = scale \u03b1 if item removed \u00b7 Loading = standardised factor loading from EFA</div>
+  </section>
+
+  <section class="page" id="page-solutions" style="padding: 24px 28px; display: none;">
+    <div style="margin-bottom: 22px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: var(--mx-orange); text-transform: uppercase;">08 \u00b7 RECOMMENDATIONS</div>
+      <div style="font-family: 'Instrument Serif', serif; font-size: 28px; line-height: 1.1; letter-spacing: -0.018em; margin-top: 4px;">Targeted interventions</div>
+      <div style="font-size: 12px; color: var(--mx-mute); margin-top: 4px;">Grounded in survey results and the IO psychology literature</div>
+    </div>
+    <div id="solutionsList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+  </section>
+
+  </div>
+</main>
+</div>
+
+<style>
+.nav-item { background: transparent; border: none; color: rgba(255,255,255,0.7); font-family: inherit; font-size: 12px; padding: 9px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left; transition: all 0.15s; }
+.nav-item i { font-size: 16px; opacity: 0.7; }
+.nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+.nav-item.active { background: rgba(226,177,70,0.12); color: var(--mx-amber); }
+.nav-item.active i { opacity: 1; }
+.chip { background: transparent; border: 1px solid var(--mx-border); color: var(--mx-mute); font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 3px 9px; border-radius: 999px; cursor: pointer; transition: all 0.12s; }
+.chip:hover { background: rgba(15,40,65,0.04); color: var(--mx-navy); }
+.chip.active { background: var(--mx-navy); color: white; border-color: var(--mx-navy); }
+.stat-card { background: var(--mx-surface); border: 1px solid var(--mx-border); border-radius: 12px; padding: 14px; }
+.stat-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: var(--mx-mute); text-transform: uppercase; margin-bottom: 6px; }
+.stat-val { font-family: 'Instrument Serif', serif; font-size: 26px; line-height: 1; }
+.stat-sub { font-size: 10px; color: var(--mx-mute); margin-top: 4px; }
+.page { animation: fadeIn 0.25s ease both; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.factor-card { background: var(--mx-surface); border: 1px solid var(--mx-border); border-radius: 14px; padding: 18px; }
+.factor-hero { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 14px; }
+.factor-badge { background: var(--mx-navy); color: white; border-radius: 10px; padding: 12px 18px; text-align: center; }
+.factor-badge .num { font-family: 'Instrument Serif', serif; font-size: 32px; line-height: 1; }
+.factor-badge .sub { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; opacity: 0.85; margin-top: 2px; }
+.gauge-track { height: 14px; border-radius: 999px; background: linear-gradient(to right, #C24232 0%, #DD6334 35%, #E2B146 60%, #9CA877 80%, #7E8A55 100%); position: relative; margin: 10px 0 4px; }
+.gauge-marker { position: absolute; top: -3px; bottom: -3px; width: 3px; background: var(--mx-navy); border-radius: 2px; box-shadow: 0 0 0 2px white; }
+.gauge-ticks { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--mx-mute); letter-spacing: 0.08em; margin-top: 6px; }
+.gauge-bands { display: flex; font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.1em; color: var(--mx-mute); margin-top: 2px; }
+.gauge-bands span { flex: 1; text-align: center; }
+.factor-interp { background: rgba(221, 99, 52, 0.06); border-left: 3px solid var(--mx-orange); border-radius: 6px; padding: 12px 14px; font-size: 13px; line-height: 1.55; margin-top: 14px; }
+.item-row { display: grid; grid-template-columns: 32px 1fr 70px 120px 50px; gap: 14px; align-items: center; padding: 11px 14px; border-bottom: 1px solid rgba(15, 40, 65, 0.06); }
+.item-row:last-child { border-bottom: none; }
+.item-num { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--mx-mute); }
+.item-text { font-size: 12px; line-height: 1.4; }
+.item-mean { font-family: 'Instrument Serif', serif; font-size: 16px; text-align: right; }
+.item-track { height: 7px; border-radius: 4px; background: rgba(15, 40, 65, 0.06); overflow: hidden; }
+.item-track-fill { height: 100%; border-radius: 4px; transition: width 0.9s cubic-bezier(0.4, 0, 0.2, 1); width: 0; background: linear-gradient(90deg, #C24232 0%, #DD6334 40%, #E2B146 100%); }
+.item-delta { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-align: right; color: var(--mx-orange); }
+.heat-table { border-collapse: separate; border-spacing: 3px; width: 100%; font-size: 11px; }
+.heat-table th { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: var(--mx-mute); text-transform: uppercase; padding: 6px; text-align: center; font-weight: 500; }
+.heat-table th:first-child { text-align: left; }
+.heat-table td { padding: 8px 6px; border-radius: 5px; text-align: center; font-family: 'Instrument Serif', serif; font-size: 13px; }
+.heat-table td:first-child { background: transparent; color: var(--mx-ink); text-align: left; font-family: inherit; font-size: 11px; font-weight: 500; padding-left: 0; }
+.demo-row { display: grid; grid-template-columns: 90px 1fr 36px 32px; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 11px; }
+.demo-label { color: var(--mx-mute); }
+.demo-track { height: 6px; background: rgba(15, 40, 65, 0.06); border-radius: 3px; overflow: hidden; }
+.demo-fill { height: 100%; border-radius: 3px; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+.demo-val { font-family: 'Instrument Serif', serif; font-size: 14px; text-align: right; }
+.demo-n { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--mx-mute); text-align: right; opacity: 0.7; }
+.theme-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--mx-border); }
+.theme-row:last-child { border-bottom: none; }
+.theme-tag { font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 3px 7px; border-radius: 4px; letter-spacing: 0.05em; }
+.psy-row { display: grid; grid-template-columns: 32px 1fr 70px 70px 70px; gap: 12px; align-items: center; padding: 10px 14px; border-bottom: 1px solid rgba(15, 40, 65, 0.06); font-size: 11px; }
+.psy-row:last-child { border-bottom: none; }
+.psy-row.header { background: rgba(15, 40, 65, 0.03); font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.1em; color: var(--mx-mute); text-transform: uppercase; padding: 8px 14px; }
+.psy-stat { font-family: 'Instrument Serif', serif; font-size: 14px; text-align: right; }
+.sol-card { background: var(--mx-surface); border: 1px solid var(--mx-border); border-radius: 12px; overflow: hidden; }
+.sol-toggle { width: 100%; background: transparent; border: none; cursor: pointer; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-family: inherit; text-align: left; transition: background 0.12s; }
+.sol-toggle:hover { background: rgba(15,40,65,0.03); }
+.sol-card.open .sol-toggle { background: rgba(15,40,65,0.03); border-bottom: 1px solid var(--mx-border); }
+.sol-body { padding: 14px 18px; display: none; font-size: 12px; line-height: 1.6; color: var(--mx-ink); }
+.sol-card.open .sol-body { display: block; }
+.sol-chev { transition: transform 0.2s; }
+.sol-card.open .sol-chev { transform: rotate(90deg); }
+</style>
+
+<script>
+(function() {
+  const NAVY = '#0F2841', NAVY2 = '#1A4068', BLUE = '#2A5BA8', ORANGE = '#DD6334', AMBER = '#E2B146', CLAY = '#C24232', MUTE = '#364668', OLIVE = '#7E8A55', SAGE = '#9CA877';
+
+  const factors = [
+    { key: 'speak', label: 'Speak up', score: 4.34, n: 247, items: 2, band: 'high', desc: 'Members feel able to raise problems, ideas, and concerns without fear of negative consequence.', strongest: 'Q6 \u2014 No one would deliberately undermine my efforts (4.40)', weakest: 'Q2 \u2014 Bring up problems and tough issues (4.29)' },
+    { key: 'mistake', label: 'Mistake tolerance', score: 3.82, n: 247, items: 2, band: 'mid', desc: 'The team treats mistakes as learning opportunities rather than failures to be punished.', strongest: 'Q4 \u2014 Safe to take a risk on this team (3.94)', weakest: 'Q1 \u2014 Mistakes held against you (3.71)' },
+    { key: 'diff', label: 'Valuing differences', score: 4.21, n: 247, items: 2, band: 'high', desc: 'People with different perspectives, backgrounds, or styles feel respected and included.', strongest: 'Q3 \u2014 Reject others for being different (4.21)', weakest: 'Q7 \u2014 Unique skills valued (4.21)' },
+    { key: 'help', label: 'Help-seeking', score: 4.08, n: 247, items: 1, band: 'high', desc: 'It is comfortable to ask colleagues for help, advice, or clarification.', strongest: 'Q5 \u2014 Difficult to ask for help (4.08)', weakest: 'Q5 \u2014 Difficult to ask for help (4.08)' }
+  ];
+
+  function renderPolar() {
+    const svg = document.getElementById('polarSvg');
+    const N = factors.length;
+    const maxR = 160;
+    const innerR = 28;
+    let html = '';
+    for (let g = 1; g <= 5; g++) {
+      const r = innerR + ((maxR - innerR) * g / 5);
+      html += `<circle r="${r}" fill="none" stroke="rgba(15,40,65,0.06)" stroke-width="1"/>`;
+    }
+    const colors = [CLAY, ORANGE, AMBER, OLIVE];
+    factors.forEach((f, i) => {
+      const startA = (i / N) * Math.PI * 2 - Math.PI/2;
+      const endA = ((i+1) / N) * Math.PI * 2 - Math.PI/2;
+      const r = innerR + ((maxR - innerR) * (f.score / 5));
+      const x1 = Math.cos(startA) * innerR, y1 = Math.sin(startA) * innerR;
+      const x2 = Math.cos(startA) * r, y2 = Math.sin(startA) * r;
+      const x3 = Math.cos(endA) * r, y3 = Math.sin(endA) * r;
+      const x4 = Math.cos(endA) * innerR, y4 = Math.sin(endA) * innerR;
+      const largeArc = endA - startA > Math.PI ? 1 : 0;
+      html += `<path d="M ${x1} ${y1} L ${x2} ${y2} A ${r} ${r} 0 ${largeArc} 1 ${x3} ${y3} L ${x4} ${y4} A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1} ${y1} Z" fill="${colors[i]}" opacity="0.85" stroke="white" stroke-width="2"/>`;
+      const midA = (startA + endA) / 2;
+      const labelR = maxR + 22;
+      const lx = Math.cos(midA) * labelR, ly = Math.sin(midA) * labelR;
+      html += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-family="Manrope" font-size="11" font-weight="600" fill="${NAVY}">${f.label}</text>`;
+      const sx = Math.cos(midA) * (innerR + (r - innerR) * 0.6), sy = Math.sin(midA) * (innerR + (r - innerR) * 0.6);
+      html += `<text x="${sx}" y="${sy}" text-anchor="middle" dominant-baseline="middle" font-family="Instrument Serif" font-size="16" fill="white" font-weight="500">${f.score.toFixed(2)}</text>`;
+    });
+    html += `<circle r="${innerR}" fill="${NAVY}"/>`;
+    html += `<text x="0" y="-2" text-anchor="middle" font-family="Instrument Serif" font-size="14" fill="${AMBER}">4.12</text>`;
+    html += `<text x="0" y="12" text-anchor="middle" font-family="JetBrains Mono" font-size="7" fill="rgba(255,255,255,0.6)" letter-spacing="0.1em">OVERALL</text>`;
+    svg.innerHTML = html;
+
+    document.getElementById('polarLegend').innerHTML = factors.map((f, i) => `
+      <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 10px; height: 10px; background: ${colors[i]}; border-radius: 2px;"></span><span style="color: ${MUTE};">${f.label}</span><span style="margin-left: auto; font-family: 'Instrument Serif', serif; font-size: 13px;">${f.score.toFixed(2)}</span></div>
+    `).join('');
+  }
+
+  function renderFactors() {
+    const colors = [CLAY, ORANGE, AMBER, OLIVE];
+    document.getElementById('factorList').innerHTML = factors.map((f, i) => {
+      const pct = (f.score / 5) * 100;
+      return `
+        <div class="factor-card">
+          <div class="factor-hero">
+            <div class="factor-badge" style="background: ${colors[i]};">
+              <div class="num">${f.score.toFixed(2)}</div>
+              <div class="sub">${f.band.toUpperCase()}</div>
+            </div>
+            <div style="flex: 1;">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: ${MUTE};">FACTOR ${i+1}</div>
+              <div style="font-family: 'Instrument Serif', serif; font-size: 22px; margin-top: 2px;">${f.label}</div>
+              <div style="font-size: 12px; color: ${MUTE}; margin-top: 4px; line-height: 1.5;">${f.desc}</div>
+            </div>
+          </div>
+          <div class="gauge-track"><div class="gauge-marker" style="left: ${pct}%;"></div></div>
+          <div class="gauge-bands"><span>LOW</span><span>BELOW</span><span>MID</span><span>ABOVE</span><span>HIGH</span></div>
+          <div class="gauge-ticks"><span>1.0</span><span>2.0</span><span>3.0</span><span>4.0</span><span>5.0</span></div>
+          <div class="factor-interp">
+            <div style="margin-bottom: 6px;"><strong style="color: ${NAVY};">Strongest:</strong> ${f.strongest}</div>
+            <div><strong style="color: ${NAVY};">Weakest:</strong> ${f.weakest}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  const items = [
+    { num: 'Q1', text: 'If you make a mistake on this team, it is often held against you. (reverse)', mean: 3.71, delta: '+0.05' },
+    { num: 'Q2', text: 'Members of this team are able to bring up problems and tough issues.', mean: 4.29, delta: '+0.18' },
+    { num: 'Q3', text: 'People on this team sometimes reject others for being different. (reverse)', mean: 4.21, delta: '+0.24' },
+    { num: 'Q4', text: 'It is safe to take a risk on this team.', mean: 3.94, delta: '+0.14' },
+    { num: 'Q5', text: 'It is difficult to ask other members for help. (reverse)', mean: 4.08, delta: '+0.15' },
+    { num: 'Q6', text: 'No one on this team would deliberately act in a way that undermines my efforts.', mean: 4.40, delta: '+0.27' },
+    { num: 'Q7', text: 'Working with this team, my unique skills and talents are valued and utilised.', mean: 4.21, delta: '+0.18' }
+  ];
+  function renderItems() {
+    document.getElementById('itemList').innerHTML = items.map(it => `
+      <div class="item-row">
+        <span class="item-num">${it.num}</span>
+        <span class="item-text">${it.text}</span>
+        <span class="item-mean">${it.mean.toFixed(2)}</span>
+        <div class="item-track"><div class="item-track-fill" data-w="${(it.mean/5)*100}"></div></div>
+        <span class="item-delta">${it.delta}</span>
+      </div>
+    `).join('');
+    setTimeout(() => { document.querySelectorAll('.item-track-fill').forEach(el => el.style.width = el.dataset.w + '%'); }, 100);
+  }
+
+  function heatColor(v) {
+    if (v >= 4.3) return { bg: NAVY, fg: 'white' };
+    if (v >= 4.0) return { bg: OLIVE, fg: 'white' };
+    if (v >= 3.7) return { bg: AMBER, fg: NAVY };
+    if (v >= 3.4) return { bg: ORANGE, fg: 'white' };
+    return { bg: CLAY, fg: 'white' };
+  }
+  function renderHeatmap() {
+    const rows = [
+      { label: 'Speak up',         vals: { Product: 4.45, Engineering: 4.38, Sales: 4.12, Operations: 4.22, People: 4.51, Finance: 4.05 } },
+      { label: 'Mistake tolerance',vals: { Product: 4.01, Engineering: 3.88, Sales: 3.52, Operations: 3.91, People: 4.18, Finance: 3.41 } },
+      { label: 'Valuing differences',vals:{ Product: 4.32, Engineering: 4.15, Sales: 4.05, Operations: 4.18, People: 4.48, Finance: 3.95 } },
+      { label: 'Help-seeking',     vals: { Product: 4.21, Engineering: 4.18, Sales: 3.92, Operations: 4.04, People: 4.42, Finance: 3.85 } }
+    ];
+    const cols = ['Product','Engineering','Sales','Operations','People','Finance'];
+    let html = '<table class="heat-table"><tr><th></th>';
+    cols.forEach(c => html += `<th>${c}</th>`);
+    html += '</tr>';
+    rows.forEach(r => {
+      html += `<tr><td>${r.label}</td>`;
+      cols.forEach(c => {
+        const v = r.vals[c];
+        const { bg, fg } = heatColor(v);
+        html += `<td style="background: ${bg}; color: ${fg};">${v.toFixed(2)}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</table>';
+    document.getElementById('heatmap').innerHTML = html;
+  }
+
+  const byFunction = [
+    { label: 'Product', score: 4.34, n: 42, color: ORANGE },
+    { label: 'Engineering', score: 4.21, n: 78, color: AMBER },
+    { label: 'Sales', score: 3.89, n: 38, color: CLAY },
+    { label: 'Operations', score: 4.08, n: 51, color: BLUE },
+    { label: 'People', score: 4.42, n: 18, color: NAVY2 },
+    { label: 'Finance', score: 3.74, n: 20, color: MUTE }
+  ];
+  const byTenure = [
+    { label: '< 6 months', score: 4.45, n: 28, color: AMBER },
+    { label: '6\u201312 months', score: 4.18, n: 54, color: ORANGE },
+    { label: '1\u20132 years', score: 4.02, n: 71, color: CLAY },
+    { label: '2\u20135 years', score: 3.94, n: 62, color: BLUE },
+    { label: '5+ years', score: 4.21, n: 32, color: NAVY2 }
+  ];
+  function renderDemo(elId, data) {
+    document.getElementById(elId).innerHTML = data.map(d => {
+      const pct = (d.score / 5) * 100;
+      return `<div class="demo-row"><span class="demo-label">${d.label}</span><div class="demo-track"><div class="demo-fill" style="background: ${d.color};" data-w="${pct}"></div></div><span class="demo-val">${d.score.toFixed(2)}</span><span class="demo-n">n=${d.n}</span></div>`;
+    }).join('');
+    setTimeout(() => { document.querySelectorAll(`#${elId} .demo-fill`).forEach(el => el.style.width = el.dataset.w + '%'); }, 100);
+  }
+
+  const themes = [
+    { tag: 'POSITIVE', label: 'Open dialogue in standups', count: 47, color: ORANGE },
+    { tag: 'POSITIVE', label: 'Manager openness to feedback', count: 38, color: ORANGE },
+    { tag: 'MIXED', label: 'Cross-team collaboration', count: 31, color: AMBER },
+    { tag: 'CONCERN', label: 'Fear of escalating to senior leaders', count: 24, color: CLAY },
+    { tag: 'CONCERN', label: 'Workload pressure suppressing voice', count: 19, color: CLAY },
+    { tag: 'POSITIVE', label: 'Peer recognition culture', count: 16, color: ORANGE }
+  ];
+  function renderThemes() {
+    document.getElementById('themesList').innerHTML = themes.map(t => `
+      <div class="theme-row">
+        <div style="display: flex; align-items: center; gap: 10px; flex: 1;"><span class="theme-tag" style="background: ${t.color}1a; color: ${t.color};">${t.tag}</span><span style="font-size: 12px;">${t.label}</span></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: ${MUTE};">${t.count}</span>
+      </div>
+    `).join('');
+  }
+
+  const psychometric = [
+    { num: 'Q1', text: 'Mistakes held against you', r: 0.62, alphaIf: 0.88, loading: 0.71 },
+    { num: 'Q2', text: 'Bring up problems', r: 0.74, alphaIf: 0.86, loading: 0.82 },
+    { num: 'Q3', text: 'Reject for being different', r: 0.58, alphaIf: 0.88, loading: 0.68 },
+    { num: 'Q4', text: 'Safe to take a risk', r: 0.79, alphaIf: 0.85, loading: 0.85 },
+    { num: 'Q5', text: 'Difficult to ask for help', r: 0.65, alphaIf: 0.87, loading: 0.73 },
+    { num: 'Q6', text: 'No one would undermine', r: 0.71, alphaIf: 0.86, loading: 0.80 },
+    { num: 'Q7', text: 'Unique skills valued', r: 0.68, alphaIf: 0.87, loading: 0.75 }
+  ];
+  function renderPsycho() {
+    let html = `<div class="psy-row header"><span></span><span>Item</span><span style="text-align:right;">Item-total r</span><span style="text-align:right;">\u03b1-if-deleted</span><span style="text-align:right;">Loading</span></div>`;
+    html += psychometric.map(p => `
+      <div class="psy-row">
+        <span style="font-family: 'JetBrains Mono', monospace; color: ${MUTE};">${p.num}</span>
+        <span style="font-size: 11px;">${p.text}</span>
+        <span class="psy-stat" style="color: ${p.r >= 0.7 ? ORANGE : MUTE};">${p.r.toFixed(2)}</span>
+        <span class="psy-stat" style="color: ${MUTE};">${p.alphaIf.toFixed(2)}</span>
+        <span class="psy-stat" style="color: ${p.loading >= 0.7 ? ORANGE : MUTE};">${p.loading.toFixed(2)}</span>
+      </div>
+    `).join('');
+    document.getElementById('psychoTable').innerHTML = html;
+  }
+
+  const solutions = [
+    { tier: 'HIGH PRIORITY', title: 'Run a mistake-tolerance workshop for Sales and Finance', evidence: 'Mistake tolerance is the lowest-scoring factor (3.82). Sales (3.52) and Finance (3.41) sit below threshold.', what: 'Half-day workshop using Amy Edmondson\'s blameless post-mortem framework. Practise three scenarios per team. Follow-up pulse in 6 weeks.', impact: 'Expected lift of +0.3 on mistake tolerance within one quarter, based on Edmondson 2018 longitudinal data.', color: CLAY },
+    { tier: 'MEDIUM PRIORITY', title: 'Strengthen escalation paths to senior leadership', evidence: 'Top qualitative concern: "Fear of escalating to senior leaders" (24 mentions). Q2 strongest in middle but weaker at IC level.', what: 'Pilot quarterly skip-level office hours with the VP. Anonymous question submission. Track participation for two quarters.', impact: 'Modest direct lift expected; primary value is reducing concern theme volume.', color: ORANGE },
+    { tier: 'MEDIUM PRIORITY', title: 'Codify what worked: standup dialogue practice', evidence: 'Top positive theme: "Open dialogue in standups" (47 mentions). Engineering uses a structured format; other teams do not.', what: 'Document the Engineering standup format. Roll out to Sales and Operations standups. Light-touch coaching for first month.', impact: 'Reinforces the strongest behavioural pattern; protects against regression next quarter.', color: AMBER },
+    { tier: 'WATCH', title: 'Monitor Finance team trajectory', evidence: 'Finance is the lowest-scoring function across three of four factors. Small n (20) limits diagnostic precision.', what: 'Run a Finance-only deep-dive in 4 weeks with focus-group qualitative method. Do not generalise from current pulse.', impact: 'Diagnostic, not interventional. Confirms whether the pattern is real or sample artefact.', color: BLUE }
+  ];
+  function renderSolutions() {
+    document.getElementById('solutionsList').innerHTML = solutions.map((s, i) => `
+      <div class="sol-card ${i === 0 ? 'open' : ''}">
+        <button class="sol-toggle" onclick="this.closest('.sol-card').classList.toggle('open')">
+          <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+            <span style="background: ${s.color}; color: white; font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.05em; white-space: nowrap;">${s.tier}</span>
+            <span style="font-family: 'Instrument Serif', serif; font-size: 16px; line-height: 1.3;">${s.title}</span>
+          </div>
+          <i class="ti ti-chevron-right sol-chev" style="font-size: 18px; color: ${MUTE};" aria-hidden="true"></i>
+        </button>
+        <div class="sol-body">
+          <div style="margin-bottom: 10px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: ${MUTE}; margin-bottom: 4px;">EVIDENCE</div>${s.evidence}</div>
+          <div style="margin-bottom: 10px;"><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: ${MUTE}; margin-bottom: 4px;">WHAT TO DO</div>${s.what}</div>
+          <div><div style="font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; color: ${MUTE}; margin-bottom: 4px;">EXPECTED IMPACT</div>${s.impact}</div>
+          <button onclick="sendPrompt('Plan this intervention in detail')" style="margin-top: 12px; background: ${NAVY}; color: white; border: none; font-size: 11px; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-family: inherit;">Plan this intervention \u2197</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  renderPolar(); renderFactors(); renderItems(); renderHeatmap();
+  renderDemo('byFunction', byFunction); renderDemo('byTenure', byTenure);
+  renderThemes(); renderPsycho(); renderSolutions();
+
+  document.querySelectorAll('.nav-item').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      document.querySelectorAll('.page').forEach(p => { p.style.display = 'none'; p.classList.remove('active'); });
+      const pg = document.getElementById('page-' + b.dataset.page);
+      pg.style.display = 'block'; pg.classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.chip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll(`.chip[data-dim="${c.dataset.dim}"]`).forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+      const n = c.dataset.v === 'all' ? 247 : Math.floor(Math.random() * 150 + 40);
+      document.getElementById('cohortN').textContent = n;
+    });
+  });
+
+  function loadCharts() {
+    if (typeof Chart === 'undefined') { setTimeout(loadCharts, 100); return; }
+    new Chart(document.getElementById('distChart').getContext('2d'), {
+      type: 'bar',
+      data: { labels: ['SD','D','N','A','SA'], datasets: [{ data: [6, 14, 44, 95, 88], backgroundColor: [CLAY, '#E8825A', AMBER, '#A66B79', NAVY2], borderRadius: 5, barThickness: 36 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: 'rgba(15,40,65,0.5)', font: { size: 9, family: 'JetBrains Mono' } }, grid: { color: 'rgba(15,40,65,0.06)' } }, x: { ticks: { color: 'rgba(15,40,65,0.7)', font: { size: 9, family: 'JetBrains Mono' } }, grid: { display: false } } } }
+    });
+    new Chart(document.getElementById('trendChart').getContext('2d'), {
+      type: 'line',
+      data: { labels: ['Q2 \u201925', 'Q3 \u201925', 'Q4 \u201925', 'Q1 \u201926'], datasets: [
+        { label: 'Speak up', data: [4.05, 4.18, 4.22, 4.34], borderColor: ORANGE, backgroundColor: ORANGE, tension: 0.35, borderWidth: 2.5, pointRadius: 4 },
+        { label: 'Mistake tolerance', data: [3.62, 3.71, 3.79, 3.82], borderColor: CLAY, backgroundColor: CLAY, tension: 0.35, borderWidth: 2.5, pointRadius: 4 },
+        { label: 'Valuing differences', data: [3.85, 4.01, 4.08, 4.21], borderColor: AMBER, backgroundColor: AMBER, tension: 0.35, borderWidth: 2.5, pointRadius: 4 },
+        { label: 'Help-seeking', data: [3.78, 3.91, 3.98, 4.08], borderColor: BLUE, backgroundColor: BLUE, tension: 0.35, borderWidth: 2.5, pointRadius: 4 }
+      ] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11, family: 'Manrope' }, color: NAVY, usePointStyle: true, pointStyle: 'circle', boxWidth: 6, padding: 14 } } }, scales: { y: { min: 3, max: 5, ticks: { stepSize: 0.5, color: 'rgba(15,40,65,0.5)', font: { size: 10, family: 'JetBrains Mono' } }, grid: { color: 'rgba(15,40,65,0.06)' } }, x: { ticks: { color: 'rgba(15,40,65,0.7)', font: { size: 10, family: 'JetBrains Mono' } }, grid: { display: false } } } }
+    });
+  }
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+  s.onload = loadCharts;
+  document.head.appendChild(s);
+})();
+</script>

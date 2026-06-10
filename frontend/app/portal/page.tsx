@@ -22,22 +22,22 @@ function MiniBar({
   const pct = score ?? 0
   const bPct = benchmark ?? null
   const statusColor =
-    score === null ? "rgba(91,33,182,0.2)"
-    : benchmark === null ? "#5b21b6"
-    : score >= benchmark + 10 ? "#059669"
-    : score >= benchmark ? "#3777A8"
-    : score >= benchmark - 20 ? "#f59e0b"
-    : "#ef4444"
+    score === null ? "rgba(15,40,65,0.2)"
+    : benchmark === null ? "#0F2841"
+    : score >= benchmark + 10 ? "#7E8A55"
+    : score >= benchmark ? "#2A5BA8"
+    : score >= benchmark - 20 ? "#E2B146"
+    : "#DD6334"
 
   return (
     <div className="mb-3">
       <div className="mb-1 flex items-center justify-between text-xs">
-        <span className="font-medium" style={{ color: "#1e1b4b" }}>{label}</span>
-        <span style={{ color: "rgba(30,27,75,0.45)" }}>
+        <span className="font-medium" style={{ color: "#0A1E33" }}>{label}</span>
+        <span style={{ color: "rgba(10,30,51,0.45)" }}>
           {score !== null ? `${score.toFixed(0)}${benchmark !== null ? ` / ${benchmark.toFixed(0)}` : ""}` : "—"}
         </span>
       </div>
-      <div className="relative h-2 overflow-hidden rounded-full" style={{ background: "rgba(91,33,182,0.08)" }}>
+      <div className="relative h-2 overflow-hidden rounded-full" style={{ background: "rgba(15,40,65,0.08)" }}>
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${pct}%`, background: statusColor }}
@@ -45,7 +45,7 @@ function MiniBar({
         {bPct !== null && (
           <div
             className="absolute top-0 h-full w-0.5"
-            style={{ left: `${bPct}%`, background: "rgba(30,27,75,0.3)" }}
+            style={{ left: `${bPct}%`, background: "rgba(10,30,51,0.3)" }}
           />
         )}
       </div>
@@ -71,9 +71,9 @@ function ProfileCard({ profile }: { profile: GrowthProfile }) {
       {/* Framework label */}
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>{profile.framework_title}</p>
+          <p className="text-sm font-semibold" style={{ color: "#0A1E33" }}>{profile.framework_title}</p>
           {profile.role_title && (
-            <p className="mt-0.5 text-xs" style={{ color: "rgba(30,27,75,0.45)" }}>{profile.role_title}</p>
+            <p className="mt-0.5 text-xs" style={{ color: "rgba(10,30,51,0.45)" }}>{profile.role_title}</p>
           )}
         </div>
         <Link
@@ -87,25 +87,25 @@ function ProfileCard({ profile }: { profile: GrowthProfile }) {
 
       {/* Quick stats */}
       <div className="mb-4 grid grid-cols-3 gap-3 text-center">
-        <div className="rounded-xl py-2" style={{ background: "rgba(91,33,182,0.04)" }}>
+        <div className="rounded-xl py-2" style={{ background: "rgba(15,40,65,0.04)" }}>
           <p className="label-caps mb-0.5">Assessed</p>
-          <p className="text-sm font-bold" style={{ color: "#1e1b4b" }}>{assessed.length}/{profile.competency_trends.length}</p>
+          <p className="text-sm font-bold" style={{ color: "#0A1E33" }}>{assessed.length}/{profile.competency_trends.length}</p>
         </div>
-        <div className="rounded-xl py-2" style={{ background: improving > 0 ? "rgba(34,197,94,0.06)" : "rgba(91,33,182,0.04)" }}>
+        <div className="rounded-xl py-2" style={{ background: improving > 0 ? "rgba(34,197,94,0.06)" : "rgba(15,40,65,0.04)" }}>
           <p className="label-caps mb-0.5">Improving</p>
-          <p className="text-sm font-bold" style={{ color: improving > 0 ? "#16a34a" : "rgba(30,27,75,0.35)" }}>{improving}</p>
+          <p className="text-sm font-bold" style={{ color: improving > 0 ? "#7E8A55" : "rgba(10,30,51,0.35)" }}>{improving}</p>
         </div>
         {hasBenchmarks ? (
           <div className="rounded-xl py-2" style={{ background: belowTarget > 0 ? "rgba(239,68,68,0.06)" : "rgba(34,197,94,0.06)" }}>
             <p className="label-caps mb-0.5">{belowTarget > 0 ? "Gaps" : "On target"}</p>
-            <p className="text-sm font-bold" style={{ color: belowTarget > 0 ? "#dc2626" : "#16a34a" }}>
+            <p className="text-sm font-bold" style={{ color: belowTarget > 0 ? "#DD6334" : "#7E8A55" }}>
               {belowTarget > 0 ? belowTarget : onTarget}
             </p>
           </div>
         ) : (
-          <div className="rounded-xl py-2" style={{ background: "rgba(91,33,182,0.04)" }}>
+          <div className="rounded-xl py-2" style={{ background: "rgba(15,40,65,0.04)" }}>
             <p className="label-caps mb-0.5">Skills</p>
-            <p className="text-sm font-bold" style={{ color: "#1e1b4b" }}>{profile.competency_trends.length}</p>
+            <p className="text-sm font-bold" style={{ color: "#0A1E33" }}>{profile.competency_trends.length}</p>
           </div>
         )}
       </div>
@@ -123,7 +123,7 @@ function ProfileCard({ profile }: { profile: GrowthProfile }) {
             />
           ))}
           {hasBenchmarks && (
-            <p className="mt-2 text-[9px]" style={{ color: "rgba(30,27,75,0.35)" }}>
+            <p className="mt-2 text-[9px]" style={{ color: "rgba(10,30,51,0.35)" }}>
               Vertical line = benchmark target
             </p>
           )}
@@ -131,8 +131,8 @@ function ProfileCard({ profile }: { profile: GrowthProfile }) {
       )}
 
       {assessed.length === 0 && (
-        <div className="rounded-xl py-5 text-center" style={{ background: "rgba(91,33,182,0.04)" }}>
-          <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>No assessments recorded yet.</p>
+        <div className="rounded-xl py-5 text-center" style={{ background: "rgba(15,40,65,0.04)" }}>
+          <p className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>No assessments recorded yet.</p>
         </div>
       )}
     </div>
@@ -177,7 +177,7 @@ export default function PortalPage() {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
-        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
+        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>
           Loading your profile…
         </div>
       </div>
@@ -195,7 +195,7 @@ export default function PortalPage() {
           <div className="mb-8">
             <p className="eyebrow mb-1">Employee Portal</p>
             <h1 className="page-title">Your Growth Profile</h1>
-            <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+            <p className="mt-1 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>
               Track your competency development and progress toward role benchmarks.
             </p>
           </div>
@@ -207,14 +207,14 @@ export default function PortalPage() {
             <div className="card p-10 text-center">
               <div
                 className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full"
-                style={{ background: "rgba(91,33,182,0.08)" }}
+                style={{ background: "rgba(15,40,65,0.08)" }}
               >
-                <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: "#5b21b6" }}>
+                <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: "#0F2841" }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
               <p className="section-heading mb-2">You&apos;re not enrolled yet</p>
-              <p className="text-sm" style={{ color: "rgba(30,27,75,0.45)" }}>
+              <p className="text-sm" style={{ color: "rgba(10,30,51,0.45)" }}>
                 Ask your manager to add you to a competency framework to start tracking your growth.
               </p>
             </div>
@@ -236,9 +236,9 @@ export default function PortalPage() {
                 <div key={p.id} className="card p-5">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>{p.name}</p>
+                      <p className="text-sm font-semibold" style={{ color: "#0A1E33" }}>{p.name}</p>
                       {p.role_title && (
-                        <p className="mt-0.5 text-xs" style={{ color: "rgba(30,27,75,0.45)" }}>{p.role_title}</p>
+                        <p className="mt-0.5 text-xs" style={{ color: "rgba(10,30,51,0.45)" }}>{p.role_title}</p>
                       )}
                     </div>
                     <Link
@@ -258,12 +258,12 @@ export default function PortalPage() {
           {profiles.length > 0 && (
             <div
               className="mt-8 rounded-[14px] p-5 text-center"
-              style={{ background: "rgba(91,33,182,0.04)", border: "0.5px solid rgba(91,33,182,0.12)" }}
+              style={{ background: "rgba(15,40,65,0.04)", border: "0.5px solid rgba(15,40,65,0.12)" }}
             >
-              <p className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>
+              <p className="text-sm font-semibold" style={{ color: "#0A1E33" }}>
                 Growth is a journey, not a destination.
               </p>
-              <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.45)" }}>
+              <p className="mt-1 text-xs" style={{ color: "rgba(10,30,51,0.45)" }}>
                 Every assessment is a snapshot of where you are today — not a verdict on who you can become.
               </p>
             </div>

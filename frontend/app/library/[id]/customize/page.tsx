@@ -38,20 +38,20 @@ function ItemRow({
   return (
     <label
       className="flex cursor-pointer items-start gap-3 rounded-xl px-3 py-2.5 transition-colors"
-      style={{ background: checked ? "rgba(91,33,182,0.04)" : "transparent" }}
+      style={{ background: checked ? "rgba(15,40,65,0.04)" : "transparent" }}
     >
       <input
         type="checkbox"
         checked={checked}
         onChange={e => onChange(item.id, e.target.checked)}
-        className="mt-0.5 h-3.5 w-3.5 accent-[#5b21b6]"
+        className="mt-0.5 h-3.5 w-3.5 accent-[#0F2841]"
       />
       <div className="flex-1 min-w-0">
-        <p className="text-xs leading-relaxed" style={{ color: "#1e1b4b" }}>{item.item_text}</p>
+        <p className="text-xs leading-relaxed" style={{ color: "#0A1E33" }}>{item.item_text}</p>
         {item.is_reverse_scored && (
           <span
             className="mt-1 inline-block rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
-            style={{ background: "rgba(239,68,68,0.08)", color: "#dc2626" }}
+            style={{ background: "rgba(239,68,68,0.08)", color: "#DD6334" }}
           >
             Reverse scored
           </span>
@@ -87,8 +87,8 @@ function SubscaleSection({
       {subscale && (
         <div className="mb-2 flex items-center justify-between">
           <div>
-            <span className="text-xs font-semibold" style={{ color: "#5b21b6" }}>{subscale.name}</span>
-            <span className="ml-2 text-[10px]" style={{ color: "rgba(30,27,75,0.4)" }}>
+            <span className="text-xs font-semibold" style={{ color: "#0F2841" }}>{subscale.name}</span>
+            <span className="ml-2 text-[10px]" style={{ color: "rgba(10,30,51,0.4)" }}>
               {selectedCount}/{items.length} selected
             </span>
           </div>
@@ -96,7 +96,7 @@ function SubscaleSection({
             type="button"
             onClick={() => onToggleAll(items.map(i => i.id), !allChecked)}
             className="text-[10px] font-semibold transition-colors"
-            style={{ color: someChecked && !allChecked ? "#5b21b6" : "rgba(30,27,75,0.4)" }}
+            style={{ color: someChecked && !allChecked ? "#0F2841" : "rgba(10,30,51,0.4)" }}
           >
             {allChecked ? "Deselect all" : "Select all"}
           </button>
@@ -179,7 +179,7 @@ export default function CustomizePage() {
     return (
       <div className="flex min-h-screen flex-col">
         <Header backHref={`/library/${id}`} backLabel="Instrument" />
-        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>Loading…</div>
+        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>Loading…</div>
       </div>
     )
   }
@@ -224,7 +224,7 @@ export default function CustomizePage() {
           <div className="mb-6">
             <p className="eyebrow mb-1">Customize</p>
             <h1 className="page-title">{instrument.name}</h1>
-            <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+            <p className="mt-1 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>
               Select the items you want to include. {selected.size} of {instrument.items.length} items selected.
             </p>
           </div>
@@ -250,7 +250,7 @@ export default function CustomizePage() {
 
           {/* Select all / none */}
           <div className="mb-4 flex items-center justify-between">
-            <span className="text-xs font-semibold" style={{ color: "rgba(30,27,75,0.5)" }}>
+            <span className="text-xs font-semibold" style={{ color: "rgba(10,30,51,0.5)" }}>
               {selected.size} / {instrument.items.length} items
             </span>
             <div className="flex gap-2">
@@ -259,17 +259,17 @@ export default function CustomizePage() {
                 onClick={() => setSelected(new Set(instrument.items.map(i => i.id)))}
                 disabled={allSelected}
                 className="text-xs font-semibold transition-colors disabled:opacity-30"
-                style={{ color: "#5b21b6" }}
+                style={{ color: "#0F2841" }}
               >
                 Select all
               </button>
-              <span style={{ color: "rgba(30,27,75,0.2)" }}>·</span>
+              <span style={{ color: "rgba(10,30,51,0.2)" }}>·</span>
               <button
                 type="button"
                 onClick={() => setSelected(new Set())}
                 disabled={noneSelected}
                 className="text-xs font-semibold transition-colors disabled:opacity-30"
-                style={{ color: "rgba(30,27,75,0.4)" }}
+                style={{ color: "rgba(10,30,51,0.4)" }}
               >
                 Clear all
               </button>
@@ -306,7 +306,7 @@ export default function CustomizePage() {
 
           {/* Deploy button */}
           <div className="flex items-center justify-between gap-4">
-            <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>
+            <p className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>
               {selected.size === 0
                 ? "Select at least one item to deploy."
                 : `Deploy ${selected.size} item${selected.size === 1 ? "" : "s"} as a new survey.`}

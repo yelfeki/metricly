@@ -33,7 +33,7 @@ function TypingIndicator() {
     <div className="flex items-end gap-2">
       <div
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-        style={{ background: "linear-gradient(135deg, #5b21b6, #3777A8)" }}
+        style={{ background: "linear-gradient(135deg, #0F2841, #2A5BA8)" }}
       >
         M
       </div>
@@ -50,7 +50,7 @@ function TypingIndicator() {
             key={i}
             className="h-1.5 w-1.5 rounded-full"
             style={{
-              background: "rgba(91,33,182,0.5)",
+              background: "rgba(15,40,65,0.5)",
               animation: `typing-bounce 1.4s ease-in-out ${i * 0.16}s infinite`,
             }}
           />
@@ -75,7 +75,7 @@ function Bubble({ message }: { message: Message }) {
       {!isUser && (
         <div
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-          style={{ background: "linear-gradient(135deg, #5b21b6, #3777A8)" }}
+          style={{ background: "linear-gradient(135deg, #0F2841, #2A5BA8)" }}
         >
           M
         </div>
@@ -85,14 +85,14 @@ function Bubble({ message }: { message: Message }) {
       <div
         className="max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed"
         style={isUser ? {
-          background: "linear-gradient(135deg, #5b21b6, #3777A8)",
+          background: "linear-gradient(135deg, #0F2841, #2A5BA8)",
           color: "#fff",
           borderBottomRightRadius: "4px",
         } : {
           background: "rgba(255,255,255,0.65)",
           border: "0.5px solid rgba(255,255,255,0.85)",
           backdropFilter: "blur(12px)",
-          color: "#1e1b4b",
+          color: "#0A1E33",
           borderBottomLeftRadius: "4px",
         }}
       >
@@ -204,8 +204,8 @@ export default function SkillsExplorerPage() {
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 2px 12px rgba(91,33,182,0.3); }
-          50%       { box-shadow: 0 4px 28px rgba(91,33,182,0.55), 0 0 48px rgba(91,33,182,0.18); }
+          0%, 100% { box-shadow: 0 2px 12px rgba(15,40,65,0.3); }
+          50%       { box-shadow: 0 4px 28px rgba(15,40,65,0.55), 0 0 48px rgba(15,40,65,0.18); }
         }
       `}</style>
 
@@ -230,12 +230,12 @@ export default function SkillsExplorerPage() {
                   <div
                     className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold"
                     style={step === 1 ? {
-                      background: "linear-gradient(135deg, #5b21b6, #3777A8)",
+                      background: "linear-gradient(135deg, #0F2841, #2A5BA8)",
                       color: "#fff",
                     } : {
-                      background: "rgba(91,33,182,0.08)",
-                      color: "rgba(30,27,75,0.3)",
-                      border: "0.5px solid rgba(91,33,182,0.15)",
+                      background: "rgba(15,40,65,0.08)",
+                      color: "rgba(10,30,51,0.3)",
+                      border: "0.5px solid rgba(15,40,65,0.15)",
                     }}
                   >
                     {step}
@@ -243,13 +243,13 @@ export default function SkillsExplorerPage() {
                   {step < 3 && (
                     <div
                       className="h-px w-8"
-                      style={{ background: "rgba(91,33,182,0.15)" }}
+                      style={{ background: "rgba(15,40,65,0.15)" }}
                     />
                   )}
                 </div>
               ))}
             </div>
-            <span className="text-xs font-semibold" style={{ color: "#5b21b6" }}>
+            <span className="text-xs font-semibold" style={{ color: "#0F2841" }}>
               Step 1 of 3 — Understanding your needs
             </span>
           </div>
@@ -263,14 +263,14 @@ export default function SkillsExplorerPage() {
             <div className="mb-6 text-center">
               <div
                 className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl"
-                style={{ background: "linear-gradient(135deg, rgba(91,33,182,0.12), rgba(37,99,235,0.1))" }}
+                style={{ background: "linear-gradient(135deg, rgba(15,40,65,0.12), rgba(37,99,235,0.1))" }}
               >
-                <svg className="h-6 w-6" style={{ color: "#5b21b6" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <svg className="h-6 w-6" style={{ color: "#0F2841" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
               </div>
               <h1 className="page-title text-xl">Skills Diagnostic</h1>
-              <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.45)" }}>
+              <p className="mt-1 text-xs" style={{ color: "rgba(10,30,51,0.45)" }}>
                 Answer a few questions and I'll recommend the right instruments for your organization
               </p>
             </div>
@@ -320,7 +320,7 @@ export default function SkillsExplorerPage() {
                   placeholder="Type your reply…"
                   disabled={loading}
                   className="flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none"
-                  style={{ color: "#1e1b4b", minHeight: "36px", maxHeight: "120px" }}
+                  style={{ color: "#0A1E33", minHeight: "36px", maxHeight: "120px" }}
                   onInput={e => {
                     const el = e.currentTarget
                     el.style.height = "auto"
@@ -331,14 +331,14 @@ export default function SkillsExplorerPage() {
                   onClick={sendMessage}
                   disabled={!input.trim() || loading}
                   className="shrink-0 flex h-9 w-9 items-center justify-center rounded-xl text-white transition-all disabled:opacity-40"
-                  style={{ background: "linear-gradient(135deg, #5b21b6, #3777A8)" }}
+                  style={{ background: "linear-gradient(135deg, #0F2841, #2A5BA8)" }}
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                   </svg>
                 </button>
               </div>
-              <p className="mt-1.5 text-center text-[10px]" style={{ color: "rgba(30,27,75,0.3)" }}>
+              <p className="mt-1.5 text-center text-[10px]" style={{ color: "rgba(10,30,51,0.3)" }}>
                 Press Enter to send · Shift+Enter for new line
               </p>
             </div>

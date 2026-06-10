@@ -2,6 +2,17 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import {
+  IconArrowRight,
+  IconBook2,
+  IconBolt,
+  IconChartArrows,
+  IconCompass,
+  IconFileText,
+  IconRocket,
+  IconSparkles,
+  IconUsers,
+} from "@tabler/icons-react"
 import Header from "@/components/Header"
 import { useAuth } from "@/components/AuthProvider"
 import { getSurveys, getLibrary } from "@/lib/api"
@@ -38,89 +49,64 @@ function timeAgo(iso: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Glass card style (shared)
-// ---------------------------------------------------------------------------
-
-const GLASS: React.CSSProperties = {
-  background: "linear-gradient(145deg, rgba(255,255,255,0.65), rgba(255,255,255,0.30))",
-  border: "0.5px solid rgba(255,255,255,0.85)",
-  borderRadius: 14,
-  backdropFilter: "blur(12px)",
-  WebkitBackdropFilter: "blur(12px)",
-  boxShadow: "0 2px 20px rgba(91,33,182,0.07)",
-}
-
-// ---------------------------------------------------------------------------
-// Section 2 — Action cards
+// Action cards
 // ---------------------------------------------------------------------------
 
 interface ActionCard {
   title: string
   body: string
   href: string
-  icon: React.ReactNode
-  iconBg: string
-  iconColor: string
+  Icon: typeof IconCompass
 }
 
 const ACTION_CARDS: ActionCard[] = [
   {
     title: "Assess skills or attitudes",
-    body: "Let our AI recommend the right validated instruments for your org",
+    body: "Let our AI recommend the right validated instruments for your org.",
     href: "/skills-explorer",
-    iconBg: "rgba(91,33,182,0.07)",
-    iconColor: "#5b21b6",
-    icon: (
-      // Compass rose
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
-        <circle cx="12" cy="12" r="9" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z" />
-      </svg>
-    ),
+    Icon: IconCompass,
   },
   {
     title: "Build an assessment framework",
-    body: "Generate a role-based competency blueprint with matched instruments",
+    body: "Generate a role-based competency blueprint with matched instruments.",
     href: "/straw-man",
-    iconBg: "rgba(5,150,105,0.07)",
-    iconColor: "#059669",
-    icon: (
-      // Layout/grid
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
-        <rect x="3" y="3" width="7" height="7" rx="1" />
-        <rect x="14" y="3" width="7" height="7" rx="1" />
-        <rect x="3" y="14" width="7" height="7" rx="1" />
-        <rect x="14" y="14" width="7" height="7" rx="1" />
-      </svg>
-    ),
+    Icon: IconChartArrows,
   },
   {
     title: "Deploy a survey",
-    body: "Create a new survey from scratch or from the instrument library",
+    body: "Create a new survey from scratch or from the instrument library.",
     href: "/surveys/new",
-    iconBg: "rgba(55,119,168,0.08)",
-    iconColor: "#3777A8",
-    icon: (
-      // Send / paper plane
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" />
-      </svg>
-    ),
+    Icon: IconRocket,
   },
 ]
 
 // ---------------------------------------------------------------------------
-// Section 3 — Status badges
+// Status pill — pigment-mapped per design system semantics
 // ---------------------------------------------------------------------------
 
 function StatusBadge({ status }: { status: string }) {
   if (status === "published") {
     return (
       <span
-        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-        style={{ background: "rgba(5,150,105,0.1)", color: "#059669" }}
+        className="inline-flex items-center gap-1"
+        style={{
+          fontFamily: "var(--mx-font-sans)",
+          fontSize: 10,
+          fontWeight: 500,
+          background: "rgba(126,138,85,0.14)",  // sage / olive — live + calm
+          color: "#3F4A2A",
+          padding: "2px 8px",
+          borderRadius: 999,
+        }}
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        <span
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: "var(--mx-sage)",
+          }}
+        />
         Live
       </span>
     )
@@ -128,20 +114,51 @@ function StatusBadge({ status }: { status: string }) {
   if (status === "closed") {
     return (
       <span
-        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-        style={{ background: "rgba(239,68,68,0.09)", color: "#b91c1c" }}
+        className="inline-flex items-center gap-1"
+        style={{
+          fontFamily: "var(--mx-font-sans)",
+          fontSize: 10,
+          fontWeight: 500,
+          background: "rgba(194,78,78,0.10)",
+          color: "var(--mx-rose)",
+          padding: "2px 8px",
+          borderRadius: 999,
+        }}
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+        <span
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: "50%",
+            background: "var(--mx-rose)",
+          }}
+        />
         Closed
       </span>
     )
   }
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
-      style={{ background: "rgba(30,27,75,0.06)", color: "rgba(30,27,75,0.45)" }}
+      className="inline-flex items-center gap-1"
+      style={{
+        fontFamily: "var(--mx-font-sans)",
+        fontSize: 10,
+        fontWeight: 500,
+        background: "var(--mx-paper-2)",
+        color: "var(--mx-ink-3)",
+        padding: "2px 8px",
+        borderRadius: 999,
+        border: "1px solid var(--mx-line)",
+      }}
     >
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: "rgba(30,27,75,0.25)" }} />
+      <span
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: "50%",
+          background: "var(--mx-ink-3)",
+        }}
+      />
       Draft
     </span>
   )
@@ -160,7 +177,10 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!user) return
     getSurveys()
-      .then(data => { setSurveys(data); setSurveysLoaded(true) })
+      .then(data => {
+        setSurveys(data)
+        setSurveysLoaded(true)
+      })
       .catch(() => setSurveysLoaded(true))
     getLibrary()
       .then(lib => setLibraryCount(lib.total_instruments))
@@ -170,12 +190,10 @@ export default function DashboardPage() {
   const greeting = getGreeting()
   const firstName = getFirstName(user?.email)
 
-  // Stats derived from surveys
   const totalSurveys = surveys.length
   const totalResponses = surveys.reduce((sum, s) => sum + s.response_count, 0)
   const liveNow = surveys.filter(s => s.status === "published").length
 
-  // Recent surveys: newest 5 by created_at
   const recentSurveys = [...surveys]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 5)
@@ -183,7 +201,13 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 rounded-full border-2 border-violet-300 border-t-violet-600 animate-spin" />
+        <div
+          className="h-8 w-8 animate-spin rounded-full"
+          style={{
+            border: "2px solid var(--mx-line)",
+            borderTopColor: "var(--mx-forest)",
+          }}
+        />
       </div>
     )
   }
@@ -193,85 +217,155 @@ export default function DashboardPage() {
       <Header />
 
       <main className="flex-1 px-6 py-12">
-        <div className="mx-auto max-w-5xl space-y-10">
-
-          {/* ── Section 1: Hero greeting ────────────────────────────────────── */}
-          <section>
-            <p className="eyebrow mb-2">Dashboard</p>
-            <h1
-              className="text-4xl font-bold leading-tight tracking-tight"
-              style={{ fontFamily: "var(--font-playfair, Georgia, serif)", color: "#1e1b4b" }}
-            >
-              {greeting}, {firstName}
-            </h1>
-            <p className="mt-2 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
-              What would you like to do today?
-            </p>
-          </section>
-
-          {/* ── Section 2: Action cards ─────────────────────────────────────── */}
-          <section>
-            <div className="grid gap-4 sm:grid-cols-3">
-              {ACTION_CARDS.map(card => (
-                <Link
-                  key={card.href}
-                  href={card.href}
-                  className="group block p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-                  style={GLASS}
-                >
-                  <div
-                    className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl transition-all duration-200 group-hover:scale-105"
-                    style={{ background: card.iconBg, color: card.iconColor }}
-                  >
-                    {card.icon}
-                  </div>
-                  <h3
-                    className="mb-2 text-[18px] font-semibold leading-snug"
-                    style={{ fontFamily: "var(--font-playfair, Georgia, serif)", color: "#1e1b4b" }}
-                  >
-                    {card.title}
-                  </h3>
-                  <p className="mb-5 text-[13px] leading-relaxed" style={{ color: "rgba(30,27,75,0.5)" }}>
-                    {card.body}
-                  </p>
-                  <span
-                    className="flex items-center gap-1 text-xs font-semibold transition-all group-hover:gap-2"
-                    style={{ color: "#3777A8" }}
-                  >
-                    Get started
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </span>
-                </Link>
-              ))}
+        <div className="mx-auto max-w-5xl space-y-12">
+          {/* ── Hero greeting — welcome card per design-system §"Hero / welcome
+                cards". Lightened from the original navy radial to a layered
+                warm/cool wash on cream (atelier pattern). Eyebrow is muted
+                ink; title is ink; the italic first-name keeps the warm
+                gradient (persimmon → butter), which reads even more strongly
+                on cream than it did on navy. ─── */}
+          <section className="mx-hero" style={{ padding: "44px 48px" }}>
+            <div className="relative z-10">
+              <p className="mx-eyebrow mb-2">Dashboard</p>
+              <h1
+                className="mx-h1"
+                style={{
+                  fontSize: 56,
+                  lineHeight: 1.02,
+                  color: "var(--mx-ink)",
+                }}
+              >
+                {greeting},{" "}
+                <em className="mx-text-grad-warm">{firstName}.</em>
+              </h1>
+              <p
+                className="mt-3 max-w-xl"
+                style={{
+                  fontFamily: "var(--mx-font-sans)",
+                  fontSize: 14,
+                  lineHeight: 1.55,
+                  color: "var(--mx-ink-2)",
+                }}
+              >
+                What would you like to do today?
+              </p>
             </div>
           </section>
 
-          {/* ── Section 3: Pick up where you left off ──────────────────────── */}
+          {/* ── Action cards ────────────────────────────────────────────── */}
           <section>
-            <h2
-              className="mb-4 text-2xl font-semibold"
-              style={{ fontFamily: "var(--font-playfair, Georgia, serif)", color: "#1e1b4b" }}
-            >
-              Pick up where you left off
+            <div className="grid gap-4 sm:grid-cols-3">
+              {ACTION_CARDS.map(card => {
+                const Icon = card.Icon
+                return (
+                  <Link
+                    key={card.href}
+                    href={card.href}
+                    className="group mx-card mx-card-hover block p-6"
+                    style={{ transition: "all var(--mx-dur-base) var(--mx-ease)" }}
+                  >
+                    <div
+                      className="mb-5 flex h-11 w-11 items-center justify-center"
+                      style={{
+                        background: "var(--mx-grad-butter-glow)",
+                        color: "var(--mx-forest)",
+                        borderRadius: "var(--mx-r-md)",
+                      }}
+                    >
+                      <Icon size={22} stroke={1.6} />
+                    </div>
+                    <h3
+                      className="mx-title mb-2"
+                      style={{ fontSize: 18, lineHeight: 1.3 }}
+                    >
+                      {card.title}
+                    </h3>
+                    <p
+                      className="mb-5"
+                      style={{
+                        fontFamily: "var(--mx-font-sans)",
+                        fontSize: 13,
+                        lineHeight: 1.5,
+                        color: "var(--mx-ink-2)",
+                      }}
+                    >
+                      {card.body}
+                    </p>
+                    <span
+                      className="inline-flex items-center gap-1.5 transition-all"
+                      style={{
+                        fontFamily: "var(--mx-font-sans)",
+                        fontSize: 12,
+                        fontWeight: 500,
+                        color: "var(--mx-forest)",
+                      }}
+                    >
+                      Get started
+                      <IconArrowRight
+                        size={13}
+                        stroke={1.8}
+                        className="transition-transform group-hover:translate-x-0.5"
+                      />
+                    </span>
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
+
+          {/* ── Recent surveys ──────────────────────────────────────────── */}
+          <section>
+            <h2 className="mx-h3 mb-4" style={{ fontSize: 26 }}>
+              Pick up where you left off.
             </h2>
 
-            <div style={GLASS} className="overflow-hidden">
+            <div className="mx-card overflow-hidden">
               {!surveysLoaded ? (
-                <div className="flex items-center justify-center py-12 text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
+                <div
+                  className="py-12 text-center"
+                  style={{
+                    fontFamily: "var(--mx-font-display)",
+                    fontStyle: "italic",
+                    fontSize: 14,
+                    color: "var(--mx-ink-3)",
+                  }}
+                >
                   Loading…
                 </div>
               ) : recentSurveys.length === 0 ? (
                 <div className="px-6 py-12 text-center">
-                  <p className="text-sm font-semibold" style={{ color: "rgba(30,27,75,0.5)" }}>No surveys yet</p>
-                  <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>
+                  <p
+                    style={{
+                      fontFamily: "var(--mx-font-sans)",
+                      fontSize: 13,
+                      fontWeight: 500,
+                      color: "var(--mx-ink-2)",
+                    }}
+                  >
+                    No surveys yet
+                  </p>
+                  <p
+                    className="mt-1"
+                    style={{
+                      fontFamily: "var(--mx-font-sans)",
+                      fontSize: 12,
+                      color: "var(--mx-ink-3)",
+                    }}
+                  >
                     Start by{" "}
-                    <Link href="/library" className="underline" style={{ color: "#3777A8" }}>
+                    <Link
+                      href="/library"
+                      className="underline"
+                      style={{ color: "var(--mx-cobalt)" }}
+                    >
                       exploring the library
                     </Link>{" "}
                     or running the{" "}
-                    <Link href="/skills-explorer" className="underline" style={{ color: "#3777A8" }}>
+                    <Link
+                      href="/skills-explorer"
+                      className="underline"
+                      style={{ color: "var(--mx-cobalt)" }}
+                    >
                       Skills Explorer
                     </Link>
                   </p>
@@ -283,63 +377,83 @@ export default function DashboardPage() {
                       key={survey.id}
                       className="flex items-center gap-4 px-5 py-3.5 transition-colors"
                       style={{
-                        borderTop: idx > 0 ? "0.5px solid rgba(91,33,182,0.06)" : "none",
+                        borderTop: idx > 0 ? "1px solid var(--mx-line)" : "none",
                       }}
-                      onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.25)")}
-                      onMouseLeave={e => (e.currentTarget.style.background = "")}
+                      onMouseEnter={e =>
+                        (e.currentTarget.style.background = "var(--mx-paper-2)")
+                      }
+                      onMouseLeave={e =>
+                        (e.currentTarget.style.background = "transparent")
+                      }
                     >
-                      {/* Document icon */}
                       <div
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-                        style={{ background: "rgba(91,33,182,0.07)", color: "#5b21b6" }}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center"
+                        style={{
+                          background: "var(--mx-paper-2)",
+                          color: "var(--mx-forest)",
+                          borderRadius: "var(--mx-r-md)",
+                        }}
                       >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
+                        <IconFileText size={16} stroke={1.6} />
                       </div>
 
-                      {/* Name + meta */}
-                      <div className="flex-1 min-w-0">
-                        <p className="truncate text-sm font-semibold" style={{ color: "#1e1b4b" }}>
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className="truncate"
+                          style={{
+                            fontFamily: "var(--mx-font-sans)",
+                            fontSize: 13,
+                            fontWeight: 500,
+                            color: "var(--mx-ink)",
+                          }}
+                        >
                           {survey.name}
                         </p>
                         <div className="mt-0.5 flex items-center gap-2">
                           <StatusBadge status={survey.status} />
-                          <span className="text-[10px]" style={{ color: "rgba(30,27,75,0.38)" }}>
+                          <span
+                            className="mx-tnum"
+                            style={{ fontSize: 10, color: "var(--mx-ink-3)" }}
+                          >
                             {timeAgo(survey.created_at)}
                           </span>
                           {survey.response_count > 0 && (
-                            <span className="text-[10px]" style={{ color: "rgba(30,27,75,0.38)" }}>
-                              · {survey.response_count} response{survey.response_count !== 1 ? "s" : ""}
+                            <span
+                              className="mx-tnum"
+                              style={{ fontSize: 10, color: "var(--mx-ink-3)" }}
+                            >
+                              · {survey.response_count} response
+                              {survey.response_count !== 1 ? "s" : ""}
                             </span>
                           )}
                         </div>
                       </div>
 
-                      {/* Edit button */}
                       <Link
                         href={`/surveys/${survey.id}/edit`}
-                        className="shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold transition-all"
-                        style={{
-                          background: "rgba(255,255,255,0.55)",
-                          border: "0.5px solid rgba(91,33,182,0.12)",
-                          color: "rgba(30,27,75,0.6)",
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.85)")}
-                        onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.55)")}
+                        className="mx-pill shrink-0"
+                        style={{ fontSize: 11 }}
                       >
                         Edit
                       </Link>
                     </div>
                   ))}
 
-                  {/* View all link */}
                   <div
                     className="px-5 py-3 text-center"
-                    style={{ borderTop: "0.5px solid rgba(91,33,182,0.06)" }}
+                    style={{ borderTop: "1px solid var(--mx-line)" }}
                   >
-                    <Link href="/surveys" className="text-xs font-semibold" style={{ color: "#3777A8" }}>
-                      View all {surveys.length} survey{surveys.length !== 1 ? "s" : ""} →
+                    <Link
+                      href="/surveys"
+                      style={{
+                        fontFamily: "var(--mx-font-sans)",
+                        fontSize: 12,
+                        fontWeight: 500,
+                        color: "var(--mx-cobalt)",
+                      }}
+                    >
+                      View all {surveys.length} survey
+                      {surveys.length !== 1 ? "s" : ""} →
                     </Link>
                   </div>
                 </>
@@ -347,76 +461,68 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          {/* ── Section 4: Quick stats ──────────────────────────────────────── */}
+          {/* ── Quick stats ─────────────────────────────────────────────── */}
           <section>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               {[
                 {
-                  label: "Surveys Created",
+                  label: "Surveys created",
                   value: surveysLoaded ? String(totalSurveys) : "—",
-                  icon: (
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  ),
+                  Icon: IconFileText,
                 },
                 {
-                  label: "Responses Collected",
+                  label: "Responses collected",
                   value: surveysLoaded ? String(totalResponses) : "—",
-                  icon: (
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  ),
+                  Icon: IconUsers,
                 },
                 {
-                  label: "Assessments Live",
+                  label: "Assessments live",
                   value: surveysLoaded ? String(liveNow) : "—",
-                  icon: (
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                  ),
+                  Icon: IconBolt,
                 },
                 {
-                  label: "Library Instruments",
+                  label: "Library instruments",
                   value: libraryCount !== null ? String(libraryCount) : "—",
-                  icon: (
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                  ),
+                  Icon: IconBook2,
                 },
-              ].map(stat => (
-                <div key={stat.label} className="p-5" style={GLASS}>
-                  <div
-                    className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg"
-                    style={{ background: "rgba(91,33,182,0.07)", color: "#5b21b6" }}
-                  >
-                    {stat.icon}
+              ].map(stat => {
+                const Icon = stat.Icon
+                return (
+                  <div key={stat.label} className="mx-card p-5">
+                    <div
+                      className="mb-3 flex h-8 w-8 items-center justify-center"
+                      style={{
+                        background: "var(--mx-paper-2)",
+                        color: "var(--mx-forest)",
+                        borderRadius: "var(--mx-r-md)",
+                      }}
+                    >
+                      <Icon size={16} stroke={1.6} />
+                    </div>
+                    <p
+                      className="mx-num mx-text-grad-cool"
+                      style={{ fontSize: 32 }}
+                    >
+                      {stat.value}
+                    </p>
+                    <p className="mx-eyebrow mt-1.5">{stat.label}</p>
                   </div>
-                  <p
-                    className="text-3xl font-bold leading-none"
-                    style={{ fontFamily: "var(--font-playfair, Georgia, serif)", color: "#1e1b4b" }}
-                  >
-                    {stat.value}
-                  </p>
-                  <p
-                    className="mt-1.5 text-[9px] font-semibold uppercase tracking-widest"
-                    style={{ color: "rgba(30,27,75,0.4)" }}
-                  >
-                    {stat.label}
-                  </p>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </section>
 
           {/* Footer */}
-          <p className="text-center text-[10px]" style={{ color: "rgba(30,27,75,0.22)" }}>
-            Metricly · Psychometric Intelligence for the Arab World
+          <p
+            className="text-center"
+            style={{
+              fontFamily: "var(--mx-font-sans)",
+              fontSize: 10,
+              color: "var(--mx-ink-3)",
+            }}
+          >
+            Metricly · Psychometric intelligence for the Arab world
           </p>
-
         </div>
       </main>
     </div>

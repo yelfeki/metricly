@@ -17,11 +17,11 @@ import type { CompetencyOut, FrameworkOut, SurveyListItem } from "@/lib/types"
 // ---------------------------------------------------------------------------
 
 const DEFAULT_LEVELS = [
-  { level: 1, label: "Novice",      description: "Limited exposure; needs close guidance.",              color: "#ef4444" },
-  { level: 2, label: "Developing",  description: "Basic understanding; can perform with support.",       color: "#f59e0b" },
-  { level: 3, label: "Proficient",  description: "Solid competency; works independently.",              color: "#3b82f6" },
-  { level: 4, label: "Advanced",    description: "Deep expertise; guides others.",                       color: "#8b5cf6" },
-  { level: 5, label: "Expert",      description: "Mastery; recognized authority; drives best practice.", color: "#059669" },
+  { level: 1, label: "Novice",      description: "Limited exposure; needs close guidance.",              color: "#DD6334" },
+  { level: 2, label: "Developing",  description: "Basic understanding; can perform with support.",       color: "#E2B146" },
+  { level: 3, label: "Proficient",  description: "Solid competency; works independently.",              color: "#2A5BA8" },
+  { level: 4, label: "Advanced",    description: "Deep expertise; guides others.",                       color: "#2A5BA8" },
+  { level: 5, label: "Expert",      description: "Mastery; recognized authority; drives best practice.", color: "#7E8A55" },
 ]
 
 const STEPS = ["Details", "Competencies", "Proficiency Scale", "Link Surveys"]
@@ -58,7 +58,7 @@ function Step1Details({
           onChange={e => setRoleTitle(e.target.value)}
           placeholder="e.g. Software Engineer L4"
         />
-        <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>The job title this framework applies to.</p>
+        <p className="mt-1 text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>The job title this framework applies to.</p>
       </div>
       <div>
         <label className="label-caps mb-1.5 block">Description</label>
@@ -92,7 +92,7 @@ function Step2Competencies({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>
+      <p className="text-xs" style={{ color: "rgba(10,30,51,0.5)" }}>
         Define the core skills and behaviours this role requires. Each competency will be independently assessed and scored.
       </p>
       {competencies.map((comp, i) => (
@@ -100,7 +100,7 @@ function Step2Competencies({
           <div className="mb-3 flex items-center justify-between gap-3">
             <span
               className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-              style={{ background: "linear-gradient(135deg, #5b21b6, #3777A8)" }}
+              style={{ background: "linear-gradient(135deg, #0F2841, #2A5BA8)" }}
             >
               {i + 1}
             </span>
@@ -113,9 +113,9 @@ function Step2Competencies({
             <button
               onClick={() => remove(i)}
               className="shrink-0 p-1.5 rounded-full transition-colors"
-              style={{ color: "rgba(30,27,75,0.35)" }}
-              onMouseEnter={e => (e.currentTarget.style.color = "#dc2626")}
-              onMouseLeave={e => (e.currentTarget.style.color = "rgba(30,27,75,0.35)")}
+              style={{ color: "rgba(10,30,51,0.35)" }}
+              onMouseEnter={e => (e.currentTarget.style.color = "#DD6334")}
+              onMouseLeave={e => (e.currentTarget.style.color = "rgba(10,30,51,0.35)")}
               title="Remove competency"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -135,17 +135,17 @@ function Step2Competencies({
         onClick={add}
         className="w-full rounded-[14px] py-3 text-sm font-semibold transition-all"
         style={{
-          border: "1.5px dashed rgba(91,33,182,0.25)",
+          border: "1.5px dashed rgba(15,40,65,0.25)",
           background: "rgba(255,255,255,0.25)",
-          color: "#5b21b6",
+          color: "#0F2841",
         }}
-        onMouseEnter={e => (e.currentTarget.style.background = "rgba(91,33,182,0.06)")}
+        onMouseEnter={e => (e.currentTarget.style.background = "rgba(15,40,65,0.06)")}
         onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.25)")}
       >
         + Add competency
       </button>
       {competencies.length === 0 && (
-        <p className="text-center text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>
+        <p className="text-center text-xs" style={{ color: "rgba(10,30,51,0.35)" }}>
           Add at least one competency to continue.
         </p>
       )}
@@ -165,7 +165,7 @@ function Step3Scale({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>
+      <p className="text-xs" style={{ color: "rgba(10,30,51,0.5)" }}>
         Define what each proficiency level means for this role. The target level for gap analysis is automatically set to <strong>Proficient (level 3)</strong>.
       </p>
       {levels.map((lv, i) => (
@@ -217,14 +217,14 @@ function Step4LinkSurveys({
 }) {
   return (
     <div className="space-y-3">
-      <p className="text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>
+      <p className="text-xs" style={{ color: "rgba(10,30,51,0.5)" }}>
         Optionally map each competency to a survey and factor. Gap analysis will pull scores from the linked factor.
       </p>
       {competencies.map(comp => {
         const link = links[comp.id] || { survey_id: "", factor: "" }
         return (
           <div key={comp.id} className="card p-4">
-            <p className="mb-3 text-sm font-semibold" style={{ color: "#1e1b4b" }}>{comp.name}</p>
+            <p className="mb-3 text-sm font-semibold" style={{ color: "#0A1E33" }}>{comp.name}</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label-caps mb-1 block">Assessment</label>
@@ -390,10 +390,10 @@ export default function NewFrameworkPage() {
                     className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all"
                     style={{
                       background: i <= step
-                        ? "linear-gradient(135deg, #5b21b6, #3777A8)"
+                        ? "linear-gradient(135deg, #0F2841, #2A5BA8)"
                         : "rgba(255,255,255,0.4)",
-                      color: i <= step ? "#fff" : "rgba(30,27,75,0.4)",
-                      border: i <= step ? "none" : "0.5px solid rgba(30,27,75,0.15)",
+                      color: i <= step ? "#fff" : "rgba(10,30,51,0.4)",
+                      border: i <= step ? "none" : "0.5px solid rgba(10,30,51,0.15)",
                     }}
                   >
                     {i < step ? (
@@ -406,7 +406,7 @@ export default function NewFrameworkPage() {
                   </div>
                   <span
                     className="mt-1 text-[9px] font-semibold uppercase tracking-wide whitespace-nowrap"
-                    style={{ color: i === step ? "#5b21b6" : "rgba(30,27,75,0.35)" }}
+                    style={{ color: i === step ? "#0F2841" : "rgba(10,30,51,0.35)" }}
                   >
                     {label}
                   </span>
@@ -414,7 +414,7 @@ export default function NewFrameworkPage() {
                 {i < STEPS.length - 1 && (
                   <div
                     className="mb-4 h-px w-8 sm:w-12"
-                    style={{ background: i < step ? "linear-gradient(90deg, #5b21b6, #3777A8)" : "rgba(30,27,75,0.12)" }}
+                    style={{ background: i < step ? "linear-gradient(90deg, #0F2841, #2A5BA8)" : "rgba(10,30,51,0.12)" }}
                   />
                 )}
               </div>
@@ -449,7 +449,7 @@ export default function NewFrameworkPage() {
               />
             )}
 
-            {error && <p className="mt-4 text-xs" style={{ color: "#dc2626" }}>{error}</p>}
+            {error && <p className="mt-4 text-xs" style={{ color: "#DD6334" }}>{error}</p>}
           </div>
 
           {/* Navigation */}

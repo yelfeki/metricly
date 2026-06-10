@@ -321,6 +321,21 @@ async def run_migrations() -> None:
         "CREATE INDEX IF NOT EXISTS ix_industry_instrument_mappings_instrument_id ON industry_instrument_mappings (instrument_id)",
         "ALTER TABLE instruments ADD COLUMN IF NOT EXISTS industry_tags TEXT",
         "ALTER TABLE instruments ADD COLUMN IF NOT EXISTS is_industry_specific BOOLEAN NOT NULL DEFAULT FALSE",
+        # v1.7 — role-family competency library (additive columns; NULL on existing rows)
+        "ALTER TABLE competency_definitions ADD COLUMN IF NOT EXISTS role_family VARCHAR(100)",
+        "ALTER TABLE competency_definitions ADD COLUMN IF NOT EXISTS framework_source VARCHAR(255)",
+        "CREATE INDEX IF NOT EXISTS ix_competency_definitions_role_family ON competency_definitions (role_family)",
+        # v1.8 — library provenance + cluster grouping on user-built competencies
+        "ALTER TABLE competencies ADD COLUMN IF NOT EXISTS library_competency_id VARCHAR(36)",
+        "ALTER TABLE competencies ADD COLUMN IF NOT EXISTS cluster VARCHAR(255)",
+        "CREATE INDEX IF NOT EXISTS ix_competencies_library_competency_id ON competencies (library_competency_id)",
+        # v1.9 — custom competency support (additive; existing rows untouched)
+        "ALTER TABLE competency_definitions ADD COLUMN IF NOT EXISTS organization_id VARCHAR(36)",
+        "ALTER TABLE competency_definitions ADD COLUMN IF NOT EXISTS created_by_user_id VARCHAR(36)",
+        "ALTER TABLE competency_definitions ADD COLUMN IF NOT EXISTS is_custom BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE competency_definitions ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'active'",
+        "CREATE INDEX IF NOT EXISTS ix_competency_definitions_organization_id ON competency_definitions (organization_id)",
+        "ALTER TABLE competency_proficiency_levels ADD COLUMN IF NOT EXISTS descriptor TEXT",
     ]
     for stmt in migrations:
         try:

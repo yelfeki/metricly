@@ -25,11 +25,11 @@ function GapBar({ gap }: { gap: CompetencyGap }) {
 
   const barColor = hasData
     ? actual >= required
-      ? "linear-gradient(90deg, #22c55e, #16a34a)"
+      ? "linear-gradient(90deg, #7E8A55, #7E8A55)"
       : gap.priority
-      ? "linear-gradient(90deg, #ef4444, #dc2626)"
-      : "linear-gradient(90deg, #f59e0b, #d97706)"
-    : "rgba(30,27,75,0.1)"
+      ? "linear-gradient(90deg, #DD6334, #DD6334)"
+      : "linear-gradient(90deg, #E2B146, #E2B146)"
+    : "rgba(10,30,51,0.1)"
 
   return (
     <div className="card p-4">
@@ -38,7 +38,7 @@ function GapBar({ gap }: { gap: CompetencyGap }) {
           {gap.priority && (
             <span
               className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-              style={{ background: "rgba(239,68,68,0.12)", border: "0.5px solid rgba(239,68,68,0.3)", color: "#dc2626" }}
+              style={{ background: "rgba(239,68,68,0.12)", border: "0.5px solid rgba(239,68,68,0.3)", color: "#DD6334" }}
             >
               High Priority
             </span>
@@ -46,7 +46,7 @@ function GapBar({ gap }: { gap: CompetencyGap }) {
           {hasData && actual >= required && (
             <span
               className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-              style={{ background: "rgba(34,197,94,0.1)", border: "0.5px solid rgba(34,197,94,0.3)", color: "#16a34a" }}
+              style={{ background: "rgba(34,197,94,0.1)", border: "0.5px solid rgba(34,197,94,0.3)", color: "#7E8A55" }}
             >
               On Target
             </span>
@@ -55,49 +55,49 @@ function GapBar({ gap }: { gap: CompetencyGap }) {
         <div className="text-right">
           {hasData ? (
             <>
-              <span className="metric-value text-lg font-bold" style={{ color: "#1e1b4b" }}>
+              <span className="metric-value text-lg font-bold" style={{ color: "#0A1E33" }}>
                 {actual.toFixed(0)}
               </span>
-              <span className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}> / {required.toFixed(0)}</span>
+              <span className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}> / {required.toFixed(0)}</span>
             </>
           ) : (
-            <span className="text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>Not assessed</span>
+            <span className="text-xs" style={{ color: "rgba(10,30,51,0.35)" }}>Not assessed</span>
           )}
         </div>
       </div>
 
-      <p className="mb-3 text-sm font-semibold" style={{ color: "#1e1b4b" }}>{gap.competency_name}</p>
+      <p className="mb-3 text-sm font-semibold" style={{ color: "#0A1E33" }}>{gap.competency_name}</p>
 
       {/* Dual-bar: actual vs required */}
       <div className="space-y-1.5">
         <div className="flex items-center gap-2">
-          <span className="w-16 text-right text-[9px]" style={{ color: "rgba(30,27,75,0.4)" }}>Actual</span>
-          <div className="relative flex-1 h-3 overflow-hidden rounded-sm" style={{ background: "rgba(91,33,182,0.08)" }}>
+          <span className="w-16 text-right text-[9px]" style={{ color: "rgba(10,30,51,0.4)" }}>Actual</span>
+          <div className="relative flex-1 h-3 overflow-hidden rounded-sm" style={{ background: "rgba(15,40,65,0.08)" }}>
             <div
               className="h-full rounded-sm transition-all duration-700"
               style={{ width: `${actualPct}%`, background: barColor }}
             />
           </div>
           {gap.actual_level && (
-            <span className="w-6 text-xs font-semibold" style={{ color: "rgba(30,27,75,0.5)" }}>L{gap.actual_level}</span>
+            <span className="w-6 text-xs font-semibold" style={{ color: "rgba(10,30,51,0.5)" }}>L{gap.actual_level}</span>
           )}
         </div>
         <div className="flex items-center gap-2">
-          <span className="w-16 text-right text-[9px]" style={{ color: "rgba(30,27,75,0.4)" }}>Required</span>
-          <div className="relative flex-1 h-3 overflow-hidden rounded-sm" style={{ background: "rgba(91,33,182,0.08)" }}>
+          <span className="w-16 text-right text-[9px]" style={{ color: "rgba(10,30,51,0.4)" }}>Required</span>
+          <div className="relative flex-1 h-3 overflow-hidden rounded-sm" style={{ background: "rgba(15,40,65,0.08)" }}>
             <div
               className="h-full rounded-sm"
-              style={{ width: `${requiredPct}%`, background: "rgba(91,33,182,0.25)" }}
+              style={{ width: `${requiredPct}%`, background: "rgba(15,40,65,0.25)" }}
             />
           </div>
-          <span className="w-6 text-xs font-semibold" style={{ color: "rgba(30,27,75,0.5)" }}>L{gap.required_level}</span>
+          <span className="w-6 text-xs font-semibold" style={{ color: "rgba(10,30,51,0.5)" }}>L{gap.required_level}</span>
         </div>
       </div>
 
       {hasData && gap.gap !== null && gap.gap > 0 && (
         <div className="mt-2 flex justify-end">
-          <span className="text-[10px]" style={{ color: "rgba(30,27,75,0.4)" }}>
-            Gap: <strong style={{ color: gap.priority ? "#dc2626" : "#d97706" }}>{gap.gap.toFixed(1)} pts</strong>
+          <span className="text-[10px]" style={{ color: "rgba(10,30,51,0.4)" }}>
+            Gap: <strong style={{ color: gap.priority ? "#DD6334" : "#E2B146" }}>{gap.gap.toFixed(1)} pts</strong>
           </span>
         </div>
       )}
@@ -172,7 +172,7 @@ function AddScoreForm({
               placeholder="e.g. 72.5"
             />
           </div>
-          {err && <p className="text-xs" style={{ color: "#dc2626" }}>{err}</p>}
+          {err && <p className="text-xs" style={{ color: "#DD6334" }}>{err}</p>}
         </div>
         <div className="mt-5 flex gap-2">
           <button onClick={onCancel} className="btn-ghost flex-1">Cancel</button>
@@ -255,7 +255,7 @@ export default function GapReportPage() {
     return (
       <div className="flex min-h-screen flex-col">
         <Header backHref="/frameworks" backLabel="Frameworks" />
-        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
+        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>
           Loading…
         </div>
       </div>
@@ -263,11 +263,11 @@ export default function GapReportPage() {
   }
 
   const readinessColor =
-    !report ? "#1e1b4b"
-    : report.overall_readiness >= 80 ? "#059669"
-    : report.overall_readiness >= 60 ? "#3b82f6"
-    : report.overall_readiness >= 40 ? "#f59e0b"
-    : "#ef4444"
+    !report ? "#0A1E33"
+    : report.overall_readiness >= 80 ? "#7E8A55"
+    : report.overall_readiness >= 60 ? "#2A5BA8"
+    : report.overall_readiness >= 40 ? "#E2B146"
+    : "#DD6334"
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -290,7 +290,7 @@ export default function GapReportPage() {
             <p className="eyebrow mb-1">Gap Analysis</p>
             <h1 className="page-title">{framework?.title ?? "…"}</h1>
             {framework?.role_title && (
-              <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>{framework.role_title}</p>
+              <p className="mt-1 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>{framework.role_title}</p>
             )}
           </div>
 
@@ -302,7 +302,7 @@ export default function GapReportPage() {
               <div className="flex-1">
                 <label className="label-caps mb-1.5 block">Employee</label>
                 {employees.length === 0 ? (
-                  <p className="text-sm" style={{ color: "rgba(30,27,75,0.45)" }}>No employees yet — add one below.</p>
+                  <p className="text-sm" style={{ color: "rgba(10,30,51,0.45)" }}>No employees yet — add one below.</p>
                 ) : (
                   <select
                     className="field"
@@ -359,7 +359,7 @@ export default function GapReportPage() {
                     <p className="metric-value text-4xl font-bold" style={{ color: readinessColor }}>
                       {report.overall_readiness.toFixed(0)}%
                     </p>
-                    <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.45)" }}>
+                    <p className="mt-1 text-xs" style={{ color: "rgba(10,30,51,0.45)" }}>
                       {report.overall_readiness >= 80 ? "On track — meets or exceeds most targets."
                         : report.overall_readiness >= 60 ? "Developing — approaching proficiency."
                         : "Needs development — significant gaps identified."}
@@ -368,7 +368,7 @@ export default function GapReportPage() {
                   {/* Radial progress */}
                   <div className="shrink-0">
                     <svg width="80" height="80" viewBox="0 0 80 80">
-                      <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(91,33,182,0.1)" strokeWidth="8" />
+                      <circle cx="40" cy="40" r="34" fill="none" stroke="rgba(15,40,65,0.1)" strokeWidth="8" />
                       <circle
                         cx="40" cy="40" r="34" fill="none"
                         stroke={readinessColor}
@@ -409,7 +409,7 @@ export default function GapReportPage() {
           )}
 
           {reportLoading && (
-            <div className="flex items-center justify-center py-16 text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
+            <div className="flex items-center justify-center py-16 text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>
               Loading report…
             </div>
           )}
@@ -417,7 +417,7 @@ export default function GapReportPage() {
           {!report && !reportLoading && employees.length === 0 && !loading && (
             <div className="card p-8 text-center">
               <p className="section-heading mb-2">No employees yet</p>
-              <p className="text-sm" style={{ color: "rgba(30,27,75,0.45)" }}>
+              <p className="text-sm" style={{ color: "rgba(10,30,51,0.45)" }}>
                 Add employees above, then submit assessment scores to generate gap reports.
               </p>
             </div>

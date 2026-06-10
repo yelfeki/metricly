@@ -6,12 +6,12 @@ export default function ForbiddenPage() {
       <div className="card p-12 text-center max-w-sm w-full">
         <p
           className="font-playfair text-7xl font-black"
-          style={{ color: "rgba(91,33,182,0.15)" }}
+          style={{ color: "rgba(15,40,65,0.15)" }}
         >
           403
         </p>
         <h1 className="section-heading mt-2">Access restricted</h1>
-        <p className="mt-2 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+        <p className="mt-2 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>
           This section requires admin access. Contact your administrator if you need access.
         </p>
         <Link href="/surveys" className="btn-primary mt-6 inline-flex">

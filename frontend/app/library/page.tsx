@@ -16,9 +16,9 @@ import type { CategoryGroup, InstrumentCategoryOut, InstrumentListItem, LibraryG
 
 function LicenseBadge({ type }: { type: string }) {
   const map: Record<string, { label: string; bg: string; color: string }> = {
-    open:          { label: "Open",          bg: "rgba(34,197,94,0.1)",  color: "#16a34a" },
-    public_domain: { label: "Public Domain", bg: "rgba(59,130,246,0.1)", color: "#3777A8" },
-    proprietary:   { label: "Metricly",      bg: "rgba(91,33,182,0.1)",  color: "#5b21b6" },
+    open:          { label: "Open",          bg: "rgba(34,197,94,0.1)",  color: "#7E8A55" },
+    public_domain: { label: "Public Domain", bg: "rgba(59,130,246,0.1)", color: "#2A5BA8" },
+    proprietary:   { label: "Metricly",      bg: "rgba(15,40,65,0.1)",  color: "#0F2841" },
   }
   const s = map[type] ?? map.open
   return (
@@ -71,22 +71,22 @@ function InstrumentCard({ instrument, inCollection, onToggle }: InstrumentCardPr
     <div
       className="flex flex-col rounded-[14px] p-5 transition-all hover:shadow-md"
       style={{
-        background: inCollection ? "rgba(91,33,182,0.07)" : "rgba(255,255,255,0.65)",
-        border: inCollection ? "0.5px solid rgba(91,33,182,0.25)" : "0.5px solid rgba(255,255,255,0.85)",
+        background: inCollection ? "rgba(15,40,65,0.07)" : "rgba(255,255,255,0.65)",
+        border: inCollection ? "0.5px solid rgba(15,40,65,0.25)" : "0.5px solid rgba(255,255,255,0.85)",
         backdropFilter: "blur(12px)",
       }}
     >
       <Link href={`/library/${instrument.id}`} className="block flex-1">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-semibold leading-snug" style={{ color: "#1e1b4b" }}>
+            <p className="text-sm font-semibold leading-snug" style={{ color: "#0A1E33" }}>
               {instrument.name}
             </p>
-            <p className="mt-0.5 text-[10px] font-semibold" style={{ color: "rgba(30,27,75,0.4)" }}>
+            <p className="mt-0.5 text-[10px] font-semibold" style={{ color: "rgba(10,30,51,0.4)" }}>
               {instrument.short_name}
             </p>
             {instrument.construct_measured && (
-              <p className="mt-0.5 text-[11px]" style={{ color: "rgba(30,27,75,0.5)" }}>
+              <p className="mt-0.5 text-[11px]" style={{ color: "rgba(10,30,51,0.5)" }}>
                 {instrument.construct_measured}
               </p>
             )}
@@ -95,23 +95,23 @@ function InstrumentCard({ instrument, inCollection, onToggle }: InstrumentCardPr
         </div>
 
         {instrument.description && (
-          <p className="mb-3 text-xs line-clamp-2" style={{ color: "rgba(30,27,75,0.55)" }}>
+          <p className="mb-3 text-xs line-clamp-2" style={{ color: "rgba(10,30,51,0.55)" }}>
             {instrument.description}
           </p>
         )}
 
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]" style={{ color: "rgba(30,27,75,0.45)" }}>
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]" style={{ color: "rgba(10,30,51,0.45)" }}>
           <span>{instrument.total_items} items</span>
           {instrument.estimated_minutes && <span>~{instrument.estimated_minutes} min</span>}
           {instrument.subscale_count > 0 && <span>{instrument.subscale_count} subscales</span>}
           {alpha !== null && alpha !== undefined && (
-            <span style={{ color: "#5b21b6" }}>α = {alpha.toFixed(2)}</span>
+            <span style={{ color: "#0F2841" }}>α = {alpha.toFixed(2)}</span>
           )}
         </div>
       </Link>
 
       {deployError && (
-        <p className="mt-2 text-[11px]" style={{ color: "#dc2626" }}>{deployError}</p>
+        <p className="mt-2 text-[11px]" style={{ color: "#DD6334" }}>{deployError}</p>
       )}
 
       <div className="mt-3 flex items-center gap-2">
@@ -121,11 +121,11 @@ function InstrumentCard({ instrument, inCollection, onToggle }: InstrumentCardPr
           className="flex-1 rounded-full py-1.5 text-xs font-bold transition-all"
           style={inCollection ? {
             background: "rgba(34,197,94,0.12)",
-            color: "#16a34a",
+            color: "#7E8A55",
             border: "0.5px solid rgba(34,197,94,0.3)",
           } : {
-            background: "rgba(91,33,182,0.08)",
-            color: "#5b21b6",
+            background: "rgba(15,40,65,0.08)",
+            color: "#0F2841",
           }}
         >
           {inCollection ? "✓ Added" : "+ Add to Collection"}
@@ -137,8 +137,8 @@ function InstrumentCard({ instrument, inCollection, onToggle }: InstrumentCardPr
           className="rounded-full px-3 py-1.5 text-xs font-semibold transition-all disabled:opacity-50"
           style={{
             background: "rgba(255,255,255,0.6)",
-            border: "0.5px solid rgba(91,33,182,0.15)",
-            color: "rgba(30,27,75,0.6)",
+            border: "0.5px solid rgba(15,40,65,0.15)",
+            color: "rgba(10,30,51,0.6)",
           }}
         >
           {deploying ? "…" : "Deploy"}
@@ -162,16 +162,16 @@ function CategorySection({ group, isInCollection, onToggle }: CategorySectionPro
   return (
     <section className="mb-10">
       <div className="mb-4 flex items-center gap-2">
-        <h2 className="section-heading" style={{ color: "#1e1b4b" }}>{group.category.name}</h2>
+        <h2 className="section-heading" style={{ color: "#0A1E33" }}>{group.category.name}</h2>
         <span
           className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-          style={{ background: "rgba(91,33,182,0.08)", color: "rgba(30,27,75,0.5)" }}
+          style={{ background: "rgba(15,40,65,0.08)", color: "rgba(10,30,51,0.5)" }}
         >
           {group.instruments.length}
         </span>
       </div>
       {group.category.description && (
-        <p className="mb-4 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+        <p className="mb-4 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>
           {group.category.description}
         </p>
       )}
@@ -248,7 +248,7 @@ export default function LibraryPage() {
           <div className="mb-8">
             <p className="eyebrow mb-1">Scale Library</p>
             <h1 className="page-title">Validated Psychometric Instruments</h1>
-            <p className="mt-2 max-w-2xl text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+            <p className="mt-2 max-w-2xl text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>
               Browse {library?.total_instruments ?? "—"} validated instruments. Add instruments to your collection,
               then deploy them together as a single survey — or deploy any instrument individually.
             </p>
@@ -256,7 +256,7 @@ export default function LibraryPage() {
               <Link
                 href="/library/industries"
                 className="inline-flex items-center gap-1.5 text-xs font-semibold"
-                style={{ color: "#5b21b6" }}
+                style={{ color: "#0F2841" }}
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -311,13 +311,13 @@ export default function LibraryPage() {
           {error && <div className="alert-error mb-6">{error}</div>}
 
           {loading ? (
-            <div className="flex items-center justify-center py-20 text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
+            <div className="flex items-center justify-center py-20 text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>
               Loading library…
             </div>
           ) : visibleGroups.length === 0 ? (
             <div className="card p-10 text-center">
               <p className="section-heading mb-2">No instruments found</p>
-              <p className="text-sm" style={{ color: "rgba(30,27,75,0.45)" }}>Try a different search term or clear the filter.</p>
+              <p className="text-sm" style={{ color: "rgba(10,30,51,0.45)" }}>Try a different search term or clear the filter.</p>
             </div>
           ) : (
             visibleGroups.map(group => (

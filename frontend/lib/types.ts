@@ -388,6 +388,8 @@ export interface CompetencyOut {
   name: string
   description: string | null
   order_index: number
+  library_competency_id: string | null
+  cluster: string | null
 }
 
 export interface ProficiencyLevelOut {
@@ -804,6 +806,7 @@ export interface CompetencyFrameworkListItem {
 export interface CompetencyProficiencyLevelOut {
   level: number
   label: string
+  descriptor?: string | null
   behavioral_indicators: string[]
   example_behaviors: string[]
 }
@@ -820,6 +823,8 @@ export interface CompetencyInstrumentMappingOut {
   response_format: string
 }
 
+export type CompetencyStatus = "active" | "draft" | "archived"
+
 export interface CompetencyListItem {
   id: string
   name: string
@@ -829,8 +834,14 @@ export interface CompetencyListItem {
   factor: string | null
   cluster: string | null
   category: string | null
+  role_family: string | null
+  framework_source: string | null
   is_leadership: boolean
   is_technical: boolean
+  is_custom: boolean
+  status: CompetencyStatus
+  organization_id: string | null
+  created_by_user_id: string | null
   primary_instrument: string | null
 }
 
@@ -843,8 +854,14 @@ export interface CompetencyDetail {
   factor: string | null
   cluster: string | null
   category: string | null
+  role_family: string | null
+  framework_source: string | null
   is_leadership: boolean
   is_technical: boolean
+  is_custom: boolean
+  status: CompetencyStatus
+  organization_id: string | null
+  created_by_user_id: string | null
   proficiency_levels: CompetencyProficiencyLevelOut[]
   instrument_mappings: CompetencyInstrumentMappingOut[]
 }

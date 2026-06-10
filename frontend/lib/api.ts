@@ -649,6 +649,188 @@ export const exportStrawMan = async (body: StrawManRequest): Promise<Blob> => {
 }
 
 // ---------------------------------------------------------------------------
+// Guided-flow ranker + library-import endpoints
+// ---------------------------------------------------------------------------
+
+export interface RankRequest {
+  role: string
+  level: "IC" | "Team Lead" | "Manager" | "Director+"
+  outcome: string
+  gaps: string[]
+  size: "lean" | "standard" | "comprehensive"
+  required_ids?: string[] | null
+}
+
+export interface RankedItem {
+  competency_id: string
+  name: string
+  definition: string | null
+  cluster: string | null
+  role_family: string | null
+  framework_id: string
+  framework_name: string
+  score: number
+  rationale: string
+  suggested_proficiency_level: number
+}
+
+export interface RankResponse {
+  role_family_inferred: string | null
+  ranked: RankedItem[]
+}
+
+export const rankForFramework = (body: RankRequest): Promise<RankResponse> =>
+  post(`/api/v1/competencies/rank-for-framework`, body)
+
+export interface FromLibraryItem {
+  library_competency_id: string
+  order_index?: number
+  suggested_proficiency_level?: number | null
+}
+
+export interface FrameworkFromLibraryRequest {
+  title: string
+  description?: string | null
+  role_title?: string | null
+  competencies: FromLibraryItem[]
+}
+
+export const createFrameworkFromLibrary = (
+  body: FrameworkFromLibraryRequest,
+): Promise<FrameworkOut> => post(`/api/v1/frameworks/from-library`, body)
+
+export const importCompetencyFromLibrary = (
+  frameworkId: string,
+  body: {
+    library_competency_id: string
+    order_index?: number
+    suggested_proficiency_level?: number | null
+  },
+): Promise<CompetencyOut> =>
+  post(`/api/v1/frameworks/${frameworkId}/competencies/import-from-library`, body)
+
+export interface PickerCandidate {
+  library_competency_id: string
+  name: string
+  definition: string | null
+  role_family: string | null
+  cluster: string | null
+  framework_source: string | null
+  framework_name: string
+  is_custom: boolean
+  status: "active" | "draft" | "archived"
+}
+
+export const getPickerCandidates = (
+  frameworkId: string,
+  params?: { role_family?: string; cluster?: string; q?: string },
+): Promise<PickerCandidate[]> => {
+  const qs = new URLSearchParams()
+  if (params?.role_family) qs.set("role_family", params.role_family)
+  if (params?.cluster) qs.set("cluster", params.cluster)
+  if (params?.q) qs.set("q", params.q)
+  const query = qs.toString()
+  return get(
+    `/api/v1/frameworks/${frameworkId}/competencies/picker-candidates${query ? `?${query}` : ""}`,
+  )
+}
+
+export interface CompetencyLevelView {
+  level: number
+  label: string
+  descriptor: string | null
+  behavioral_indicators: string[]
+  example_behaviors: string[]
+}
+
+export interface LinkedSurveyView {
+  survey_id: string
+  survey_name: string | null
+}
+
+export interface CompetencyDetailView {
+  id: string
+  framework_id: string
+  name: string
+  description: string | null
+  cluster: string | null
+  order_index: number
+  library_competency_id: string | null
+  library_framework_source: string | null
+  library_role_family: string | null
+  library_framework_name: string | null
+  // Custom-competency overlay (when imported from a custom library row)
+  library_is_custom: boolean
+  library_status: "active" | "draft" | "archived"
+  library_organization_id: string | null
+  levels: CompetencyLevelView[]
+  linked_survey: LinkedSurveyView | null
+}
+
+export const getFrameworkCompetencyDetail = (
+  frameworkId: string,
+  competencyId: string,
+): Promise<CompetencyDetailView> =>
+  get(`/api/v1/frameworks/${frameworkId}/competencies/${competencyId}/detail`)
+
+// ---------------------------------------------------------------------------
+// Custom competency CRUD
+// ---------------------------------------------------------------------------
+
+export interface CustomCompetencyLevelInput {
+  level: number
+  label?: string | null
+  descriptor?: string | null
+  behavioral_indicators: string[]
+  example_behaviors: string[]
+}
+
+export interface CustomCompetencyCreate {
+  name: string
+  definition: string
+  role_family: string
+  cluster: string
+  framework_source?: string | null
+  levels?: CustomCompetencyLevelInput[]
+}
+
+export interface CustomCompetencyUpdate {
+  name?: string
+  definition?: string
+  role_family?: string
+  cluster?: string
+  framework_source?: string | null
+  // When provided, replaces ALL existing levels atomically.
+  levels?: CustomCompetencyLevelInput[]
+}
+
+export interface FrameworkUsage {
+  competency_id: string
+  framework_count: number
+  framework_titles: string[]
+}
+
+export interface ClusterOptions {
+  options: Record<string, string[]>  // role_family -> sorted cluster names
+}
+
+export const createCustomCompetency = (
+  body: CustomCompetencyCreate,
+): Promise<CompetencyDetail> => post(`/api/v1/competencies/custom`, body)
+
+export const updateCustomCompetency = (
+  competencyId: string,
+  body: CustomCompetencyUpdate,
+): Promise<CompetencyDetail> =>
+  patch(`/api/v1/competencies/custom/${competencyId}`, body)
+
+export const getFrameworkUsage = (competencyId: string): Promise<FrameworkUsage> =>
+  get(`/api/v1/competencies/custom/${competencyId}/framework-usage`)
+
+export const getClusterOptions = (): Promise<ClusterOptions> =>
+  get(`/api/v1/competencies/cluster-options`)
+
+// ---------------------------------------------------------------------------
 // Industry Library
 // ---------------------------------------------------------------------------
 

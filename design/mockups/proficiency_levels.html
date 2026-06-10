@@ -1,0 +1,333 @@
+<div style="background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1.25rem; font-family: var(--font-sans);">
+
+<h2 class="sr-only">Interactive proficiency level rubric showing five behaviourally anchored levels (L1 Foundational through L5 Expert) for each competency.</h2>
+
+<!-- Header -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; gap: 12px;">
+  <div>
+    <div style="font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 4px; letter-spacing: 0.5px;">METRICLY · BEHAVIOURAL ANCHORS</div>
+    <div style="font-size: 18px; font-weight: 500;">Proficiency levels per competency</div>
+    <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 2px;">Pick a competency, then walk the ladder from foundational to expert</div>
+  </div>
+  <div style="display: flex; align-items: center; gap: 8px;">
+    <span style="font-size: 11px; color: var(--color-text-tertiary);">View</span>
+    <button id="viewLadder" class="view-btn active" style="font-size: 12px;"><i class="ti ti-stairs" style="font-size: 13px; vertical-align: -2px;" aria-hidden="true"></i> Ladder</button>
+    <button id="viewCompare" class="view-btn" style="font-size: 12px;"><i class="ti ti-layout-columns" style="font-size: 13px; vertical-align: -2px;" aria-hidden="true"></i> Compare</button>
+  </div>
+</div>
+
+<!-- Competency selector pills -->
+<div style="background: var(--color-background-primary); border-radius: var(--border-radius-md); padding: 10px 12px; margin-bottom: 1rem;">
+  <div style="font-size: 10px; color: var(--color-text-secondary); margin-bottom: 8px; font-weight: 500; letter-spacing: 0.4px;">SELECT COMPETENCY</div>
+  <div id="competencyPills" style="display: flex; flex-wrap: wrap; gap: 5px;"></div>
+</div>
+
+<!-- LADDER VIEW -->
+<div id="ladderView">
+
+  <!-- Competency header card -->
+  <div id="compHeader" style="background: var(--color-background-primary); border-radius: var(--border-radius-lg); padding: 14px 16px; margin-bottom: 12px;"></div>
+
+  <!-- Level navigation tabs -->
+  <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 12px;">
+    <button class="level-tab" data-level="1"><span class="level-num">L1</span><span class="level-name">Foundational</span></button>
+    <button class="level-tab" data-level="2"><span class="level-num">L2</span><span class="level-name">Developing</span></button>
+    <button class="level-tab active" data-level="3"><span class="level-num">L3</span><span class="level-name">Proficient</span></button>
+    <button class="level-tab" data-level="4"><span class="level-num">L4</span><span class="level-name">Advanced</span></button>
+    <button class="level-tab" data-level="5"><span class="level-num">L5</span><span class="level-name">Expert</span></button>
+  </div>
+
+  <!-- Progression visual: dot ladder -->
+  <div style="background: var(--color-background-primary); border-radius: var(--border-radius-lg); padding: 16px; margin-bottom: 12px;">
+    <div style="position: relative; height: 60px;">
+      <div style="position: absolute; top: 28px; left: 6%; right: 6%; height: 3px; background: var(--color-background-secondary); border-radius: 2px;"></div>
+      <div id="progressFill" style="position: absolute; top: 28px; left: 6%; height: 3px; background: #534AB7; border-radius: 2px; width: 0; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background 0.4s ease;"></div>
+      <div id="dotLadder" style="position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-around; align-items: flex-start; padding: 0 4%;"></div>
+    </div>
+  </div>
+
+  <!-- Current level detail card -->
+  <div id="levelDetail" style="background: var(--color-background-primary); border-radius: var(--border-radius-lg); padding: 16px;"></div>
+
+  <!-- Footer: target & gap row -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px;">
+    <div style="background: var(--color-background-primary); border-radius: var(--border-radius-md); padding: 12px;">
+      <div style="font-size: 10px; color: var(--color-text-tertiary); letter-spacing: 0.4px; margin-bottom: 4px;">TARGET FOR ROLE</div>
+      <div id="targetText" style="font-size: 14px; font-weight: 500;"></div>
+    </div>
+    <div style="background: var(--color-background-primary); border-radius: var(--border-radius-md); padding: 12px;">
+      <div style="font-size: 10px; color: var(--color-text-tertiary); letter-spacing: 0.4px; margin-bottom: 4px;">PROGRESSION TIME</div>
+      <div id="progText" style="font-size: 14px; font-weight: 500;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- COMPARE VIEW (hidden by default) -->
+<div id="compareView" style="display: none;">
+  <div style="background: var(--color-background-primary); border-radius: var(--border-radius-lg); padding: 16px;">
+    <div style="font-size: 13px; font-weight: 500; margin-bottom: 4px;">All five levels side by side</div>
+    <div style="font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 12px;">Behavioural anchors compared across the rubric</div>
+    <div id="compareGrid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;"></div>
+  </div>
+</div>
+
+</div>
+
+<style>
+.comp-pill { font-size: 11px; padding: 5px 10px; border-radius: 12px; background: var(--color-background-secondary); color: var(--color-text-secondary); border: 0.5px solid transparent; cursor: pointer; transition: all 0.15s; }
+.comp-pill:hover { background: var(--color-background-primary); border-color: var(--color-border-secondary); }
+.comp-pill.active { background: #534AB7; color: white; border-color: #534AB7; }
+.view-btn { transition: all 0.15s; }
+.view-btn.active { background: var(--color-background-info); color: var(--color-text-info); border-color: var(--color-border-info); }
+.level-tab { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); cursor: pointer; transition: all 0.2s; }
+.level-tab .level-num { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); }
+.level-tab .level-name { font-size: 10px; color: var(--color-text-tertiary); }
+.level-tab:hover { border-color: var(--color-border-secondary); }
+.level-tab.active { background: #534AB7; border-color: #534AB7; }
+.level-tab.active .level-num, .level-tab.active .level-name { color: white; }
+.ladder-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--color-background-primary); border: 2.5px solid var(--color-border-secondary); margin-top: 21px; transition: all 0.3s; cursor: pointer; position: relative; z-index: 2; }
+.ladder-dot.reached { background: #534AB7; border-color: #534AB7; }
+.ladder-dot.current { background: white; border-color: #534AB7; box-shadow: 0 0 0 4px rgba(83, 74, 183, 0.18); transform: scale(1.15); }
+.ladder-dot-wrap { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+.ladder-dot-label { font-size: 9px; color: var(--color-text-tertiary); margin-top: 6px; transition: color 0.3s; }
+.ladder-dot-wrap.current .ladder-dot-label { color: #534AB7; font-weight: 500; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.anim-slide { animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) both; }
+.anchor-item { animation: slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1) both; }
+.compare-col { animation: slideUp 0.4s ease both; }
+</style>
+
+<script>
+(function() {
+  const competencies = [
+    { id: 'vision', name: 'Vision setting', icon: 'ti-target-arrow', target: 5, progression: '~24 months L3→L5' },
+    { id: 'coach', name: 'Coaching', icon: 'ti-users', target: 4, progression: '~18 months L2→L4' },
+    { id: 'decide', name: 'Decision making', icon: 'ti-bulb', target: 4, progression: '~18 months L3→L4' },
+    { id: 'plan', name: 'Strategic planning', icon: 'ti-chart-arrows', target: 5, progression: '~24 months L3→L5' },
+    { id: 'influ', name: 'Influence', icon: 'ti-bolt', target: 4, progression: '~12 months L3→L4' },
+    { id: 'deliver', name: 'Project delivery', icon: 'ti-checklist', target: 4, progression: '~12 months L3→L4' },
+    { id: 'resil', name: 'Resilience', icon: 'ti-spider', target: 4, progression: '~18 months L2→L4' },
+    { id: 'data', name: 'Data literacy', icon: 'ti-chart-dots', target: 3, progression: '~9 months L1→L3' }
+  ];
+
+  // BARS — behaviourally anchored rating scale per competency
+  const rubric = {
+    vision: {
+      1: { headline: 'Understands stated vision', anchors: ['Can restate the team vision when asked', 'Sees how own work connects to broader goals', 'Asks questions to clarify purpose'], example: '"My manager told me where we\'re heading and I can repeat it back."' },
+      2: { headline: 'Communicates vision to peers', anchors: ['Explains team direction to new joiners', 'Reinforces purpose in day-to-day conversations', 'Identifies misalignment between vision and tasks'], example: '"I help onboard newcomers by explaining what we\'re building and why."' },
+      3: { headline: 'Translates vision into team direction', anchors: ['Sets 6-12 month team goals from broader vision', 'Articulates a compelling narrative for own scope', 'Connects daily work to longer-term outcomes'], example: '"I run quarterly planning and link every initiative back to our north star."' },
+      4: { headline: 'Shapes vision for own function', anchors: ['Defines 1-3 year future state for the function', 'Builds organisational buy-in across stakeholders', 'Adjusts vision in response to market signals'], example: '"I shaped our department\'s 3-year strategy and got alignment from 5 peer leaders."' },
+      5: { headline: 'Sets enterprise-level direction', anchors: ['Articulates compelling 3-5 year future across the organisation', 'Inspires action through narrative at scale', 'Reframes industry trajectory; others adopt the framing'], example: '"My vision for the business unit became the company\'s strategic narrative."' }
+    },
+    coach: {
+      1: { headline: 'Listens to others\' development needs', anchors: ['Knows what colleagues want to learn', 'Recognises teachable moments', 'Asks how others are doing'], example: '"I ask my teammates what they\'re working on developing."' },
+      2: { headline: 'Gives feedback when prompted', anchors: ['Shares observations when asked', 'Recognises strengths in others', 'Tries to be specific in feedback'], example: '"When asked, I gave concrete feedback after a presentation."' },
+      3: { headline: 'Coaches direct reports proactively', anchors: ['Holds regular 1:1s focused on growth', 'Gives timely, specific feedback unprompted', 'Co-creates development goals'], example: '"I run weekly 1:1s and we always have an active development goal."' },
+      4: { headline: 'Develops talent across the team', anchors: ['Asks powerful questions that unlock thinking', 'Tailors coaching style per individual', 'Tracks longitudinal growth across team'], example: '"Three of my reports were promoted this year, two via lateral moves I sponsored."' },
+      5: { headline: 'Builds coaching culture organisation-wide', anchors: ['Coaches other coaches and senior leaders', 'Designs talent development systems', 'Recognised externally as a developer of leaders'], example: '"I built our coaching framework and trained 40 managers on it."' }
+    },
+    decide: {
+      1: { headline: 'Decides within clear guidelines', anchors: ['Makes routine decisions consistent with policy', 'Escalates ambiguous calls promptly', 'Documents reasoning when asked'], example: '"I handle standard decisions and flag the harder ones to my manager."' },
+      2: { headline: 'Decides with manager input', anchors: ['Weighs 2-3 options before deciding', 'Identifies key risks before acting', 'Owns small-scope decisions independently'], example: '"I bring options to my 1:1 and decide together with my manager."' },
+      3: { headline: 'Decides independently in own scope', anchors: ['Weighs trade-offs explicitly', 'Decides with incomplete information when needed', 'Owns the outcome whether positive or negative'], example: '"I made the call to delay launch by 2 weeks; I owned the trade-off."' },
+      4: { headline: 'Decides on cross-functional issues', anchors: ['Resolves trade-offs across competing functions', 'Builds decision frameworks others can reuse', 'Holds firm under pushback when warranted'], example: '"I made the call on the platform-vs-product split despite strong disagreement."' },
+      5: { headline: 'Sets decision norms organisation-wide', anchors: ['Designs decision-making systems for scale', 'Decides on bet-the-company issues with composure', 'Trains others on judgement under uncertainty'], example: '"I led the pivot decision; it reset our strategy and our culture of decisiveness."' }
+    },
+    plan: {
+      1: { headline: 'Follows existing plans accurately', anchors: ['Executes against a given roadmap', 'Tracks progress against milestones', 'Flags slippage early'], example: '"I work the plan and call out when something\'s drifting."' },
+      2: { headline: 'Contributes to team planning', anchors: ['Estimates effort for own work', 'Identifies dependencies', 'Helps sequence backlog items'], example: '"In planning, I lay out my workstreams and dependencies."' },
+      3: { headline: 'Plans for a team or workstream', anchors: ['Translates goals into quarterly roadmaps', 'Sequences initiatives by impact and effort', 'Defines clear success metrics'], example: '"I built our team\'s quarterly roadmap with measurable OKRs."' },
+      4: { headline: 'Plans across multiple teams', anchors: ['Balances 5+ workstreams against capacity', 'Builds multi-quarter roadmaps with clear hand-offs', 'Re-plans rapidly when context shifts'], example: '"I run portfolio planning across 3 squads and re-balance monthly."' },
+      5: { headline: 'Plans at organisational level', anchors: ['Designs 3-year strategic plans', 'Sequences major bets and capital allocation', 'Aligns plans with industry timing'], example: '"I led the 3-year plan that aligned product, GTM, and capital allocation."' }
+    },
+    influ: {
+      1: { headline: 'States position clearly', anchors: ['Articulates own view with evidence', 'Listens before pushing back', 'Adjusts when shown new information'], example: '"I share my view and back it up; I change my mind when convinced."' },
+      2: { headline: 'Persuades peers on small decisions', anchors: ['Tailors messages to individual peers', 'Anticipates simple objections', 'Wins agreement on team-level calls'], example: '"I shifted the team\'s view on tool choice through 1:1 conversations."' },
+      3: { headline: 'Influences across functions', anchors: ['Builds coalitions before formal meetings', 'Tailors message to audience needs', 'Persuades with data and narrative together'], example: '"I got design, eng, and PM aligned on a contentious roadmap call."' },
+      4: { headline: 'Influences senior stakeholders', anchors: ['Reads political dynamics accurately', 'Wins support from skeptical executives', 'Sponsors others\' ideas to raise their visibility'], example: '"I won the CFO\'s support for a major investment over two stakeholders\' objections."' },
+      5: { headline: 'Shapes industry conversation', anchors: ['Influences external stakeholders and ecosystem', 'Reframes how the industry thinks about a topic', 'Others amplify and adopt the framing'], example: '"My framing of the category became the industry standard within 18 months."' }
+    },
+    deliver: {
+      1: { headline: 'Completes assigned tasks', anchors: ['Delivers individual tasks on time', 'Asks for help when stuck', 'Reports status accurately'], example: '"I finish what\'s on my plate and ask early if I\'m blocked."' },
+      2: { headline: 'Delivers small projects', anchors: ['Breaks projects into manageable steps', 'Coordinates with 1-2 collaborators', 'Hits 80%+ of self-set deadlines'], example: '"I led a 4-week project with one collaborator and shipped on time."' },
+      3: { headline: 'Delivers complex projects', anchors: ['Plans backwards from outcomes', 'Removes blockers proactively', 'Ships on time without quality compromise'], example: '"I shipped a 6-month cross-functional project on the original timeline."' },
+      4: { headline: 'Delivers programmes across teams', anchors: ['Orchestrates 3+ workstreams in parallel', 'Manages dependencies and risk across teams', 'Brings programmes home under pressure'], example: '"I delivered a 12-month programme across 4 teams with no major slips."' },
+      5: { headline: 'Delivers organisational transformation', anchors: ['Drives multi-year initiatives to completion', 'Builds delivery systems others operate', 'Recognised for delivering what others couldn\'t'], example: '"I led the 2-year platform migration; we shipped early and under budget."' }
+    },
+    resil: {
+      1: { headline: 'Recovers from setbacks with support', anchors: ['Asks for help when overwhelmed', 'Continues work after disappointments', 'Names difficult emotions accurately'], example: '"After a tough sprint, I talked to my manager and got back on track."' },
+      2: { headline: 'Recovers independently', anchors: ['Bounces back from setbacks within days', 'Maintains output under moderate stress', 'Uses simple self-regulation strategies'], example: '"A failed launch knocked me back a couple of days, then I was back at it."' },
+      3: { headline: 'Maintains composure under pressure', anchors: ['Stays effective during sustained pressure', 'Reframes setbacks as learning', 'Protects team energy by modelling steadiness'], example: '"During the outage, I stayed calm and the team mirrored that."' },
+      4: { headline: 'Holds the team steady in crisis', anchors: ['Operates calmly through high-stakes uncertainty', 'Models recovery for the whole team', 'Sustains morale through extended hard periods'], example: '"Through 6 months of restructuring, I kept the team functioning and engaged."' },
+      5: { headline: 'Builds organisational resilience', anchors: ['Designs systems and culture for resilience', 'Anchors the organisation through existential crises', 'Recognised externally as a steady operator'], example: '"I led the company through the downturn; our culture came out stronger."' }
+    },
+    data: {
+      1: { headline: 'Reads basic charts and tables', anchors: ['Interprets simple bar and line charts', 'Distinguishes count vs rate vs percentage', 'Asks what a number means before reacting'], example: '"I can read a dashboard and tell you what the numbers say."' },
+      2: { headline: 'Uses data in own decisions', anchors: ['Queries data for routine questions', 'Spots obvious anomalies', 'Builds simple charts in own tools'], example: '"I pulled the conversion numbers and made my own pivot table to decide."' },
+      3: { headline: 'Interprets metrics in context', anchors: ['Reads metrics in business context, not isolation', 'Distinguishes signal from noise', 'Asks for the right data, not just available data'], example: '"I noticed the metric was up but the underlying behaviour was down; flagged it."' },
+      4: { headline: 'Designs measurement systems', anchors: ['Defines metrics that drive the right behaviours', 'Spots when a metric is being gamed', 'Coaches others on data interpretation'], example: '"I redesigned our KPIs after spotting that we were optimising the wrong thing."' },
+      5: { headline: 'Shapes data culture organisation-wide', anchors: ['Builds analytical capability across the organisation', 'Sets standards for measurement and inference', 'Trusted as final arbiter on contested data calls'], example: '"I built our data literacy programme; it changed how decisions get made."' }
+    }
+  };
+
+  const PURPLE = '#534AB7';
+  const PURPLE_BG = '#EEEDFE';
+  const PURPLE_TEXT = '#26215C';
+
+  let currentComp = 'vision';
+  let currentLevel = 3;
+
+  function renderPills() {
+    const html = competencies.map(c => `
+      <button class="comp-pill ${c.id === currentComp ? 'active' : ''}" data-id="${c.id}">
+        <i class="ti ${c.icon}" style="font-size: 11px; vertical-align: -1px; margin-right: 3px;" aria-hidden="true"></i>${c.name}
+      </button>
+    `).join('');
+    document.getElementById('competencyPills').innerHTML = html;
+    document.querySelectorAll('.comp-pill').forEach(p => {
+      p.addEventListener('click', () => { currentComp = p.dataset.id; currentLevel = 3; renderAll(); });
+    });
+  }
+
+  function renderHeader() {
+    const c = competencies.find(x => x.id === currentComp);
+    const r3 = rubric[c.id][3];
+    document.getElementById('compHeader').innerHTML = `
+      <div class="anim-slide" style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 40px; height: 40px; border-radius: var(--border-radius-md); background: ${PURPLE_BG}; display: flex; align-items: center; justify-content: center; color: ${PURPLE};">
+          <i class="ti ${c.icon}" style="font-size: 22px;" aria-hidden="true"></i>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 15px; font-weight: 500;">${c.name}</div>
+          <div style="font-size: 11px; color: var(--color-text-secondary); margin-top: 2px;">Five behavioural levels · target for senior role L${c.target}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 10px; color: var(--color-text-tertiary); letter-spacing: 0.4px;">TARGET</div>
+          <div style="font-size: 16px; font-weight: 500; color: ${PURPLE};">L${c.target}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderDotLadder() {
+    const c = competencies.find(x => x.id === currentComp);
+    const html = [1,2,3,4,5].map(lvl => {
+      const reached = lvl < currentLevel;
+      const current = lvl === currentLevel;
+      const cls = current ? 'current' : (reached ? 'reached' : '');
+      return `
+        <div class="ladder-dot-wrap ${current ? 'current' : ''}" data-level="${lvl}">
+          <div class="ladder-dot ${cls}"></div>
+          <div class="ladder-dot-label">L${lvl}${lvl === c.target ? ' ★' : ''}</div>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('dotLadder').innerHTML = html;
+    document.querySelectorAll('.ladder-dot-wrap').forEach(d => {
+      d.addEventListener('click', () => { currentLevel = parseInt(d.dataset.level); renderAll(); });
+    });
+    const fillPct = ((currentLevel - 1) / 4) * (100 - 12);
+    document.getElementById('progressFill').style.width = fillPct + '%';
+  }
+
+  function renderTabs() {
+    document.querySelectorAll('.level-tab').forEach(t => {
+      t.classList.toggle('active', parseInt(t.dataset.level) === currentLevel);
+    });
+  }
+
+  function renderLevelDetail() {
+    const c = competencies.find(x => x.id === currentComp);
+    const r = rubric[c.id][currentLevel];
+    const isTarget = currentLevel === c.target;
+
+    document.getElementById('levelDetail').innerHTML = `
+      <div class="anim-slide">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px;">
+          <div>
+            <div style="font-size: 10px; color: ${PURPLE}; letter-spacing: 0.5px; font-weight: 500; margin-bottom: 2px;">LEVEL ${currentLevel}</div>
+            <div style="font-size: 16px; font-weight: 500; line-height: 1.3;">${r.headline}</div>
+          </div>
+          ${isTarget ? `<span style="background: ${PURPLE_BG}; color: ${PURPLE_TEXT}; font-size: 10px; padding: 4px 8px; border-radius: var(--border-radius-md); font-weight: 500; white-space: nowrap;"><i class="ti ti-star" style="font-size: 10px; vertical-align: -1px;" aria-hidden="true"></i> Role target</span>` : ''}
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <div style="font-size: 10px; color: var(--color-text-secondary); margin-bottom: 6px; font-weight: 500; letter-spacing: 0.4px;">BEHAVIOURAL ANCHORS</div>
+          ${r.anchors.map((a, i) => `
+            <div class="anchor-item" style="animation-delay: ${i * 0.08}s; display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; background: ${PURPLE_BG}; color: ${PURPLE_TEXT}; border-radius: var(--border-radius-md); margin-bottom: 4px; font-size: 12px;">
+              <i class="ti ti-check" style="font-size: 13px; margin-top: 1px; flex-shrink: 0;" aria-hidden="true"></i>
+              <span>${a}</span>
+            </div>
+          `).join('')}
+        </div>
+
+        <div style="background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px 12px; border-left: 2.5px solid ${PURPLE};">
+          <div style="font-size: 9px; color: var(--color-text-tertiary); letter-spacing: 0.4px; margin-bottom: 4px; font-weight: 500;">EXAMPLE BEHAVIOUR</div>
+          <div style="font-family: var(--font-serif); font-size: 12px; color: var(--color-text-primary); font-style: italic; line-height: 1.5;">${r.example}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderFooter() {
+    const c = competencies.find(x => x.id === currentComp);
+    const gap = c.target - currentLevel;
+    const gapText = gap > 0 ? `${gap} level${gap > 1 ? 's' : ''} below target` : (gap < 0 ? `${Math.abs(gap)} above target` : 'At target');
+    const gapColor = gap > 0 ? 'var(--color-text-warning)' : (gap < 0 ? 'var(--color-text-success)' : PURPLE);
+    document.getElementById('targetText').innerHTML = `L${c.target} <span style="font-size: 11px; color: ${gapColor}; font-weight: 400; margin-left: 6px;">${gapText}</span>`;
+    document.getElementById('progText').innerHTML = `<span style="font-size: 13px; color: var(--color-text-secondary); font-weight: 400;">${c.progression}</span>`;
+  }
+
+  function renderCompare() {
+    const c = competencies.find(x => x.id === currentComp);
+    const html = [1,2,3,4,5].map(lvl => {
+      const r = rubric[c.id][lvl];
+      const isTarget = lvl === c.target;
+      const intensity = lvl / 5;
+      const bgOpacity = 0.15 + intensity * 0.25;
+      return `
+        <div class="compare-col" style="animation-delay: ${lvl * 0.06}s; background: rgba(83, 74, 183, ${bgOpacity * 0.3}); border: ${isTarget ? '2px' : '0.5px'} solid ${isTarget ? PURPLE : 'var(--color-border-tertiary)'}; border-radius: var(--border-radius-md); padding: 10px; position: relative;">
+          ${isTarget ? `<div style="position: absolute; top: -8px; right: 6px; background: ${PURPLE}; color: white; font-size: 8px; padding: 2px 5px; border-radius: 3px; font-weight: 500;">TARGET</div>` : ''}
+          <div style="font-size: 9px; color: ${PURPLE}; font-weight: 500; letter-spacing: 0.4px; margin-bottom: 4px;">LEVEL ${lvl}</div>
+          <div style="font-size: 12px; font-weight: 500; line-height: 1.3; margin-bottom: 8px; min-height: 32px;">${r.headline}</div>
+          <div style="font-size: 10px; color: var(--color-text-secondary); line-height: 1.5;">
+            ${r.anchors.slice(0,2).map(a => `<div style="display: flex; gap: 4px; margin-bottom: 4px;"><span style="color: ${PURPLE}; flex-shrink: 0;">•</span><span>${a}</span></div>`).join('')}
+          </div>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('compareGrid').innerHTML = html;
+  }
+
+  function renderAll() {
+    renderPills();
+    renderHeader();
+    renderDotLadder();
+    renderTabs();
+    renderLevelDetail();
+    renderFooter();
+    renderCompare();
+  }
+
+  document.querySelectorAll('.level-tab').forEach(t => {
+    t.addEventListener('click', () => { currentLevel = parseInt(t.dataset.level); renderAll(); });
+  });
+
+  document.getElementById('viewLadder').addEventListener('click', () => {
+    document.getElementById('viewLadder').classList.add('active');
+    document.getElementById('viewCompare').classList.remove('active');
+    document.getElementById('ladderView').style.display = 'block';
+    document.getElementById('compareView').style.display = 'none';
+  });
+  document.getElementById('viewCompare').addEventListener('click', () => {
+    document.getElementById('viewCompare').classList.add('active');
+    document.getElementById('viewLadder').classList.remove('active');
+    document.getElementById('ladderView').style.display = 'none';
+    document.getElementById('compareView').style.display = 'block';
+    renderCompare();
+  });
+
+  renderAll();
+})();
+</script>

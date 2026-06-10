@@ -82,25 +82,25 @@ function RadarChart({ factors, size = 280 }: RadarChartProps) {
   return (
     <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} className="mx-auto print:mx-0" aria-label="Factor radar chart">
       {ringPaths.map((d, i) => (
-        <path key={i} d={d} fill="none" stroke="rgba(91,33,182,0.12)" strokeWidth={1} />
+        <path key={i} d={d} fill="none" stroke="rgba(15,40,65,0.12)" strokeWidth={1} />
       ))}
       {rings.map(pct => (
-        <text key={pct} x={cx + 4} y={cy - (pct / 100) * R - 3} fontSize={7} fill="rgba(30,27,75,0.3)">{pct}</text>
+        <text key={pct} x={cx + 4} y={cy - (pct / 100) * R - 3} fontSize={7} fill="rgba(10,30,51,0.3)">{pct}</text>
       ))}
       {Array.from({ length: n }, (_, i) => {
         const end = axisEnd(i)
-        return <line key={i} x1={cx} y1={cy} x2={end.x.toFixed(1)} y2={end.y.toFixed(1)} stroke="rgba(91,33,182,0.12)" strokeWidth={1} />
+        return <line key={i} x1={cx} y1={cy} x2={end.x.toFixed(1)} y2={end.y.toFixed(1)} stroke="rgba(15,40,65,0.12)" strokeWidth={1} />
       })}
-      <path d={scorePath} fill="rgba(91,33,182,0.15)" stroke="#7c3aed" strokeWidth={2} strokeLinejoin="round" />
+      <path d={scorePath} fill="rgba(15,40,65,0.15)" stroke="#0F2841" strokeWidth={2} strokeLinejoin="round" />
       {scorePts.map((p, i) => (
-        <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r={4} fill="#7c3aed" />
+        <circle key={i} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r={4} fill="#0F2841" />
       ))}
       {scored.map((f, i) => {
         const lp = labelPos(i)
         const anchor = lp.x < cx - 5 ? "end" : lp.x > cx + 5 ? "start" : "middle"
         const words = f.factor_name.split(" ")
         return (
-          <text key={i} x={lp.x.toFixed(1)} y={lp.y.toFixed(1)} textAnchor={anchor} dominantBaseline="middle" fontSize={9} fontWeight={600} fill="rgba(30,27,75,0.6)">
+          <text key={i} x={lp.x.toFixed(1)} y={lp.y.toFixed(1)} textAnchor={anchor} dominantBaseline="middle" fontSize={9} fontWeight={600} fill="rgba(10,30,51,0.6)">
             {words.length <= 2 ? f.factor_name : (
               <>
                 <tspan x={lp.x.toFixed(1)} dy="-6">{words.slice(0, Math.ceil(words.length / 2)).join(" ")}</tspan>
@@ -132,21 +132,21 @@ function CompositeCard({ report }: { report: ParticipantReport }) {
       <p className="eyebrow">Overall Score</p>
       <p
         className="metric-value mt-2 text-6xl font-black tabular-nums leading-none"
-        style={{ color: composite.color ?? "#5b21b6" }}
+        style={{ color: composite.color ?? "#0F2841" }}
       >
         {hasScore ? fmt(composite.normalized, 1) : "—"}
       </p>
-      <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>/ 100</p>
+      <p className="mt-1 text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>/ 100</p>
       {composite.label && (
         <span
           className="mt-3 inline-block rounded-full px-4 py-1 text-sm font-bold text-white"
-          style={{ backgroundColor: composite.color ?? "#5b21b6" }}
+          style={{ backgroundColor: composite.color ?? "#0F2841" }}
         >
           {composite.label}
         </span>
       )}
       {!hasScore && (
-        <p className="mt-3 text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>
+        <p className="mt-3 text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>
           Configure a composite scoring algorithm to see an overall score.
         </p>
       )}
@@ -162,7 +162,7 @@ function FactorBars({ factors }: { factors: FactorReport[] }) {
   const scored = factors.filter(f => f.normalized !== null)
   if (scored.length === 0) {
     return (
-      <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>
+      <p className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>
         No factor scores available. Assign questions to factors and configure scoring algorithms.
       </p>
     )
@@ -173,14 +173,14 @@ function FactorBars({ factors }: { factors: FactorReport[] }) {
       {factors.map(f => (
         <div key={f.factor_name}>
           <div className="mb-1 flex items-center justify-between gap-2">
-            <span className="text-sm font-medium truncate" style={{ color: "rgba(30,27,75,0.75)" }}>{f.factor_name}</span>
+            <span className="text-sm font-medium truncate" style={{ color: "rgba(10,30,51,0.75)" }}>{f.factor_name}</span>
             <div className="flex items-center gap-2 shrink-0">
               {f.label && (
-                <span className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: f.color ?? "#5b21b6" }}>
+                <span className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: f.color ?? "#0F2841" }}>
                   {f.label}
                 </span>
               )}
-              <span className="w-10 text-right text-xs tabular-nums font-semibold" style={{ color: "rgba(30,27,75,0.65)" }}>
+              <span className="w-10 text-right text-xs tabular-nums font-semibold" style={{ color: "rgba(10,30,51,0.65)" }}>
                 {fmt(f.normalized)}
               </span>
             </div>
@@ -188,10 +188,10 @@ function FactorBars({ factors }: { factors: FactorReport[] }) {
           <div className="bar-track" style={{ height: "10px" }}>
             <div
               className="h-full rounded-sm transition-all duration-500"
-              style={{ width: `${f.normalized ?? 0}%`, backgroundColor: f.color ?? "#5b21b6" }}
+              style={{ width: `${f.normalized ?? 0}%`, backgroundColor: f.color ?? "#0F2841" }}
             />
           </div>
-          <div className="mt-0.5 flex justify-between text-[10px]" style={{ color: "rgba(30,27,75,0.3)" }}>
+          <div className="mt-0.5 flex justify-between text-[10px]" style={{ color: "rgba(10,30,51,0.3)" }}>
             <span>0</span>
             <span>{`raw: ${fmt(f.raw_mean, 2)} · ${f.item_count} item${f.item_count !== 1 ? "s" : ""}`}</span>
             <span>100</span>
@@ -235,30 +235,30 @@ function ItemTable({ report }: { report: ParticipantReport }) {
                 <tbody>
                   {items.map(ans => (
                     <tr key={ans.question_id} style={{ borderTop: "0.5px solid rgba(255,255,255,0.3)" }}>
-                      <td className="px-3 py-2 leading-snug" style={{ color: "rgba(30,27,75,0.75)" }}>
+                      <td className="px-3 py-2 leading-snug" style={{ color: "rgba(10,30,51,0.75)" }}>
                         {ans.question_text}
                         {ans.reverse_scored && (
                           <span
                             className="ml-1.5 rounded px-1 py-0.5 text-[10px] font-bold"
-                            style={{ background: "rgba(245,158,11,0.12)", color: "#b45309" }}
+                            style={{ background: "rgba(245,158,11,0.12)", color: "#7A4F0B" }}
                           >R</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 max-w-[160px] truncate" style={{ color: "rgba(30,27,75,0.6)" }} title={displayValue(ans.value)}>
+                      <td className="px-3 py-2 max-w-[160px] truncate" style={{ color: "rgba(10,30,51,0.6)" }} title={displayValue(ans.value)}>
                         {displayValue(ans.value)}
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums" style={{ color: "rgba(30,27,75,0.6)" }}>
-                        {ans.raw_score !== null ? fmt(ans.raw_score, 2) : <span style={{ color: "rgba(30,27,75,0.2)" }}>—</span>}
+                      <td className="px-3 py-2 text-right tabular-nums" style={{ color: "rgba(10,30,51,0.6)" }}>
+                        {ans.raw_score !== null ? fmt(ans.raw_score, 2) : <span style={{ color: "rgba(10,30,51,0.2)" }}>—</span>}
                       </td>
-                      <td className="px-3 py-2 text-right tabular-nums" style={{ color: "rgba(30,27,75,0.6)" }}>
-                        {ans.normalized !== null ? fmt(ans.normalized, 1) : <span style={{ color: "rgba(30,27,75,0.2)" }}>—</span>}
+                      <td className="px-3 py-2 text-right tabular-nums" style={{ color: "rgba(10,30,51,0.6)" }}>
+                        {ans.normalized !== null ? fmt(ans.normalized, 1) : <span style={{ color: "rgba(10,30,51,0.2)" }}>—</span>}
                       </td>
                       <td className="px-3 py-2 text-center">
                         {ans.label ? (
-                          <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: ans.color ?? "#5b21b6" }}>
+                          <span className="inline-block rounded-full px-2 py-0.5 text-[10px] font-bold text-white" style={{ backgroundColor: ans.color ?? "#0F2841" }}>
                             {ans.label}
                           </span>
-                        ) : <span style={{ color: "rgba(30,27,75,0.2)" }}>—</span>}
+                        ) : <span style={{ color: "rgba(10,30,51,0.2)" }}>—</span>}
                       </td>
                     </tr>
                   ))}
@@ -297,22 +297,22 @@ function AIContextForm({
     <div
       className="rounded-[18px] p-6"
       style={{
-        background: "linear-gradient(135deg, rgba(91,33,182,0.06) 0%, rgba(124,58,237,0.04) 100%)",
-        border: "0.5px solid rgba(91,33,182,0.18)",
+        background: "linear-gradient(135deg, rgba(15,40,65,0.06) 0%, rgba(124,58,237,0.04) 100%)",
+        border: "0.5px solid rgba(15,40,65,0.18)",
       }}
     >
       <div className="mb-5 flex items-center gap-3">
         <div
           className="flex h-9 w-9 items-center justify-center rounded-xl"
-          style={{ background: "rgba(91,33,182,0.12)" }}
+          style={{ background: "rgba(15,40,65,0.12)" }}
         >
-          <svg className="h-4 w-4" style={{ color: "#5b21b6" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="h-4 w-4" style={{ color: "#0F2841" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
           </svg>
         </div>
         <div>
-          <p className="text-sm font-bold" style={{ color: "#1e1b4b" }}>Generate AI Interpretive Report</p>
-          <p className="text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>
+          <p className="text-sm font-bold" style={{ color: "#0A1E33" }}>Generate AI Interpretive Report</p>
+          <p className="text-xs" style={{ color: "rgba(10,30,51,0.5)" }}>
             Optional context improves report specificity
           </p>
         </div>
@@ -383,10 +383,10 @@ function AIContextForm({
 function HiringBadge({ recommendation }: { recommendation: string }) {
   const lower = recommendation.toLowerCase()
   const config = lower.includes("do not")
-    ? { bg: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.3)", color: "#dc2626", icon: "✕" }
+    ? { bg: "rgba(239,68,68,0.1)", border: "rgba(239,68,68,0.3)", color: "#DD6334", icon: "✕" }
     : lower.includes("consider")
-    ? { bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.3)", color: "#b45309", icon: "~" }
-    : { bg: "rgba(34,197,94,0.1)", border: "rgba(34,197,94,0.3)", color: "#16a34a", icon: "✓" }
+    ? { bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.3)", color: "#7A4F0B", icon: "~" }
+    : { bg: "rgba(34,197,94,0.1)", border: "rgba(34,197,94,0.3)", color: "#7E8A55", icon: "✓" }
 
   return (
     <div
@@ -418,37 +418,37 @@ function FactorNarrativeCard({ fn }: { fn: FactorNarrative }) {
       className="rounded-[14px] p-5"
       style={{
         background: "rgba(255,255,255,0.55)",
-        border: "0.5px solid rgba(91,33,182,0.1)",
+        border: "0.5px solid rgba(15,40,65,0.1)",
       }}
     >
       {/* Header row */}
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h4 className="font-semibold" style={{ color: "#1e1b4b" }}>{fn.factor_name}</h4>
+        <h4 className="font-semibold" style={{ color: "#0A1E33" }}>{fn.factor_name}</h4>
         <div className="flex items-center gap-2 shrink-0">
           {fn.label && (
             <span
               className="rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white"
-              style={{ backgroundColor: "#5b21b6" }}
+              style={{ backgroundColor: "#0F2841" }}
             >
               {fn.label}
             </span>
           )}
-          <span className="text-sm font-bold tabular-nums" style={{ color: "#5b21b6" }}>
+          <span className="text-sm font-bold tabular-nums" style={{ color: "#0F2841" }}>
             {fn.score.toFixed(1)}
           </span>
         </div>
       </div>
 
       {/* Score bar */}
-      <div className="mb-4 h-1.5 rounded-full" style={{ background: "rgba(91,33,182,0.1)" }}>
+      <div className="mb-4 h-1.5 rounded-full" style={{ background: "rgba(15,40,65,0.1)" }}>
         <div
           className="h-full rounded-full transition-all duration-700"
-          style={{ width: `${scoreWidth}%`, background: "linear-gradient(90deg, #7c3aed, #5b21b6)" }}
+          style={{ width: `${scoreWidth}%`, background: "linear-gradient(90deg, #0F2841, #0F2841)" }}
         />
       </div>
 
       {/* Narrative */}
-      <p className="mb-4 text-sm leading-relaxed" style={{ color: "rgba(30,27,75,0.75)" }}>
+      <p className="mb-4 text-sm leading-relaxed" style={{ color: "rgba(10,30,51,0.75)" }}>
         {fn.narrative}
       </p>
 
@@ -456,13 +456,13 @@ function FactorNarrativeCard({ fn }: { fn: FactorNarrative }) {
       <div className="grid gap-4 sm:grid-cols-2">
         {fn.strengths.length > 0 && (
           <div>
-            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#16a34a" }}>
+            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#7E8A55" }}>
               Strengths
             </p>
             <ul className="space-y-1">
               {fn.strengths.map((s, i) => (
-                <li key={i} className="flex items-start gap-1.5 text-xs" style={{ color: "rgba(30,27,75,0.7)" }}>
-                  <span className="mt-0.5 shrink-0 text-[10px]" style={{ color: "#16a34a" }}>●</span>
+                <li key={i} className="flex items-start gap-1.5 text-xs" style={{ color: "rgba(10,30,51,0.7)" }}>
+                  <span className="mt-0.5 shrink-0 text-[10px]" style={{ color: "#7E8A55" }}>●</span>
                   {s}
                 </li>
               ))}
@@ -471,13 +471,13 @@ function FactorNarrativeCard({ fn }: { fn: FactorNarrative }) {
         )}
         {fn.watch_outs.length > 0 && (
           <div>
-            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#d97706" }}>
+            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#E2B146" }}>
               Watch-outs
             </p>
             <ul className="space-y-1">
               {fn.watch_outs.map((w, i) => (
-                <li key={i} className="flex items-start gap-1.5 text-xs" style={{ color: "rgba(30,27,75,0.7)" }}>
-                  <span className="mt-0.5 shrink-0 text-[10px]" style={{ color: "#d97706" }}>●</span>
+                <li key={i} className="flex items-start gap-1.5 text-xs" style={{ color: "rgba(10,30,51,0.7)" }}>
+                  <span className="mt-0.5 shrink-0 text-[10px]" style={{ color: "#E2B146" }}>●</span>
                   {w}
                 </li>
               ))}
@@ -507,21 +507,21 @@ function AIReportRenderer({ aiReport, onRegenerate }: AIReportRendererProps) {
         <div className="flex items-center gap-2">
           <div
             className="flex h-7 w-7 items-center justify-center rounded-lg"
-            style={{ background: "rgba(91,33,182,0.12)" }}
+            style={{ background: "rgba(15,40,65,0.12)" }}
           >
-            <svg className="h-3.5 w-3.5" style={{ color: "#5b21b6" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-3.5 w-3.5" style={{ color: "#0F2841" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
             </svg>
           </div>
-          <div className="text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>
-            <span className="font-semibold" style={{ color: "#5b21b6" }}>AI Interpretive Report</span>
+          <div className="text-xs" style={{ color: "rgba(10,30,51,0.5)" }}>
+            <span className="font-semibold" style={{ color: "#0F2841" }}>AI Interpretive Report</span>
             {" · "}{purposeLabel}
             {context.role && <span> · {context.role}</span>}
             {context.industry && <span> · {context.industry}</span>}
           </div>
         </div>
         <div className="flex items-center gap-2 print:hidden">
-          <span className="text-[10px]" style={{ color: "rgba(30,27,75,0.3)" }}>
+          <span className="text-[10px]" style={{ color: "rgba(10,30,51,0.3)" }}>
             {new Date(generated_at).toLocaleDateString()}
           </span>
           <button
@@ -542,14 +542,14 @@ function AIReportRenderer({ aiReport, onRegenerate }: AIReportRendererProps) {
       <div
         className="rounded-[18px] p-6"
         style={{
-          background: "linear-gradient(135deg, rgba(91,33,182,0.07) 0%, rgba(124,58,237,0.04) 100%)",
-          border: "0.5px solid rgba(91,33,182,0.15)",
+          background: "linear-gradient(135deg, rgba(15,40,65,0.07) 0%, rgba(124,58,237,0.04) 100%)",
+          border: "0.5px solid rgba(15,40,65,0.15)",
         }}
       >
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: "rgba(91,33,182,0.7)" }}>
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: "rgba(15,40,65,0.7)" }}>
           Executive Summary
         </p>
-        <p className="text-base leading-relaxed font-medium" style={{ color: "#1e1b4b" }}>
+        <p className="text-base leading-relaxed font-medium" style={{ color: "#0A1E33" }}>
           {report.overall_summary}
         </p>
       </div>
@@ -575,10 +575,10 @@ function AIReportRenderer({ aiReport, onRegenerate }: AIReportRendererProps) {
             border: "0.5px solid rgba(59,130,246,0.15)",
           }}
         >
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#3777A8" }}>
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#2A5BA8" }}>
             Role Fit: {context.role}
           </p>
-          <p className="text-sm leading-relaxed" style={{ color: "rgba(30,27,75,0.75)" }}>
+          <p className="text-sm leading-relaxed" style={{ color: "rgba(10,30,51,0.75)" }}>
             {report.role_fit_notes}
           </p>
         </div>
@@ -590,10 +590,10 @@ function AIReportRenderer({ aiReport, onRegenerate }: AIReportRendererProps) {
           className="rounded-[18px] p-6"
           style={{
             background: "rgba(255,255,255,0.55)",
-            border: "0.5px solid rgba(91,33,182,0.1)",
+            border: "0.5px solid rgba(15,40,65,0.1)",
           }}
         >
-          <h3 className="mb-4 text-sm font-bold" style={{ color: "#1e1b4b" }}>
+          <h3 className="mb-4 text-sm font-bold" style={{ color: "#0A1E33" }}>
             Development Recommendations
           </h3>
           <ol className="space-y-3">
@@ -601,11 +601,11 @@ function AIReportRenderer({ aiReport, onRegenerate }: AIReportRendererProps) {
               <li key={i} className="flex items-start gap-3">
                 <span
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
-                  style={{ backgroundColor: "#5b21b6" }}
+                  style={{ backgroundColor: "#0F2841" }}
                 >
                   {i + 1}
                 </span>
-                <p className="pt-0.5 text-sm leading-relaxed" style={{ color: "rgba(30,27,75,0.75)" }}>
+                <p className="pt-0.5 text-sm leading-relaxed" style={{ color: "rgba(10,30,51,0.75)" }}>
                   {s}
                 </p>
               </li>
@@ -615,7 +615,7 @@ function AIReportRenderer({ aiReport, onRegenerate }: AIReportRendererProps) {
       )}
 
       {/* Attribution */}
-      <p className="text-[10px] text-center print:block" style={{ color: "rgba(30,27,75,0.25)" }}>
+      <p className="text-[10px] text-center print:block" style={{ color: "rgba(10,30,51,0.25)" }}>
         Generated by {model_used} · {new Date(generated_at).toLocaleString()}
       </p>
     </div>
@@ -691,19 +691,19 @@ function AIReportSection({ surveyId, responseId }: AIReportSectionProps) {
   if (phase === "idle") {
     return (
       <div className="flex flex-col items-center gap-3 rounded-[18px] py-8 text-center"
-        style={{ background: "rgba(91,33,182,0.03)", border: "0.5px dashed rgba(91,33,182,0.2)" }}
+        style={{ background: "rgba(15,40,65,0.03)", border: "0.5px dashed rgba(15,40,65,0.2)" }}
       >
         <div
           className="flex h-10 w-10 items-center justify-center rounded-xl"
-          style={{ background: "rgba(91,33,182,0.1)" }}
+          style={{ background: "rgba(15,40,65,0.1)" }}
         >
-          <svg className="h-5 w-5" style={{ color: "#5b21b6" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <svg className="h-5 w-5" style={{ color: "#0F2841" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
           </svg>
         </div>
         <div>
-          <p className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>AI Interpretive Report</p>
-          <p className="mt-0.5 text-xs" style={{ color: "rgba(30,27,75,0.45)" }}>
+          <p className="text-sm font-semibold" style={{ color: "#0A1E33" }}>AI Interpretive Report</p>
+          <p className="mt-0.5 text-xs" style={{ color: "rgba(10,30,51,0.45)" }}>
             Transform scores into a professional narrative — written like a Hogan or CliftonStrengths report
           </p>
         </div>
@@ -730,15 +730,15 @@ function AIReportSection({ surveyId, responseId }: AIReportSectionProps) {
   if (phase === "polling") {
     return (
       <div className="flex flex-col items-center gap-4 rounded-[18px] py-12"
-        style={{ background: "rgba(91,33,182,0.03)", border: "0.5px solid rgba(91,33,182,0.12)" }}
+        style={{ background: "rgba(15,40,65,0.03)", border: "0.5px solid rgba(15,40,65,0.12)" }}
       >
-        <svg className="h-8 w-8 animate-spin" style={{ color: "#5b21b6" }} fill="none" viewBox="0 0 24 24">
+        <svg className="h-8 w-8 animate-spin" style={{ color: "#0F2841" }} fill="none" viewBox="0 0 24 24">
           <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
           <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
         <div className="text-center">
-          <p className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>Generating your report…</p>
-          <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>
+          <p className="text-sm font-semibold" style={{ color: "#0A1E33" }}>Generating your report…</p>
+          <p className="mt-1 text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>
             This takes about 30 seconds
           </p>
         </div>
@@ -790,7 +790,7 @@ export default function ParticipantReportPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
+      <div className="flex min-h-screen items-center justify-center text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>
         Loading report…
       </div>
     )
@@ -822,7 +822,7 @@ export default function ParticipantReportPage() {
           <Link
             href={`/surveys/${id}/results`}
             className="flex items-center gap-1.5 text-xs font-semibold transition-colors"
-            style={{ color: "rgba(30,27,75,0.5)" }}
+            style={{ color: "rgba(10,30,51,0.5)" }}
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -851,20 +851,20 @@ export default function ParticipantReportPage() {
         >
           <div>
             <p className="eyebrow">Assessment Report</p>
-            <h1 className="mt-1 font-playfair text-3xl font-black tracking-tight print:text-2xl" style={{ color: "#1e1b4b" }}>
+            <h1 className="mt-1 font-playfair text-3xl font-black tracking-tight print:text-2xl" style={{ color: "#0A1E33" }}>
               {report.survey_title}
             </h1>
             {report.survey_description && (
-              <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>{report.survey_description}</p>
+              <p className="mt-1 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>{report.survey_description}</p>
             )}
           </div>
-          <div className="shrink-0 text-right text-xs space-y-1" style={{ color: "rgba(30,27,75,0.45)" }}>
+          <div className="shrink-0 text-right text-xs space-y-1" style={{ color: "rgba(10,30,51,0.45)" }}>
             <p>
-              <span className="font-semibold" style={{ color: "rgba(30,27,75,0.65)" }}>Respondent</span>
+              <span className="font-semibold" style={{ color: "rgba(10,30,51,0.65)" }}>Respondent</span>
               <br />{respondentLabel}
             </p>
             <p>
-              <span className="font-semibold" style={{ color: "rgba(30,27,75,0.65)" }}>Date</span>
+              <span className="font-semibold" style={{ color: "rgba(10,30,51,0.65)" }}>Date</span>
               <br />{fmtDate(report.submitted_at)}
             </p>
           </div>
@@ -879,7 +879,7 @@ export default function ParticipantReportPage() {
             </div>
           ) : (
             <div className="card flex items-center justify-center p-4">
-              <p className="text-center text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>
+              <p className="text-center text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>
                 Radar chart requires at least 3 factors with normalized scores.
               </p>
             </div>
@@ -913,7 +913,7 @@ export default function ParticipantReportPage() {
         {/* Footer */}
         <footer
           className="pt-4 text-center text-[10px] print:block"
-          style={{ borderTop: "0.5px solid rgba(255,255,255,0.35)", color: "rgba(30,27,75,0.3)" }}
+          style={{ borderTop: "0.5px solid rgba(255,255,255,0.35)", color: "rgba(10,30,51,0.3)" }}
         >
           Generated by Metricly · {report.survey_title} · {fmtDate(report.submitted_at)}
         </footer>

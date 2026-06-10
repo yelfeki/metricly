@@ -90,15 +90,15 @@ export default function LoginPage() {
           <span
             className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest"
             style={{
-              background: "rgba(91,33,182,0.1)",
-              border: "0.5px solid rgba(91,33,182,0.2)",
-              color: "#5b21b6",
+              background: "rgba(15,40,65,0.1)",
+              border: "0.5px solid rgba(15,40,65,0.2)",
+              color: "#0F2841",
             }}
           >
             Beta
           </span>
         </Link>
-        <p className="mt-2 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+        <p className="mt-2 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>
           Psychometric intelligence for the Arab world
         </p>
       </div>
@@ -110,9 +110,9 @@ export default function LoginPage() {
           style={{ borderColor: "rgba(255,255,255,0.35)" }}
         >
           <h1 className="section-heading">Sign in to your account</h1>
-          <p className="mt-0.5 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+          <p className="mt-0.5 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-semibold" style={{ color: "#5b21b6" }}>
+            <Link href="/signup" className="font-semibold" style={{ color: "#0F2841" }}>
               Sign up
             </Link>
           </p>

@@ -56,21 +56,21 @@ function ScheduleCard({
               className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
               style={
                 schedule.is_active
-                  ? { background: "rgba(34,197,94,0.1)", border: "0.5px solid rgba(34,197,94,0.3)", color: "#16a34a" }
-                  : { background: "rgba(30,27,75,0.07)", border: "0.5px solid rgba(30,27,75,0.15)", color: "rgba(30,27,75,0.4)" }
+                  ? { background: "rgba(34,197,94,0.1)", border: "0.5px solid rgba(34,197,94,0.3)", color: "#7E8A55" }
+                  : { background: "rgba(10,30,51,0.07)", border: "0.5px solid rgba(10,30,51,0.15)", color: "rgba(10,30,51,0.4)" }
               }
             >
               {schedule.is_active ? "Active" : "Inactive"}
             </span>
             <span
               className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-              style={{ background: "rgba(91,33,182,0.08)", color: "#5b21b6" }}
+              style={{ background: "rgba(15,40,65,0.08)", color: "#0F2841" }}
             >
               {FREQ_LABELS[schedule.frequency as PulseFrequency] ?? schedule.frequency}
             </span>
           </div>
-          <p className="text-sm font-semibold truncate" style={{ color: "#1e1b4b" }}>{surveyName}</p>
-          <div className="mt-2 grid grid-cols-3 gap-3 text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>
+          <p className="text-sm font-semibold truncate" style={{ color: "#0A1E33" }}>{surveyName}</p>
+          <div className="mt-2 grid grid-cols-3 gap-3 text-xs" style={{ color: "rgba(10,30,51,0.5)" }}>
             <div>
               <span className="label-caps block mb-0.5">Start</span>
               {formatDate(schedule.start_date)}
@@ -81,7 +81,7 @@ function ScheduleCard({
             </div>
             <div>
               <span className="label-caps block mb-0.5">Next</span>
-              <span style={{ color: schedule.next_assessment_date ? "#5b21b6" : "rgba(30,27,75,0.35)" }}>
+              <span style={{ color: schedule.next_assessment_date ? "#0F2841" : "rgba(10,30,51,0.35)" }}>
                 {formatDate(schedule.next_assessment_date)}
               </span>
             </div>
@@ -202,7 +202,7 @@ export default function PulsePage() {
     return (
       <div className="flex min-h-screen flex-col">
         <Header backHref="/frameworks" backLabel="Frameworks" />
-        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>Loading…</div>
+        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>Loading…</div>
       </div>
     )
   }
@@ -222,7 +222,7 @@ export default function PulsePage() {
               <p className="eyebrow mb-1">Pulse Checks</p>
               <h1 className="page-title">{framework?.title ?? "…"}</h1>
               {framework?.role_title && (
-                <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>{framework.role_title}</p>
+                <p className="mt-1 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>{framework.role_title}</p>
               )}
             </div>
             <button
@@ -239,11 +239,11 @@ export default function PulsePage() {
           <div className="mb-6 grid grid-cols-2 gap-4">
             <div className="card p-4 text-center">
               <p className="label-caps mb-1">Total Schedules</p>
-              <p className="metric-value text-3xl font-bold" style={{ color: "#1e1b4b" }}>{schedules.length}</p>
+              <p className="metric-value text-3xl font-bold" style={{ color: "#0A1E33" }}>{schedules.length}</p>
             </div>
             <div className="card p-4 text-center">
               <p className="label-caps mb-1">Active</p>
-              <p className="metric-value text-3xl font-bold" style={{ color: activeCount > 0 ? "#059669" : "rgba(30,27,75,0.3)" }}>
+              <p className="metric-value text-3xl font-bold" style={{ color: activeCount > 0 ? "#7E8A55" : "rgba(10,30,51,0.3)" }}>
                 {activeCount}
               </p>
             </div>
@@ -257,7 +257,7 @@ export default function PulsePage() {
                 <div>
                   <label className="label-caps mb-1.5 block">Assessment</label>
                   {surveys.length === 0 ? (
-                    <p className="text-xs" style={{ color: "rgba(30,27,75,0.45)" }}>No surveys available.</p>
+                    <p className="text-xs" style={{ color: "rgba(10,30,51,0.45)" }}>No surveys available.</p>
                   ) : (
                     <select className="field" value={surveyId} onChange={e => setSurveyId(e.target.value)}>
                       {surveys.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -300,7 +300,7 @@ export default function PulsePage() {
           {schedules.length === 0 ? (
             <div className="card p-8 text-center">
               <p className="section-heading mb-2">No pulse schedules yet</p>
-              <p className="text-sm" style={{ color: "rgba(30,27,75,0.45)" }}>
+              <p className="text-sm" style={{ color: "rgba(10,30,51,0.45)" }}>
                 Create a schedule to run recurring assessments for this framework.
               </p>
             </div>

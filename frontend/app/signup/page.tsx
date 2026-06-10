@@ -57,16 +57,16 @@ export default function SignupPage() {
             className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full"
             style={{ background: "rgba(16,185,129,0.12)" }}
           >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#059669" }}>
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#7E8A55" }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           </div>
           <h2 className="section-heading">Check your email</h2>
-          <p className="mt-2 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+          <p className="mt-2 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>
             We sent a confirmation link to{" "}
-            <span className="font-semibold" style={{ color: "#1e1b4b" }}>{email}</span>.
+            <span className="font-semibold" style={{ color: "#0A1E33" }}>{email}</span>.
             Click the link to activate your account, then{" "}
-            <Link href="/login" className="font-semibold" style={{ color: "#5b21b6" }}>sign in</Link>.
+            <Link href="/login" className="font-semibold" style={{ color: "#0F2841" }}>sign in</Link>.
           </p>
         </div>
       </div>
@@ -82,15 +82,15 @@ export default function SignupPage() {
           <span
             className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest"
             style={{
-              background: "rgba(91,33,182,0.1)",
-              border: "0.5px solid rgba(91,33,182,0.2)",
-              color: "#5b21b6",
+              background: "rgba(15,40,65,0.1)",
+              border: "0.5px solid rgba(15,40,65,0.2)",
+              color: "#0F2841",
             }}
           >
             Beta
           </span>
         </Link>
-        <p className="mt-2 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+        <p className="mt-2 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>
           Psychometric intelligence for the Arab world
         </p>
       </div>
@@ -102,9 +102,9 @@ export default function SignupPage() {
           style={{ borderColor: "rgba(255,255,255,0.35)" }}
         >
           <h1 className="section-heading">Create your account</h1>
-          <p className="mt-0.5 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+          <p className="mt-0.5 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>
             Already have an account?{" "}
-            <Link href="/login" className="font-semibold" style={{ color: "#5b21b6" }}>
+            <Link href="/login" className="font-semibold" style={{ color: "#0F2841" }}>
               Sign in
             </Link>
           </p>

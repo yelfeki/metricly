@@ -34,14 +34,14 @@ export default function CollectionTray({ list, onRemove, onClear }: CollectionTr
             background: "rgba(22,18,55,0.94)",
             backdropFilter: "blur(20px)",
             border: "0.5px solid rgba(255,255,255,0.12)",
-            boxShadow: "0 8px 40px rgba(30,27,75,0.45)",
+            boxShadow: "0 8px 40px rgba(10,30,51,0.45)",
             maxWidth: "min(90vw, 720px)",
           }}
         >
           {/* Count badge */}
           <div
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-            style={{ background: "linear-gradient(135deg, #5b21b6, #3777A8)" }}
+            style={{ background: "linear-gradient(135deg, #0F2841, #2A5BA8)" }}
           >
             {list.length}
           </div>
@@ -73,7 +73,7 @@ export default function CollectionTray({ list, onRemove, onClear }: CollectionTr
           <button
             onClick={() => setShowModal(true)}
             className="flex shrink-0 items-center gap-2 rounded-full px-4 py-1.5 text-sm font-bold text-white transition-all"
-            style={{ background: "linear-gradient(135deg, #5b21b6, #3777A8)", boxShadow: "0 2px 12px rgba(91,33,182,0.4)" }}
+            style={{ background: "linear-gradient(135deg, #0F2841, #2A5BA8)", boxShadow: "0 2px 12px rgba(15,40,65,0.4)" }}
           >
             Deploy as Survey
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

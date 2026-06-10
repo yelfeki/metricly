@@ -18,7 +18,7 @@ function StatusBadge({ status }: { status: string }) {
   if (status === "published") {
     return (
       <span className="badge-live">
-        <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
+        <span className="h-1.5 w-1.5 rounded-full bg-[#0F2841]" />
         Live
       </span>
     )
@@ -33,7 +33,7 @@ function StatusBadge({ status }: { status: string }) {
   }
   return (
     <span className="badge-draft">
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: "rgba(30,27,75,0.3)" }} />
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: "rgba(10,30,51,0.3)" }} />
       Draft
     </span>
   )
@@ -91,7 +91,7 @@ export default function SurveysPage() {
           <div className="mb-8 flex items-center justify-between">
             <div>
               <h1 className="page-title">Surveys</h1>
-              <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+              <p className="mt-1 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>
                 Build surveys, collect responses, and analyse results.
               </p>
             </div>
@@ -115,7 +115,7 @@ export default function SurveysPage() {
           </div>
 
           {loading && (
-            <div className="flex items-center justify-center py-20 text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
+            <div className="flex items-center justify-center py-20 text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>
               Loading surveys…
             </div>
           )}
@@ -127,21 +127,21 @@ export default function SurveysPage() {
               className="flex flex-col items-center justify-center rounded-[14px] py-20 text-center"
               style={{
                 background: "rgba(255,255,255,0.3)",
-                border: "1.5px dashed rgba(91,33,182,0.2)",
+                border: "1.5px dashed rgba(15,40,65,0.2)",
                 backdropFilter: "blur(8px)",
               }}
             >
               <svg
                 className="mb-4 h-10 w-10"
-                style={{ color: "rgba(91,33,182,0.25)" }}
+                style={{ color: "rgba(15,40,65,0.25)" }}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <p className="text-sm font-semibold" style={{ color: "rgba(30,27,75,0.55)" }}>No surveys yet</p>
-              <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>Create your first survey to get started.</p>
+              <p className="text-sm font-semibold" style={{ color: "rgba(10,30,51,0.55)" }}>No surveys yet</p>
+              <p className="mt-1 text-xs" style={{ color: "rgba(10,30,51,0.35)" }}>Create your first survey to get started.</p>
               <Link href="/surveys/new" className="btn-primary mt-5">
                 Create Survey
               </Link>
@@ -164,9 +164,9 @@ export default function SurveysPage() {
                   {surveys.map((s) => (
                     <tr key={s.id}>
                       <td>
-                        <p className="font-semibold text-sm" style={{ color: "#1e1b4b" }}>{s.name}</p>
+                        <p className="font-semibold text-sm" style={{ color: "#0A1E33" }}>{s.name}</p>
                         {s.description && (
-                          <p className="mt-0.5 line-clamp-1 text-xs" style={{ color: "rgba(30,27,75,0.45)" }}>
+                          <p className="mt-0.5 line-clamp-1 text-xs" style={{ color: "rgba(10,30,51,0.45)" }}>
                             {s.description}
                           </p>
                         )}
@@ -174,10 +174,10 @@ export default function SurveysPage() {
                       <td>
                         <StatusBadge status={s.status} />
                       </td>
-                      <td className="tabular-nums text-sm font-semibold" style={{ color: "rgba(30,27,75,0.7)" }}>
+                      <td className="tabular-nums text-sm font-semibold" style={{ color: "rgba(10,30,51,0.7)" }}>
                         {s.response_count}
                       </td>
-                      <td className="text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
+                      <td className="text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>
                         {formatDate(s.created_at)}
                       </td>
                       <td>
@@ -187,7 +187,7 @@ export default function SurveysPage() {
                               onClick={() => copyRespondLink(s.id)}
                               title="Copy respond link"
                               className="rounded-full px-2.5 py-1 text-xs font-semibold transition-all"
-                              style={{ color: "rgba(30,27,75,0.5)" }}
+                              style={{ color: "rgba(10,30,51,0.5)" }}
                             >
                               Copy link
                             </button>
@@ -195,14 +195,14 @@ export default function SurveysPage() {
                           <Link
                             href={`/surveys/${s.id}/edit`}
                             className="rounded-full px-2.5 py-1 text-xs font-semibold transition-all"
-                            style={{ color: "rgba(30,27,75,0.6)" }}
+                            style={{ color: "rgba(10,30,51,0.6)" }}
                           >
                             Edit
                           </Link>
                           <Link
                             href={`/surveys/${s.id}/results`}
                             className="rounded-full px-2.5 py-1 text-xs font-semibold transition-all"
-                            style={{ color: "#5b21b6" }}
+                            style={{ color: "#0F2841" }}
                           >
                             Results
                           </Link>
@@ -210,7 +210,7 @@ export default function SurveysPage() {
                             onClick={() => handleDelete(s.id, s.name)}
                             disabled={deleting === s.id}
                             className="rounded-full px-2.5 py-1 text-xs font-semibold transition-all disabled:opacity-50"
-                            style={{ color: "#dc2626" }}
+                            style={{ color: "#DD6334" }}
                           >
                             {deleting === s.id ? "…" : "Delete"}
                           </button>

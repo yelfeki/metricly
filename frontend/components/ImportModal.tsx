@@ -141,7 +141,7 @@ function ReviewRow({ rq, index, onChange }: ReviewRowProps) {
       className="rounded-xl p-4 space-y-3"
       style={{
         background: "rgba(255,255,255,0.6)",
-        border: "0.5px solid rgba(91,33,182,0.1)",
+        border: "0.5px solid rgba(15,40,65,0.1)",
         backdropFilter: "blur(8px)",
       }}
     >
@@ -149,7 +149,7 @@ function ReviewRow({ rq, index, onChange }: ReviewRowProps) {
       <div className="flex items-start gap-3">
         <span
           className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold mt-1"
-          style={{ background: "rgba(91,33,182,0.1)", color: "#5b21b6" }}
+          style={{ background: "rgba(15,40,65,0.1)", color: "#0F2841" }}
         >
           {index + 1}
         </span>
@@ -168,7 +168,7 @@ function ReviewRow({ rq, index, onChange }: ReviewRowProps) {
               value={rq.question_type}
               onChange={e => onChange(rq.id, { question_type: e.target.value as ImportedQuestionType })}
               className="rounded-lg border px-2 py-1 text-xs font-semibold focus:outline-none"
-              style={{ background: "rgba(91,33,182,0.07)", borderColor: "rgba(91,33,182,0.2)", color: "#5b21b6" }}
+              style={{ background: "rgba(15,40,65,0.07)", borderColor: "rgba(15,40,65,0.2)", color: "#0F2841" }}
             >
               {ALL_TYPES.map(t => (
                 <option key={t} value={t}>{TYPE_LABELS[t]}</option>
@@ -179,7 +179,7 @@ function ReviewRow({ rq, index, onChange }: ReviewRowProps) {
             {rq.subscale && (
               <span
                 className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                style={{ background: "rgba(30,27,75,0.07)", color: "rgba(30,27,75,0.55)" }}
+                style={{ background: "rgba(10,30,51,0.07)", color: "rgba(10,30,51,0.55)" }}
               >
                 {rq.subscale}
               </span>
@@ -187,7 +187,7 @@ function ReviewRow({ rq, index, onChange }: ReviewRowProps) {
 
             {/* Reverse scored toggle for Likert */}
             {isLikert && (
-              <label className="flex cursor-pointer items-center gap-1 text-[11px]" style={{ color: "rgba(30,27,75,0.55)" }}>
+              <label className="flex cursor-pointer items-center gap-1 text-[11px]" style={{ color: "rgba(10,30,51,0.55)" }}>
                 <input
                   type="checkbox"
                   checked={rq.reverse_scored}
@@ -204,7 +204,7 @@ function ReviewRow({ rq, index, onChange }: ReviewRowProps) {
       {/* Likert min/max */}
       {isLikert && (
         <div className="flex items-center gap-3 pl-9">
-          <span className="text-xs font-medium" style={{ color: "rgba(30,27,75,0.5)" }}>Scale:</span>
+          <span className="text-xs font-medium" style={{ color: "rgba(10,30,51,0.5)" }}>Scale:</span>
           <select
             value={`${rq.likert_min}-${rq.likert_max}`}
             onChange={e => {
@@ -212,7 +212,7 @@ function ReviewRow({ rq, index, onChange }: ReviewRowProps) {
               onChange(rq.id, { likert_min: mn, likert_max: mx })
             }}
             className="rounded-lg border px-2 py-0.5 text-xs focus:outline-none"
-            style={{ background: "rgba(255,255,255,0.7)", borderColor: "rgba(91,33,182,0.2)", color: "#1e1b4b" }}
+            style={{ background: "rgba(255,255,255,0.7)", borderColor: "rgba(15,40,65,0.2)", color: "#0A1E33" }}
           >
             <option value="1-5">1 – 5</option>
             <option value="1-7">1 – 7</option>
@@ -223,13 +223,13 @@ function ReviewRow({ rq, index, onChange }: ReviewRowProps) {
               <div
                 key={i}
                 className="flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold"
-                style={{ background: "rgba(91,33,182,0.08)", color: "rgba(30,27,75,0.5)" }}
+                style={{ background: "rgba(15,40,65,0.08)", color: "rgba(10,30,51,0.5)" }}
               >
                 {i + 1}
               </div>
             ))}
             {rq.likert_max > 5 && (
-              <span className="self-center text-[10px]" style={{ color: "rgba(30,27,75,0.4)" }}>…{rq.likert_max}</span>
+              <span className="self-center text-[10px]" style={{ color: "rgba(10,30,51,0.4)" }}>…{rq.likert_max}</span>
             )}
           </div>
         </div>
@@ -242,7 +242,7 @@ function ReviewRow({ rq, index, onChange }: ReviewRowProps) {
             <span
               key={i}
               className="rounded-full px-3 py-1 text-xs font-semibold"
-              style={{ background: "rgba(30,27,75,0.07)", color: "rgba(30,27,75,0.55)" }}
+              style={{ background: "rgba(10,30,51,0.07)", color: "rgba(10,30,51,0.55)" }}
             >
               {opt}
             </span>
@@ -255,7 +255,7 @@ function ReviewRow({ rq, index, onChange }: ReviewRowProps) {
         <div className="space-y-1.5 pl-9">
           {rq.options.map((opt, i) => (
             <div key={i} className="flex items-center gap-2">
-              <span className="text-xs font-medium w-4 text-right shrink-0" style={{ color: "rgba(30,27,75,0.35)" }}>
+              <span className="text-xs font-medium w-4 text-right shrink-0" style={{ color: "rgba(10,30,51,0.35)" }}>
                 {i + 1}
               </span>
               <input
@@ -269,7 +269,7 @@ function ReviewRow({ rq, index, onChange }: ReviewRowProps) {
                   type="button"
                   onClick={() => removeOption(i)}
                   className="shrink-0"
-                  style={{ color: "rgba(30,27,75,0.25)" }}
+                  style={{ color: "rgba(10,30,51,0.25)" }}
                 >
                   <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -283,7 +283,7 @@ function ReviewRow({ rq, index, onChange }: ReviewRowProps) {
               type="button"
               onClick={addOption}
               className="flex items-center gap-1 text-xs font-semibold"
-              style={{ color: "#5b21b6" }}
+              style={{ color: "#0F2841" }}
             >
               <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -391,8 +391,8 @@ export default function ImportModal({ onClose }: ImportModalProps) {
         className="w-full max-w-2xl rounded-2xl flex flex-col"
         style={{
           background: "rgba(248,246,255,0.98)",
-          border: "0.5px solid rgba(91,33,182,0.15)",
-          boxShadow: "0 24px 64px rgba(30,27,75,0.22)",
+          border: "0.5px solid rgba(15,40,65,0.15)",
+          boxShadow: "0 24px 64px rgba(10,30,51,0.22)",
           maxHeight: "90vh",
         }}
       >
@@ -407,7 +407,7 @@ export default function ImportModal({ onClose }: ImportModalProps) {
           <button
             onClick={onClose}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all"
-            style={{ background: "rgba(30,27,75,0.07)" }}
+            style={{ background: "rgba(10,30,51,0.07)" }}
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -422,23 +422,23 @@ export default function ImportModal({ onClose }: ImportModalProps) {
               <div
                 className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold"
                 style={step === s
-                  ? { background: "linear-gradient(135deg, #5b21b6, #3777A8)", color: "#fff" }
+                  ? { background: "linear-gradient(135deg, #0F2841, #2A5BA8)", color: "#fff" }
                   : step > s
-                    ? { background: "rgba(34,197,94,0.15)", color: "#16a34a" }
-                    : { background: "rgba(91,33,182,0.08)", color: "rgba(30,27,75,0.3)" }
+                    ? { background: "rgba(34,197,94,0.15)", color: "#7E8A55" }
+                    : { background: "rgba(15,40,65,0.08)", color: "rgba(10,30,51,0.3)" }
                 }
               >
                 {step > s ? "✓" : s}
               </div>
-              <span className="text-xs" style={{ color: step === s ? "#5b21b6" : "rgba(30,27,75,0.35)" }}>
+              <span className="text-xs" style={{ color: step === s ? "#0F2841" : "rgba(10,30,51,0.35)" }}>
                 {s === 1 ? "Upload" : "Review & Create"}
               </span>
-              {s < 2 && <div className="h-px w-6" style={{ background: "rgba(91,33,182,0.15)" }} />}
+              {s < 2 && <div className="h-px w-6" style={{ background: "rgba(15,40,65,0.15)" }} />}
             </div>
           ))}
         </div>
 
-        <div className="border-t" style={{ borderColor: "rgba(91,33,182,0.08)" }} />
+        <div className="border-t" style={{ borderColor: "rgba(15,40,65,0.08)" }} />
 
         {/* ------------------------------------------------------------------ */}
         {/* STEP 1 */}
@@ -448,19 +448,19 @@ export default function ImportModal({ onClose }: ImportModalProps) {
             {/* Download template button */}
             <div
               className="rounded-xl px-4 py-4"
-              style={{ background: "rgba(91,33,182,0.05)", border: "0.5px solid rgba(91,33,182,0.12)" }}
+              style={{ background: "rgba(15,40,65,0.05)", border: "0.5px solid rgba(15,40,65,0.12)" }}
             >
-              <p className="mb-1 text-sm font-semibold" style={{ color: "#1e1b4b" }}>
+              <p className="mb-1 text-sm font-semibold" style={{ color: "#0A1E33" }}>
                 Start with the Metricly template
               </p>
-              <p className="mb-3 text-xs" style={{ color: "rgba(30,27,75,0.55)" }}>
+              <p className="mb-3 text-xs" style={{ color: "rgba(10,30,51,0.55)" }}>
                 Fill in the template, then upload it here. Or upload any Excel document and we'll detect questions automatically.
               </p>
               <button
                 onClick={handleDownload}
                 disabled={downloading}
                 className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all disabled:opacity-50"
-                style={{ background: "linear-gradient(135deg, #5b21b6, #3777A8)", color: "#fff" }}
+                style={{ background: "linear-gradient(135deg, #0F2841, #2A5BA8)", color: "#fff" }}
               >
                 {downloading ? (
                   <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -484,27 +484,27 @@ export default function ImportModal({ onClose }: ImportModalProps) {
               onClick={() => fileRef.current?.click()}
               className="cursor-pointer rounded-xl py-10 text-center transition-all"
               style={{
-                background: dragging ? "rgba(91,33,182,0.07)" : "rgba(255,255,255,0.4)",
-                border: dragging ? "1.5px solid rgba(91,33,182,0.4)" : "1.5px dashed rgba(91,33,182,0.2)",
+                background: dragging ? "rgba(15,40,65,0.07)" : "rgba(255,255,255,0.4)",
+                border: dragging ? "1.5px solid rgba(15,40,65,0.4)" : "1.5px dashed rgba(15,40,65,0.2)",
               }}
             >
               {uploading ? (
                 <div className="flex flex-col items-center gap-3">
-                  <svg className="h-8 w-8 animate-spin" style={{ color: "#5b21b6" }} fill="none" viewBox="0 0 24 24">
+                  <svg className="h-8 w-8 animate-spin" style={{ color: "#0F2841" }} fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
                     <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                   </svg>
-                  <p className="text-sm font-semibold" style={{ color: "#5b21b6" }}>Parsing file…</p>
+                  <p className="text-sm font-semibold" style={{ color: "#0F2841" }}>Parsing file…</p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-2">
-                  <svg className="h-10 w-10" style={{ color: "rgba(91,33,182,0.25)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <svg className="h-10 w-10" style={{ color: "rgba(15,40,65,0.25)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <p className="text-sm font-semibold" style={{ color: "rgba(30,27,75,0.6)" }}>
+                  <p className="text-sm font-semibold" style={{ color: "rgba(10,30,51,0.6)" }}>
                     Drop your file here, or click to browse
                   </p>
-                  <p className="text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>.xlsx files supported</p>
+                  <p className="text-xs" style={{ color: "rgba(10,30,51,0.35)" }}>.xlsx files supported</p>
                 </div>
               )}
               <input
@@ -519,7 +519,7 @@ export default function ImportModal({ onClose }: ImportModalProps) {
             {uploadError && (
               <div
                 className="rounded-xl px-4 py-3 text-xs"
-                style={{ background: "rgba(239,68,68,0.07)", color: "#dc2626" }}
+                style={{ background: "rgba(239,68,68,0.07)", color: "#DD6334" }}
               >
                 {uploadError}
               </div>
@@ -537,7 +537,7 @@ export default function ImportModal({ onClose }: ImportModalProps) {
               {result.source === "template" ? (
                 <div
                   className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold"
-                  style={{ background: "rgba(34,197,94,0.1)", color: "#16a34a", border: "0.5px solid rgba(34,197,94,0.2)" }}
+                  style={{ background: "rgba(34,197,94,0.1)", color: "#7E8A55", border: "0.5px solid rgba(34,197,94,0.2)" }}
                 >
                   <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -547,7 +547,7 @@ export default function ImportModal({ onClose }: ImportModalProps) {
               ) : (
                 <div
                   className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold"
-                  style={{ background: "rgba(59,130,246,0.09)", color: "#3777A8", border: "0.5px solid rgba(59,130,246,0.2)" }}
+                  style={{ background: "rgba(59,130,246,0.09)", color: "#2A5BA8", border: "0.5px solid rgba(59,130,246,0.2)" }}
                 >
                   <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -567,7 +567,7 @@ export default function ImportModal({ onClose }: ImportModalProps) {
             {/* Footer: survey title + create */}
             <div
               className="shrink-0 px-6 pt-4 pb-6 space-y-4 border-t mt-4"
-              style={{ borderColor: "rgba(91,33,182,0.08)" }}
+              style={{ borderColor: "rgba(15,40,65,0.08)" }}
             >
               <div>
                 <label className="label-caps mb-1.5 block">Survey title</label>
@@ -586,7 +586,7 @@ export default function ImportModal({ onClose }: ImportModalProps) {
               {createError && (
                 <div
                   className="rounded-xl px-3 py-2.5 text-xs"
-                  style={{ background: "rgba(239,68,68,0.07)", color: "#dc2626" }}
+                  style={{ background: "rgba(239,68,68,0.07)", color: "#DD6334" }}
                 >
                   {createError}
                 </div>

@@ -13,9 +13,9 @@ import type { InstrumentOut } from "@/lib/types"
 
 function LicenseBadge({ type }: { type: string }) {
   const map: Record<string, { label: string; bg: string; color: string }> = {
-    open:          { label: "Open Access",    bg: "rgba(34,197,94,0.1)",  color: "#16a34a" },
-    public_domain: { label: "Public Domain",  bg: "rgba(59,130,246,0.1)", color: "#3777A8" },
-    proprietary:   { label: "Metricly",       bg: "rgba(91,33,182,0.1)",  color: "#5b21b6" },
+    open:          { label: "Open Access",    bg: "rgba(34,197,94,0.1)",  color: "#7E8A55" },
+    public_domain: { label: "Public Domain",  bg: "rgba(59,130,246,0.1)", color: "#2A5BA8" },
+    proprietary:   { label: "Metricly",       bg: "rgba(15,40,65,0.1)",  color: "#0F2841" },
   }
   const s = map[type] ?? map.open
   return (
@@ -31,9 +31,9 @@ function LicenseBadge({ type }: { type: string }) {
 function MetaRow({ label, value }: { label: string; value: string | number | null | undefined }) {
   if (value === null || value === undefined || value === "") return null
   return (
-    <div className="flex items-start gap-3 py-2.5 border-b" style={{ borderColor: "rgba(91,33,182,0.08)" }}>
+    <div className="flex items-start gap-3 py-2.5 border-b" style={{ borderColor: "rgba(15,40,65,0.08)" }}>
       <span className="label-caps w-36 shrink-0 mt-0.5">{label}</span>
-      <span className="text-sm" style={{ color: "#1e1b4b" }}>{String(value)}</span>
+      <span className="text-sm" style={{ color: "#0A1E33" }}>{String(value)}</span>
     </div>
   )
 }
@@ -93,7 +93,7 @@ export default function InstrumentDetailPage() {
     return (
       <div className="flex min-h-screen flex-col">
         <Header backHref="/library" backLabel="Library" />
-        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>Loading…</div>
+        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>Loading…</div>
       </div>
     )
   }
@@ -130,7 +130,7 @@ export default function InstrumentDetailPage() {
               <p className="eyebrow mb-1">{instrument.short_name}</p>
               <h1 className="page-title leading-tight">{instrument.name}</h1>
               {instrument.construct_measured && (
-                <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>{instrument.construct_measured}</p>
+                <p className="mt-1 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>{instrument.construct_measured}</p>
               )}
               <div className="mt-2">
                 <LicenseBadge type={instrument.license_type} />
@@ -156,7 +156,7 @@ export default function InstrumentDetailPage() {
           {deployError && <div className="alert-error mb-4">{deployError}</div>}
 
           {instrument.description && (
-            <p className="mb-6 text-sm leading-relaxed" style={{ color: "rgba(30,27,75,0.6)" }}>
+            <p className="mb-6 text-sm leading-relaxed" style={{ color: "rgba(10,30,51,0.6)" }}>
               {instrument.description}
             </p>
           )}
@@ -165,17 +165,17 @@ export default function InstrumentDetailPage() {
           <div className="mb-6 grid grid-cols-3 gap-3">
             <div className="card p-4 text-center">
               <p className="label-caps mb-1">Items</p>
-              <p className="text-2xl font-bold" style={{ color: "#1e1b4b" }}>{instrument.total_items}</p>
+              <p className="text-2xl font-bold" style={{ color: "#0A1E33" }}>{instrument.total_items}</p>
             </div>
             <div className="card p-4 text-center">
               <p className="label-caps mb-1">Time</p>
-              <p className="text-2xl font-bold" style={{ color: "#1e1b4b" }}>
+              <p className="text-2xl font-bold" style={{ color: "#0A1E33" }}>
                 {instrument.estimated_minutes ? `${instrument.estimated_minutes}m` : "—"}
               </p>
             </div>
             <div className="card p-4 text-center">
               <p className="label-caps mb-1">α reliability</p>
-              <p className="text-2xl font-bold" style={{ color: "#5b21b6" }}>
+              <p className="text-2xl font-bold" style={{ color: "#0F2841" }}>
                 {instrument.reliability_alpha != null ? instrument.reliability_alpha.toFixed(2) : "—"}
               </p>
             </div>
@@ -183,8 +183,8 @@ export default function InstrumentDetailPage() {
 
           {/* Psychometric properties */}
           <div className="card mb-6 overflow-hidden">
-            <div className="border-b px-5 py-3" style={{ borderColor: "rgba(91,33,182,0.08)" }}>
-              <p className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>Psychometric Properties</p>
+            <div className="border-b px-5 py-3" style={{ borderColor: "rgba(15,40,65,0.08)" }}>
+              <p className="text-sm font-semibold" style={{ color: "#0A1E33" }}>Psychometric Properties</p>
             </div>
             <div className="px-5">
               <MetaRow label="Response Format" value={FormatLabel(instrument.response_format)} />
@@ -206,19 +206,19 @@ export default function InstrumentDetailPage() {
           {/* Subscales */}
           {instrument.subscales.length > 0 && (
             <div className="card mb-6">
-              <div className="border-b px-5 py-3" style={{ borderColor: "rgba(91,33,182,0.08)" }}>
-                <p className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>Subscales</p>
+              <div className="border-b px-5 py-3" style={{ borderColor: "rgba(15,40,65,0.08)" }}>
+                <p className="text-sm font-semibold" style={{ color: "#0A1E33" }}>Subscales</p>
               </div>
-              <div className="divide-y" style={{ borderColor: "rgba(91,33,182,0.08)" }}>
+              <div className="divide-y" style={{ borderColor: "rgba(15,40,65,0.08)" }}>
                 {instrument.subscales.map(ss => (
                   <div key={ss.id} className="flex items-start justify-between gap-3 px-5 py-3">
                     <div>
-                      <p className="text-sm font-medium" style={{ color: "#1e1b4b" }}>{ss.name}</p>
+                      <p className="text-sm font-medium" style={{ color: "#0A1E33" }}>{ss.name}</p>
                       {ss.description && (
-                        <p className="mt-0.5 text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>{ss.description}</p>
+                        <p className="mt-0.5 text-xs" style={{ color: "rgba(10,30,51,0.5)" }}>{ss.description}</p>
                       )}
                     </div>
-                    <span className="shrink-0 text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>{ss.item_count} items</span>
+                    <span className="shrink-0 text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>{ss.item_count} items</span>
                   </div>
                 ))}
               </div>
@@ -228,10 +228,10 @@ export default function InstrumentDetailPage() {
           {/* Items */}
           {instrument.items.length > 0 && (
             <div className="card mb-6">
-              <div className="border-b px-5 py-3 flex items-center justify-between" style={{ borderColor: "rgba(91,33,182,0.08)" }}>
-                <p className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>Items ({instrument.items.length})</p>
+              <div className="border-b px-5 py-3 flex items-center justify-between" style={{ borderColor: "rgba(15,40,65,0.08)" }}>
+                <p className="text-sm font-semibold" style={{ color: "#0A1E33" }}>Items ({instrument.items.length})</p>
               </div>
-              <div className="divide-y" style={{ borderColor: "rgba(91,33,182,0.08)" }}>
+              <div className="divide-y" style={{ borderColor: "rgba(15,40,65,0.08)" }}>
                 {instrument.items.map((item, idx) => {
                   const ssName = item.subscale_id ? subscaleMap[item.subscale_id] : null
                   return (
@@ -239,17 +239,17 @@ export default function InstrumentDetailPage() {
                       <div className="flex items-start gap-3">
                         <span
                           className="mt-0.5 shrink-0 text-[10px] font-bold tabular-nums"
-                          style={{ color: "rgba(30,27,75,0.3)" }}
+                          style={{ color: "rgba(10,30,51,0.3)" }}
                         >
                           {String(idx + 1).padStart(2, "0")}
                         </span>
                         <div className="flex-1">
-                          <p className="text-xs leading-relaxed" style={{ color: "#1e1b4b" }}>{item.item_text}</p>
+                          <p className="text-xs leading-relaxed" style={{ color: "#0A1E33" }}>{item.item_text}</p>
                           <div className="mt-1 flex flex-wrap gap-1.5">
                             {ssName && (
                               <span
                                 className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
-                                style={{ background: "rgba(91,33,182,0.08)", color: "#5b21b6" }}
+                                style={{ background: "rgba(15,40,65,0.08)", color: "#0F2841" }}
                               >
                                 {ssName}
                               </span>
@@ -257,7 +257,7 @@ export default function InstrumentDetailPage() {
                             {item.is_reverse_scored && (
                               <span
                                 className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
-                                style={{ background: "rgba(239,68,68,0.08)", color: "#dc2626" }}
+                                style={{ background: "rgba(239,68,68,0.08)", color: "#DD6334" }}
                               >
                                 R
                               </span>
@@ -275,9 +275,9 @@ export default function InstrumentDetailPage() {
           {/* Deploy CTA */}
           <div
             className="rounded-[14px] p-5 text-center"
-            style={{ background: "rgba(91,33,182,0.04)", border: "0.5px solid rgba(91,33,182,0.12)" }}
+            style={{ background: "rgba(15,40,65,0.04)", border: "0.5px solid rgba(15,40,65,0.12)" }}
           >
-            <p className="mb-3 text-sm font-semibold" style={{ color: "#1e1b4b" }}>Ready to use this instrument?</p>
+            <p className="mb-3 text-sm font-semibold" style={{ color: "#0A1E33" }}>Ready to use this instrument?</p>
             <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
               <button
                 onClick={handleDeployAll}

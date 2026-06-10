@@ -31,7 +31,7 @@ export default function ModuleCard({ module }: { module: Module }) {
   const c = colorMap[module.color]
 
   const cardBody = (
-    <div className="card group flex h-full flex-col p-6 transition-all hover:shadow-[0_4px_30px_rgba(91,33,182,0.12)]">
+    <div className="card group flex h-full flex-col p-6 transition-all hover:shadow-[0_4px_30px_rgba(15,40,65,0.12)]">
       {/* Top row */}
       <div className="mb-4 flex items-center justify-between">
         <div
@@ -50,16 +50,16 @@ export default function ModuleCard({ module }: { module: Module }) {
 
       {/* Title + description */}
       <h3 className="section-heading mb-2">{module.name}</h3>
-      <p className="mb-4 flex-1 text-sm leading-relaxed" style={{ color: "rgba(30,27,75,0.55)" }}>
+      <p className="mb-4 flex-1 text-sm leading-relaxed" style={{ color: "rgba(10,30,51,0.55)" }}>
         {module.description}
       </p>
 
       {/* Endpoint pill */}
       <div
         className="mb-4 rounded-lg px-3 py-2"
-        style={{ background: "rgba(30,27,75,0.04)", border: "0.5px solid rgba(30,27,75,0.08)" }}
+        style={{ background: "rgba(10,30,51,0.04)", border: "0.5px solid rgba(10,30,51,0.08)" }}
       >
-        <code className="font-mono text-[11px]" style={{ color: "rgba(30,27,75,0.45)" }}>
+        <code className="font-mono text-[11px]" style={{ color: "rgba(10,30,51,0.45)" }}>
           {module.endpoint}
         </code>
       </div>
@@ -82,12 +82,12 @@ export default function ModuleCard({ module }: { module: Module }) {
         <div
           className="flex w-full items-center justify-center gap-2 rounded-full py-2 text-sm font-semibold"
           style={{
-            background: "rgba(30,27,75,0.05)",
-            border: "0.5px solid rgba(30,27,75,0.1)",
-            color: "rgba(30,27,75,0.35)",
+            background: "rgba(10,30,51,0.05)",
+            border: "0.5px solid rgba(10,30,51,0.1)",
+            color: "rgba(10,30,51,0.35)",
           }}
         >
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: "rgba(30,27,75,0.2)" }} />
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: "rgba(10,30,51,0.2)" }} />
           Coming soon
         </div>
       )}

@@ -16,10 +16,10 @@ import type { CompetencyTrend, GrowthProfile } from "@/lib/types"
 
 function TrendBadge({ trend }: { trend: CompetencyTrend["trend"] }) {
   const map: Record<string, { label: string; bg: string; color: string; icon: string }> = {
-    improving:          { label: "Improving",   bg: "rgba(34,197,94,0.1)",   color: "#16a34a", icon: "↑" },
-    stable:             { label: "Stable",      bg: "rgba(59,130,246,0.1)",  color: "#3777A8", icon: "→" },
-    declining:          { label: "Declining",   bg: "rgba(239,68,68,0.1)",   color: "#dc2626", icon: "↓" },
-    insufficient_data:  { label: "No trend",   bg: "rgba(30,27,75,0.07)",   color: "rgba(30,27,75,0.4)", icon: "—" },
+    improving:          { label: "Improving",   bg: "rgba(34,197,94,0.1)",   color: "#7E8A55", icon: "↑" },
+    stable:             { label: "Stable",      bg: "rgba(59,130,246,0.1)",  color: "#2A5BA8", icon: "→" },
+    declining:          { label: "Declining",   bg: "rgba(239,68,68,0.1)",   color: "#DD6334", icon: "↓" },
+    insufficient_data:  { label: "No trend",   bg: "rgba(10,30,51,0.07)",   color: "rgba(10,30,51,0.4)", icon: "—" },
   }
   const s = map[trend] ?? map.insufficient_data
   return (
@@ -39,9 +39,9 @@ function TrendBadge({ trend }: { trend: CompetencyTrend["trend"] }) {
 function BenchmarkBadge({ status }: { status: CompetencyTrend["benchmark_status"] }) {
   if (!status) return null
   const map: Record<string, { label: string; bg: string; color: string }> = {
-    exceeding: { label: "Exceeding target", bg: "rgba(34,197,94,0.1)", color: "#16a34a" },
-    meeting:   { label: "Meeting target",   bg: "rgba(59,130,246,0.1)", color: "#3777A8" },
-    below:     { label: "Below target",     bg: "rgba(239,68,68,0.1)", color: "#dc2626" },
+    exceeding: { label: "Exceeding target", bg: "rgba(34,197,94,0.1)", color: "#7E8A55" },
+    meeting:   { label: "Meeting target",   bg: "rgba(59,130,246,0.1)", color: "#2A5BA8" },
+    below:     { label: "Below target",     bg: "rgba(239,68,68,0.1)", color: "#DD6334" },
   }
   const s = map[status]
   if (!s) return null
@@ -71,7 +71,7 @@ function CompetencyCard({ trend }: { trend: CompetencyTrend }) {
     <div className="card p-5">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>{trend.competency_name}</p>
+          <p className="text-sm font-semibold" style={{ color: "#0A1E33" }}>{trend.competency_name}</p>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
             <TrendBadge trend={trend.trend} />
             <BenchmarkBadge status={trend.benchmark_status} />
@@ -80,17 +80,17 @@ function CompetencyCard({ trend }: { trend: CompetencyTrend }) {
         <div className="shrink-0 text-right">
           {trend.current_score !== null ? (
             <>
-              <span className="metric-value text-2xl font-bold" style={{ color: "#1e1b4b" }}>
+              <span className="metric-value text-2xl font-bold" style={{ color: "#0A1E33" }}>
                 {trend.current_score.toFixed(0)}
               </span>
               {trend.benchmark_score !== null && (
-                <span className="block text-[10px]" style={{ color: "rgba(30,27,75,0.4)" }}>
+                <span className="block text-[10px]" style={{ color: "rgba(10,30,51,0.4)" }}>
                   target {trend.benchmark_score.toFixed(0)}
                 </span>
               )}
             </>
           ) : (
-            <span className="text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>Not assessed</span>
+            <span className="text-xs" style={{ color: "rgba(10,30,51,0.35)" }}>Not assessed</span>
           )}
         </div>
       </div>
@@ -99,53 +99,53 @@ function CompetencyCard({ trend }: { trend: CompetencyTrend }) {
         <div className="h-32">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(91,33,182,0.08)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,40,65,0.08)" />
               <XAxis
                 dataKey="name"
-                tick={{ fontSize: 9, fill: "rgba(30,27,75,0.4)" }}
+                tick={{ fontSize: 9, fill: "rgba(10,30,51,0.4)" }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
                 domain={[0, 100]}
-                tick={{ fontSize: 9, fill: "rgba(30,27,75,0.4)" }}
+                tick={{ fontSize: 9, fill: "rgba(10,30,51,0.4)" }}
                 axisLine={false}
                 tickLine={false}
                 tickCount={5}
               />
               <Tooltip
-                contentStyle={{ background: "rgba(240,238,255,0.95)", border: "0.5px solid rgba(91,33,182,0.2)", borderRadius: 8, fontSize: 11 }}
+                contentStyle={{ background: "rgba(240,238,255,0.95)", border: "0.5px solid rgba(15,40,65,0.2)", borderRadius: 8, fontSize: 11 }}
                 formatter={(v) => [`${Number(v).toFixed(1)}`, "Score"]}
                 labelFormatter={(label, payload) => payload?.[0]?.payload?.date ?? label}
               />
               {trend.benchmark_score !== null && (
                 <ReferenceLine
                   y={trend.benchmark_score}
-                  stroke="rgba(91,33,182,0.35)"
+                  stroke="rgba(15,40,65,0.35)"
                   strokeDasharray="4 3"
-                  label={{ value: "target", position: "insideTopRight", fontSize: 8, fill: "rgba(91,33,182,0.5)" }}
+                  label={{ value: "target", position: "insideTopRight", fontSize: 8, fill: "rgba(15,40,65,0.5)" }}
                 />
               )}
               <Line
                 type="monotone"
                 dataKey="score"
-                stroke="#5b21b6"
+                stroke="#0F2841"
                 strokeWidth={2}
-                dot={{ fill: "#5b21b6", r: 3 }}
+                dot={{ fill: "#0F2841", r: 3 }}
                 activeDot={{ r: 5 }}
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
       ) : trend.scores.length === 1 ? (
-        <div className="mt-2 flex items-center justify-center rounded-xl py-4" style={{ background: "rgba(91,33,182,0.04)" }}>
-          <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>
+        <div className="mt-2 flex items-center justify-center rounded-xl py-4" style={{ background: "rgba(15,40,65,0.04)" }}>
+          <p className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>
             Baseline recorded — more data needed for trend.
           </p>
         </div>
       ) : (
-        <div className="mt-2 flex items-center justify-center rounded-xl py-4" style={{ background: "rgba(91,33,182,0.04)" }}>
-          <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Not yet assessed.</p>
+        <div className="mt-2 flex items-center justify-center rounded-xl py-4" style={{ background: "rgba(15,40,65,0.04)" }}>
+          <p className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>Not yet assessed.</p>
         </div>
       )}
     </div>
@@ -174,7 +174,7 @@ export default function GrowthPage() {
     return (
       <div className="flex min-h-screen flex-col">
         <Header />
-        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>Loading…</div>
+        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>Loading…</div>
       </div>
     )
   }
@@ -206,12 +206,12 @@ export default function GrowthPage() {
           <div className="mb-8">
             <p className="eyebrow mb-1">Growth Profile</p>
             <h1 className="page-title">{profile.employee_name}</h1>
-            <div className="mt-1 flex flex-wrap gap-3 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+            <div className="mt-1 flex flex-wrap gap-3 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>
               {profile.role_title && <span>{profile.role_title}</span>}
-              {profile.role_title && profile.department && <span style={{ color: "rgba(30,27,75,0.25)" }}>·</span>}
+              {profile.role_title && profile.department && <span style={{ color: "rgba(10,30,51,0.25)" }}>·</span>}
               {profile.department && <span>{profile.department}</span>}
-              <span style={{ color: "rgba(30,27,75,0.25)" }}>·</span>
-              <span style={{ color: "rgba(30,27,75,0.4)" }}>{profile.framework_title}</span>
+              <span style={{ color: "rgba(10,30,51,0.25)" }}>·</span>
+              <span style={{ color: "rgba(10,30,51,0.4)" }}>{profile.framework_title}</span>
             </div>
           </div>
 
@@ -219,27 +219,27 @@ export default function GrowthPage() {
           <div className="mb-6 grid grid-cols-3 gap-4">
             <div className="card p-4 text-center">
               <p className="label-caps mb-1">Assessed</p>
-              <p className="metric-value text-2xl font-bold" style={{ color: "#1e1b4b" }}>
+              <p className="metric-value text-2xl font-bold" style={{ color: "#0A1E33" }}>
                 {assessed.length}/{profile.competency_trends.length}
               </p>
             </div>
             <div className="card p-4 text-center">
               <p className="label-caps mb-1">Improving</p>
-              <p className="metric-value text-2xl font-bold" style={{ color: improving > 0 ? "#16a34a" : "rgba(30,27,75,0.3)" }}>
+              <p className="metric-value text-2xl font-bold" style={{ color: improving > 0 ? "#7E8A55" : "rgba(10,30,51,0.3)" }}>
                 {improving}
               </p>
             </div>
             {hasBenchmarks ? (
               <div className="card p-4 text-center">
                 <p className="label-caps mb-1">On Target</p>
-                <p className="metric-value text-2xl font-bold" style={{ color: meeting > 0 ? "#3777A8" : "rgba(30,27,75,0.3)" }}>
+                <p className="metric-value text-2xl font-bold" style={{ color: meeting > 0 ? "#2A5BA8" : "rgba(10,30,51,0.3)" }}>
                   {meeting}
                 </p>
               </div>
             ) : (
               <div className="card p-4 text-center">
                 <p className="label-caps mb-1">Competencies</p>
-                <p className="metric-value text-2xl font-bold" style={{ color: "#1e1b4b" }}>
+                <p className="metric-value text-2xl font-bold" style={{ color: "#0A1E33" }}>
                   {profile.competency_trends.length}
                 </p>
               </div>
@@ -256,7 +256,7 @@ export default function GrowthPage() {
           {profile.competency_trends.length === 0 && (
             <div className="card p-8 text-center">
               <p className="section-heading mb-1">No competencies</p>
-              <p className="text-sm" style={{ color: "rgba(30,27,75,0.45)" }}>
+              <p className="text-sm" style={{ color: "rgba(10,30,51,0.45)" }}>
                 This framework has no competencies defined.
               </p>
             </div>

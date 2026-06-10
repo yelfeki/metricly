@@ -15,12 +15,14 @@ class CompetencyCreate(BaseModel):
     name: str
     description: str | None = None
     order_index: int = 0
+    cluster: str | None = None
 
 
 class CompetencyUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     order_index: int | None = None
+    cluster: str | None = None
 
 
 class CompetencyOut(BaseModel):
@@ -31,6 +33,87 @@ class CompetencyOut(BaseModel):
     name: str
     description: str | None
     order_index: int
+    library_competency_id: str | None = None
+    cluster: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Library import / from-library framework creation
+# ---------------------------------------------------------------------------
+
+
+class FromLibraryItem(BaseModel):
+    library_competency_id: str
+    order_index: int = 0
+    suggested_proficiency_level: int | None = None  # informational; no benchmark seeded yet
+
+
+class FrameworkFromLibraryRequest(BaseModel):
+    title: str
+    description: str | None = None
+    role_title: str | None = None
+    competencies: list[FromLibraryItem]
+
+
+class ImportFromLibraryRequest(BaseModel):
+    library_competency_id: str
+    order_index: int = 0
+    suggested_proficiency_level: int | None = None  # falls back to L3 if None
+
+
+# ---------------------------------------------------------------------------
+# Competency detail view (side panel) — assembles library overlay
+# ---------------------------------------------------------------------------
+
+
+class CompetencyLevelView(BaseModel):
+    level: int
+    label: str
+    descriptor: str | None
+    behavioral_indicators: list[str] = []
+    example_behaviors: list[str] = []
+
+
+class LinkedSurveyView(BaseModel):
+    survey_id: str
+    survey_name: str | None = None
+
+
+class CompetencyDetailView(BaseModel):
+    id: str
+    framework_id: str
+    name: str
+    description: str | None
+    cluster: str | None
+    order_index: int
+    library_competency_id: str | None
+    library_framework_source: str | None
+    library_role_family: str | None
+    library_framework_name: str | None
+    # Custom-competency surface — populated from the library row when imported.
+    # Drives the edit affordance + draft banner in the side panel.
+    library_is_custom: bool = False
+    library_status: str = "active"
+    library_organization_id: str | None = None
+    levels: list[CompetencyLevelView] = []
+    linked_survey: LinkedSurveyView | None = None
+
+
+# ---------------------------------------------------------------------------
+# Library picker (for adding to existing framework)
+# ---------------------------------------------------------------------------
+
+
+class PickerCandidate(BaseModel):
+    library_competency_id: str
+    name: str
+    definition: str | None
+    role_family: str | None
+    cluster: str | None
+    framework_source: str | None
+    framework_name: str
+    is_custom: bool = False
+    status: str = "active"  # 'active' | 'draft' | 'archived'
 
 
 # ---------------------------------------------------------------------------

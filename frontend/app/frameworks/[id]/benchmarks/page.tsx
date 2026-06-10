@@ -40,16 +40,16 @@ function BenchmarkRow({
   onChange: (score: number) => void
 }) {
   const level = scoreToLevel(currentScore, maxLevel)
-  const levelColors = ["", "#ef4444", "#f59e0b", "#3b82f6", "#8b5cf6", "#059669"]
-  const color = levelColors[Math.min(level, 5)] ?? "#5b21b6"
+  const levelColors = ["", "#DD6334", "#E2B146", "#2A5BA8", "#2A5BA8", "#7E8A55"]
+  const color = levelColors[Math.min(level, 5)] ?? "#0F2841"
 
   return (
     <div className="card p-4">
       <div className="mb-3 flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>{competency.name}</p>
+          <p className="text-sm font-semibold" style={{ color: "#0A1E33" }}>{competency.name}</p>
           {competency.description && (
-            <p className="mt-0.5 text-xs" style={{ color: "rgba(30,27,75,0.45)" }}>{competency.description}</p>
+            <p className="mt-0.5 text-xs" style={{ color: "rgba(10,30,51,0.45)" }}>{competency.description}</p>
           )}
         </div>
         <div className="flex shrink-0 items-center gap-3">
@@ -70,11 +70,11 @@ function BenchmarkRow({
                 onChange(v)
               }}
             />
-            <span className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>/ 100</span>
+            <span className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>/ 100</span>
           </div>
         </div>
       </div>
-      <div className="relative h-2 overflow-hidden rounded-full" style={{ background: "rgba(91,33,182,0.08)" }}>
+      <div className="relative h-2 overflow-hidden rounded-full" style={{ background: "rgba(15,40,65,0.08)" }}>
         <div
           className="h-full rounded-full transition-all duration-300"
           style={{ width: `${currentScore}%`, background: `linear-gradient(90deg, ${color}99, ${color})` }}
@@ -150,7 +150,7 @@ export default function BenchmarksPage() {
     return (
       <div className="flex min-h-screen flex-col">
         <Header backHref="/frameworks" backLabel="Frameworks" />
-        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>Loading…</div>
+        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>Loading…</div>
       </div>
     )
   }
@@ -173,7 +173,7 @@ export default function BenchmarksPage() {
               <p className="eyebrow mb-1">Role Benchmarks</p>
               <h1 className="page-title">{framework?.title ?? "…"}</h1>
               {framework?.role_title && (
-                <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>{framework.role_title}</p>
+                <p className="mt-1 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>{framework.role_title}</p>
               )}
             </div>
             <button
@@ -197,7 +197,7 @@ export default function BenchmarksPage() {
           {/* Info card */}
           <div
             className="mb-6 rounded-[14px] p-4 text-sm"
-            style={{ background: "rgba(91,33,182,0.06)", border: "0.5px solid rgba(91,33,182,0.15)", color: "rgba(30,27,75,0.6)" }}
+            style={{ background: "rgba(15,40,65,0.06)", border: "0.5px solid rgba(15,40,65,0.15)", color: "rgba(10,30,51,0.6)" }}
           >
             Set the minimum required score (0–100) for each competency. The proficiency level is derived automatically.
             These benchmarks are used in individual and team benchmark reports.
@@ -207,11 +207,11 @@ export default function BenchmarksPage() {
           <div className="mb-6 grid grid-cols-3 gap-4">
             <div className="card p-4 text-center">
               <p className="label-caps mb-1">Competencies</p>
-              <p className="metric-value text-2xl font-bold" style={{ color: "#1e1b4b" }}>{competencyCount}</p>
+              <p className="metric-value text-2xl font-bold" style={{ color: "#0A1E33" }}>{competencyCount}</p>
             </div>
             <div className="card p-4 text-center">
               <p className="label-caps mb-1">Avg Target</p>
-              <p className="metric-value text-2xl font-bold" style={{ color: "#5b21b6" }}>
+              <p className="metric-value text-2xl font-bold" style={{ color: "#0F2841" }}>
                 {competencyCount > 0
                   ? Math.round(Object.values(scores).reduce((s, v) => s + v, 0) / competencyCount)
                   : "—"}
@@ -219,7 +219,7 @@ export default function BenchmarksPage() {
             </div>
             <div className="card p-4 text-center">
               <p className="label-caps mb-1">Employees</p>
-              <p className="metric-value text-2xl font-bold" style={{ color: "#1e1b4b" }}>{employees.length}</p>
+              <p className="metric-value text-2xl font-bold" style={{ color: "#0A1E33" }}>{employees.length}</p>
             </div>
           </div>
 
@@ -227,7 +227,7 @@ export default function BenchmarksPage() {
           {framework?.competencies.length === 0 ? (
             <div className="card p-8 text-center">
               <p className="section-heading mb-1">No competencies</p>
-              <p className="text-sm" style={{ color: "rgba(30,27,75,0.45)" }}>Add competencies to this framework first.</p>
+              <p className="text-sm" style={{ color: "rgba(10,30,51,0.45)" }}>Add competencies to this framework first.</p>
             </div>
           ) : (
             <div className="space-y-3">

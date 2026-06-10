@@ -23,17 +23,17 @@ function LikertQuestion({ question, value, onChange, scale }: {
             <label key={v}
               className="flex flex-1 cursor-pointer flex-col items-center gap-1 rounded-xl py-3 transition-all"
               style={selected
-                ? { background: "rgba(91,33,182,0.12)", border: "1.5px solid rgba(91,33,182,0.4)" }
+                ? { background: "rgba(15,40,65,0.12)", border: "1.5px solid rgba(15,40,65,0.4)" }
                 : { background: "rgba(255,255,255,0.4)", border: "1.5px solid rgba(255,255,255,0.6)" }
               }>
               <input type="radio" name={question.id} value={v} checked={selected}
                 onChange={() => onChange(v)} className="sr-only" />
-              <span className="text-lg font-bold" style={{ color: selected ? "#5b21b6" : "rgba(30,27,75,0.35)" }}>{v}</span>
+              <span className="text-lg font-bold" style={{ color: selected ? "#0F2841" : "rgba(10,30,51,0.35)" }}>{v}</span>
             </label>
           )
         })}
       </div>
-      <div className="flex justify-between px-1 text-[11px]" style={{ color: "rgba(30,27,75,0.35)" }}>
+      <div className="flex justify-between px-1 text-[11px]" style={{ color: "rgba(10,30,51,0.35)" }}>
         <span>Strongly disagree</span><span>Strongly agree</span>
       </div>
     </div>
@@ -56,7 +56,7 @@ function SingleChoiceQuestion({ question, value, onChange }: {
           <label key={opt}
             className="flex cursor-pointer items-center gap-3 rounded-xl px-4 py-3 transition-all"
             style={selected
-              ? { background: "rgba(91,33,182,0.1)", border: "1.5px solid rgba(91,33,182,0.35)" }
+              ? { background: "rgba(15,40,65,0.1)", border: "1.5px solid rgba(15,40,65,0.35)" }
               : { background: "rgba(255,255,255,0.4)", border: "1.5px solid rgba(255,255,255,0.6)" }
             }>
             <input type="radio" name={question.id} value={opt} checked={selected}
@@ -64,12 +64,12 @@ function SingleChoiceQuestion({ question, value, onChange }: {
             <span
               className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2"
               style={selected
-                ? { borderColor: "#5b21b6", backgroundColor: "#5b21b6" }
-                : { borderColor: "rgba(30,27,75,0.25)" }
+                ? { borderColor: "#0F2841", backgroundColor: "#0F2841" }
+                : { borderColor: "rgba(10,30,51,0.25)" }
               }>
               {selected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
             </span>
-            <span className="text-sm" style={{ color: "rgba(30,27,75,0.75)" }}>{opt}</span>
+            <span className="text-sm" style={{ color: "rgba(10,30,51,0.75)" }}>{opt}</span>
           </label>
         )
       })}
@@ -96,21 +96,21 @@ function MultipleChoiceQuestion({ question, value, onChange }: {
           <label key={opt}
             className="flex cursor-pointer items-center gap-3 rounded-xl px-4 py-3 transition-all"
             style={selected
-              ? { background: "rgba(91,33,182,0.1)", border: "1.5px solid rgba(91,33,182,0.35)" }
+              ? { background: "rgba(15,40,65,0.1)", border: "1.5px solid rgba(15,40,65,0.35)" }
               : { background: "rgba(255,255,255,0.4)", border: "1.5px solid rgba(255,255,255,0.6)" }
             }>
             <span
               className="flex h-4 w-4 shrink-0 items-center justify-center rounded border-2"
               style={selected
-                ? { borderColor: "#5b21b6", backgroundColor: "#5b21b6" }
-                : { borderColor: "rgba(30,27,75,0.25)" }
+                ? { borderColor: "#0F2841", backgroundColor: "#0F2841" }
+                : { borderColor: "rgba(10,30,51,0.25)" }
               }>
               {selected && <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>}
             </span>
             <input type="checkbox" checked={selected} onChange={() => toggle(opt)} className="sr-only" />
-            <span className="text-sm" style={{ color: "rgba(30,27,75,0.75)" }}>{opt}</span>
+            <span className="text-sm" style={{ color: "rgba(10,30,51,0.75)" }}>{opt}</span>
           </label>
         )
       })}
@@ -144,9 +144,9 @@ function ForcedChoiceQuestion({ question, value, onChange }: {
       <table className="w-full text-sm">
         <thead>
           <tr>
-            <th className="w-24 py-2 text-center text-xs font-bold" style={{ color: "#5b21b6" }}>{labelA}</th>
-            <th className="py-2 text-left text-xs font-semibold" style={{ color: "rgba(30,27,75,0.5)" }}>Item</th>
-            <th className="w-24 py-2 text-center text-xs font-bold" style={{ color: "#5b21b6" }}>{labelB}</th>
+            <th className="w-24 py-2 text-center text-xs font-bold" style={{ color: "#0F2841" }}>{labelA}</th>
+            <th className="py-2 text-left text-xs font-semibold" style={{ color: "rgba(10,30,51,0.5)" }}>Item</th>
+            <th className="w-24 py-2 text-center text-xs font-bold" style={{ color: "#0F2841" }}>{labelB}</th>
           </tr>
         </thead>
         <tbody>
@@ -159,23 +159,23 @@ function ForcedChoiceQuestion({ question, value, onChange }: {
                   <button type="button" onClick={() => assign(labelA, item)}
                     className="mx-auto flex h-7 w-7 items-center justify-center rounded-full border-2 transition-all"
                     style={hasA
-                      ? { borderColor: "#5b21b6", backgroundColor: "#5b21b6" }
-                      : { borderColor: "rgba(30,27,75,0.25)" }
+                      ? { borderColor: "#0F2841", backgroundColor: "#0F2841" }
+                      : { borderColor: "rgba(10,30,51,0.25)" }
                     }>
                     {hasA && <span className="h-2.5 w-2.5 rounded-full bg-white" />}
                   </button>
                 </td>
-                <td className="py-2.5 px-3 font-medium" style={{ color: hasA || hasB ? "#1e1b4b" : "rgba(30,27,75,0.65)" }}>
+                <td className="py-2.5 px-3 font-medium" style={{ color: hasA || hasB ? "#0A1E33" : "rgba(10,30,51,0.65)" }}>
                   {item}
-                  {hasA && <span className="ml-2 text-[10px] font-bold" style={{ color: "#5b21b6" }}>{labelA}</span>}
-                  {hasB && <span className="ml-2 text-[10px] font-bold" style={{ color: "#5b21b6" }}>{labelB}</span>}
+                  {hasA && <span className="ml-2 text-[10px] font-bold" style={{ color: "#0F2841" }}>{labelA}</span>}
+                  {hasB && <span className="ml-2 text-[10px] font-bold" style={{ color: "#0F2841" }}>{labelB}</span>}
                 </td>
                 <td className="py-2.5 text-center">
                   <button type="button" onClick={() => assign(labelB, item)}
                     className="mx-auto flex h-7 w-7 items-center justify-center rounded-full border-2 transition-all"
                     style={hasB
-                      ? { borderColor: "#5b21b6", backgroundColor: "#5b21b6" }
-                      : { borderColor: "rgba(30,27,75,0.25)" }
+                      ? { borderColor: "#0F2841", backgroundColor: "#0F2841" }
+                      : { borderColor: "rgba(10,30,51,0.25)" }
                     }>
                     {hasB && <span className="h-2.5 w-2.5 rounded-full bg-white" />}
                   </button>
@@ -186,7 +186,7 @@ function ForcedChoiceQuestion({ question, value, onChange }: {
         </tbody>
       </table>
       {Object.keys(value).length < 2 && (
-        <p className="mt-2 text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>
+        <p className="mt-2 text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>
           Assign one item to each label ({cfg.labels.join(" / ")}).
         </p>
       )}
@@ -224,7 +224,7 @@ function RankingQuestion({ question, value, onChange }: {
 
   return (
     <div className="space-y-2">
-      <p className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Drag to reorder · 1 = most preferred</p>
+      <p className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>Drag to reorder · 1 = most preferred</p>
       {items.map((item, i) => (
         <div key={item} draggable
           onDragStart={() => onDragStart(i)}
@@ -233,32 +233,32 @@ function RankingQuestion({ question, value, onChange }: {
           onDragEnd={onDragEnd}
           className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all cursor-grab active:cursor-grabbing"
           style={overIdx === i && dragIdx.current !== i
-            ? { background: "rgba(91,33,182,0.12)", border: "1.5px solid rgba(91,33,182,0.35)" }
+            ? { background: "rgba(15,40,65,0.12)", border: "1.5px solid rgba(15,40,65,0.35)" }
             : dragIdx.current === i
               ? { background: "rgba(255,255,255,0.25)", border: "1.5px solid rgba(255,255,255,0.4)", opacity: 0.4 }
               : { background: "rgba(255,255,255,0.4)", border: "1.5px solid rgba(255,255,255,0.6)" }
           }>
           <span
             className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-            style={{ background: "rgba(91,33,182,0.1)", color: "#5b21b6" }}
+            style={{ background: "rgba(15,40,65,0.1)", color: "#0F2841" }}
           >
             {i + 1}
           </span>
-          <div className="flex flex-col gap-0.5" style={{ color: "rgba(30,27,75,0.2)" }}>
+          <div className="flex flex-col gap-0.5" style={{ color: "rgba(10,30,51,0.2)" }}>
             {[0,1,2].map(r => <div key={r} className="flex gap-0.5">
               <span className="h-1 w-1 rounded-full bg-current" /><span className="h-1 w-1 rounded-full bg-current" />
             </div>)}
           </div>
-          <span className="flex-1 text-sm" style={{ color: "rgba(30,27,75,0.75)" }}>{item}</span>
+          <span className="flex-1 text-sm" style={{ color: "rgba(10,30,51,0.75)" }}>{item}</span>
           <div className="flex flex-col">
             <button type="button" disabled={i === 0} onClick={() => move(i, i - 1)}
-              className="disabled:opacity-20" style={{ color: "rgba(30,27,75,0.3)" }}>
+              className="disabled:opacity-20" style={{ color: "rgba(10,30,51,0.3)" }}>
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
               </svg>
             </button>
             <button type="button" disabled={i === items.length - 1} onClick={() => move(i, i + 1)}
-              className="disabled:opacity-20" style={{ color: "rgba(30,27,75,0.3)" }}>
+              className="disabled:opacity-20" style={{ color: "rgba(10,30,51,0.3)" }}>
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
@@ -362,7 +362,7 @@ function RespondPageInner() {
   if (loading) return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>Loading…</main>
+      <main className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>Loading…</main>
     </div>
   )
 
@@ -374,12 +374,12 @@ function RespondPageInner() {
           className="flex h-16 w-16 items-center justify-center rounded-full"
           style={{ background: "rgba(239,68,68,0.1)" }}
         >
-          <svg className="h-8 w-8" style={{ color: "#dc2626" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="h-8 w-8" style={{ color: "#DD6334" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
         <h1 className="page-title">Assessment closed</h1>
-        <p className="text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>This assessment is no longer accepting responses.</p>
+        <p className="text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>This assessment is no longer accepting responses.</p>
       </main>
     </div>
   )
@@ -392,12 +392,12 @@ function RespondPageInner() {
           className="flex h-16 w-16 items-center justify-center rounded-full"
           style={{ background: "rgba(16,185,129,0.12)" }}
         >
-          <svg className="h-8 w-8" style={{ color: "#059669" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="h-8 w-8" style={{ color: "#7E8A55" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
         <h1 className="page-title">Response submitted</h1>
-        <p className="text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>Thank you for completing this assessment.</p>
+        <p className="text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>Thank you for completing this assessment.</p>
       </main>
     </div>
   )
@@ -410,7 +410,7 @@ function RespondPageInner() {
           {error && !survey && (
             <div
               className="rounded-xl px-5 py-4 text-sm"
-              style={{ background: "rgba(245,158,11,0.1)", border: "0.5px solid rgba(245,158,11,0.25)", color: "#b45309" }}
+              style={{ background: "rgba(245,158,11,0.1)", border: "0.5px solid rgba(245,158,11,0.25)", color: "#7A4F0B" }}
             >
               {error}
             </div>
@@ -422,17 +422,17 @@ function RespondPageInner() {
               <div className="card px-6 py-5">
                 <h1 className="section-heading">{survey.name}</h1>
                 {survey.description && (
-                  <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>{survey.description}</p>
+                  <p className="mt-1 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>{survey.description}</p>
                 )}
-                <p className="mt-3 text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>
+                <p className="mt-3 text-xs" style={{ color: "rgba(10,30,51,0.35)" }}>
                   {survey.questions.length} question{survey.questions.length !== 1 ? "s" : ""}
                 </p>
               </div>
 
               {survey.questions.map((q, i) => (
                 <div key={q.id} className="card px-6 py-5">
-                  <p className="mb-4 text-sm font-semibold" style={{ color: "#1e1b4b" }}>
-                    <span className="mr-2" style={{ color: "rgba(30,27,75,0.35)" }}>{i + 1}.</span>{q.text}
+                  <p className="mb-4 text-sm font-semibold" style={{ color: "#0A1E33" }}>
+                    <span className="mr-2" style={{ color: "rgba(10,30,51,0.35)" }}>{i + 1}.</span>{q.text}
                   </p>
 
                   {(q.question_type === "likert_5" || q.question_type === "likert_7") && (
@@ -484,7 +484,7 @@ export default function RespondPage() {
     <Suspense fallback={
       <div className="flex min-h-screen flex-col">
         <Header />
-        <main className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>Loading…</main>
+        <main className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>Loading…</main>
       </div>
     }>
       <RespondPageInner />

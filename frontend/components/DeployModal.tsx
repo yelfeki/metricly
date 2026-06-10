@@ -65,8 +65,8 @@ export default function DeployModal({ items, onClose, onSuccess }: DeployModalPr
         className="w-full max-w-md rounded-2xl p-6"
         style={{
           background: "rgba(248,246,255,0.98)",
-          border: "0.5px solid rgba(91,33,182,0.15)",
-          boxShadow: "0 24px 64px rgba(30,27,75,0.22)",
+          border: "0.5px solid rgba(15,40,65,0.15)",
+          boxShadow: "0 24px 64px rgba(10,30,51,0.22)",
         }}
       >
         {/* Header */}
@@ -78,7 +78,7 @@ export default function DeployModal({ items, onClose, onSuccess }: DeployModalPr
           <button
             onClick={onClose}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all"
-            style={{ background: "rgba(30,27,75,0.07)" }}
+            style={{ background: "rgba(10,30,51,0.07)" }}
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -89,13 +89,13 @@ export default function DeployModal({ items, onClose, onSuccess }: DeployModalPr
         {/* Selected instruments summary */}
         <div
           className="mb-5 flex flex-wrap gap-1.5 rounded-xl p-3"
-          style={{ background: "rgba(91,33,182,0.05)", border: "0.5px solid rgba(91,33,182,0.1)" }}
+          style={{ background: "rgba(15,40,65,0.05)", border: "0.5px solid rgba(15,40,65,0.1)" }}
         >
           {items.map(item => (
             <span
               key={item.id}
               className="rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-              style={{ background: "rgba(91,33,182,0.1)", color: "#5b21b6" }}
+              style={{ background: "rgba(15,40,65,0.1)", color: "#0F2841" }}
             >
               {item.short_name}
             </span>
@@ -120,7 +120,7 @@ export default function DeployModal({ items, onClose, onSuccess }: DeployModalPr
 
           <div>
             <label className="label-caps mb-1.5 block">
-              Description <span style={{ color: "rgba(30,27,75,0.35)" }}>(optional)</span>
+              Description <span style={{ color: "rgba(10,30,51,0.35)" }}>(optional)</span>
             </label>
             <textarea
               value={description}
@@ -135,7 +135,7 @@ export default function DeployModal({ items, onClose, onSuccess }: DeployModalPr
           {error && (
             <div
               className="rounded-xl px-3 py-2.5 text-xs"
-              style={{ background: "rgba(239,68,68,0.07)", color: "#dc2626" }}
+              style={{ background: "rgba(239,68,68,0.07)", color: "#DD6334" }}
             >
               {error}
             </div>

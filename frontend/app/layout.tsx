@@ -1,8 +1,15 @@
 import type { Metadata } from "next"
-import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google"
+import {
+  DM_Sans,
+  Instrument_Serif,
+  JetBrains_Mono,
+  Playfair_Display,
+  Plus_Jakarta_Sans,
+} from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/components/AuthProvider"
 
+// Existing fonts — kept for pages still on the previous aesthetic.
 const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-playfair",
@@ -17,6 +24,31 @@ const jakarta = Plus_Jakarta_Sans({
   weight: ["300", "400", "500", "600", "700", "800"],
 })
 
+// New design-system fonts (Metricly editorial-modern) — exposed as
+// --font-instrument-serif / --font-dm-sans / --font-jetbrains-mono. The
+// mx-* token layer in globals.css aliases these into --mx-font-display etc.
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  variable: "--font-instrument-serif",
+  display: "swap",
+  weight: ["400"],
+  style: ["normal", "italic"],
+})
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+  weight: ["400", "500"],
+})
+
 export const metadata: Metadata = {
   title: "Metricly — Psychometric Intelligence",
   description:
@@ -29,27 +61,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${playfair.variable} ${jakarta.variable}`}
+      className={`${playfair.variable} ${jakarta.variable} ${instrumentSerif.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}
     >
       <body className="min-h-screen antialiased">
-        {/* Ambient glow */}
-        <div
-          aria-hidden
-          className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
-        >
-          <div
-            className="absolute -top-60 -right-60 h-[700px] w-[700px] rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(91,33,182,0.08) 0%, transparent 70%)" }}
-          />
-          <div
-            className="absolute -bottom-40 -left-40 h-[500px] w-[500px] rounded-full"
-            style={{ background: "radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 70%)" }}
-          />
-        </div>
-
-        <div className="relative z-10">
-          <AuthProvider>{children}</AuthProvider>
-        </div>
+        {/* Filigree bell-curve decoration removed per user request — the page
+            background relies solely on the atelier washes (warm top-right +
+            cool bottom-left + faint wine centre) set on <html> in globals.css. */}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   )

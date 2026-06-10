@@ -25,21 +25,21 @@ const CATEGORY_TO_THEME: Record<string, string> = {
 
 const THEME_COLORS: Record<string, { bg: string; border: string; accent: string; pill: string }> = {
   "Leadership & Management": {
-    bg: "rgba(91,33,182,0.05)",
-    border: "rgba(91,33,182,0.18)",
-    accent: "#5b21b6",
-    pill: "rgba(91,33,182,0.1)",
+    bg: "rgba(15,40,65,0.05)",
+    border: "rgba(15,40,65,0.18)",
+    accent: "#0F2841",
+    pill: "rgba(15,40,65,0.1)",
   },
   "Team & Culture": {
     bg: "rgba(5,150,105,0.05)",
     border: "rgba(5,150,105,0.18)",
-    accent: "#059669",
+    accent: "#7E8A55",
     pill: "rgba(5,150,105,0.1)",
   },
   "Individual Performance": {
     bg: "rgba(217,119,6,0.05)",
     border: "rgba(217,119,6,0.18)",
-    accent: "#d97706",
+    accent: "#E2B146",
     pill: "rgba(217,119,6,0.1)",
   },
 }
@@ -124,10 +124,10 @@ function groupByTheme(
 // ---------------------------------------------------------------------------
 
 const CAT_COLORS: Record<string, string> = {
-  "Leadership": "#5b21b6",
-  "Well-being": "#059669",
-  "Personality": "#d97706",
-  "Team Effectiveness": "#3777A8",
+  "Leadership": "#0F2841",
+  "Well-being": "#7E8A55",
+  "Personality": "#E2B146",
+  "Team Effectiveness": "#2A5BA8",
   "Skills & Competencies": "#0891b2",
   "Cognitive": "#9333ea",
   "Organizational Health": "#db2777",
@@ -163,10 +163,10 @@ function InstrumentCard({ inst, contextSummary, inCollection, onAddRemove, accen
       {/* Header row */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h4 className="font-bold text-sm leading-snug" style={{ color: "#1e1b4b" }}>
+          <h4 className="font-bold text-sm leading-snug" style={{ color: "#0A1E33" }}>
             {inst.name}
           </h4>
-          <p className="text-[11px] font-semibold mt-0.5" style={{ color: "rgba(30,27,75,0.4)" }}>
+          <p className="text-[11px] font-semibold mt-0.5" style={{ color: "rgba(10,30,51,0.4)" }}>
             {inst.short_name}
           </p>
         </div>
@@ -183,7 +183,7 @@ function InstrumentCard({ inst, contextSummary, inCollection, onAddRemove, accen
             className="rounded-full px-2 py-0.5 text-[9px] font-bold"
             style={{
               background: inst.is_proprietary ? "rgba(239,68,68,0.1)" : "rgba(34,197,94,0.1)",
-              color: inst.is_proprietary ? "#dc2626" : "#16a34a",
+              color: inst.is_proprietary ? "#DD6334" : "#7E8A55",
             }}
           >
             {inst.license_type}
@@ -195,12 +195,12 @@ function InstrumentCard({ inst, contextSummary, inCollection, onAddRemove, accen
       {inst.construct_measured && (
         <div
           className="rounded-xl p-3"
-          style={{ background: `rgba(${accentColor === "#5b21b6" ? "91,33,182" : accentColor === "#059669" ? "5,150,105" : "217,119,6"},0.05)` }}
+          style={{ background: `rgba(${accentColor === "#0F2841" ? "91,33,182" : accentColor === "#7E8A55" ? "5,150,105" : "217,119,6"},0.05)` }}
         >
           <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: accentColor, opacity: 0.8 }}>
             Why this fits your needs
           </p>
-          <p className="text-xs leading-relaxed" style={{ color: "rgba(30,27,75,0.75)" }}>
+          <p className="text-xs leading-relaxed" style={{ color: "rgba(10,30,51,0.75)" }}>
             {inst.construct_measured}
           </p>
         </div>
@@ -210,23 +210,23 @@ function InstrumentCard({ inst, contextSummary, inCollection, onAddRemove, accen
       <div className="flex items-center gap-4 text-xs">
         <div>
           <span className="label-caps block">Items</span>
-          <span className="font-semibold" style={{ color: "#1e1b4b" }}>{inst.total_items}</span>
+          <span className="font-semibold" style={{ color: "#0A1E33" }}>{inst.total_items}</span>
         </div>
         {inst.estimated_minutes && (
           <div>
             <span className="label-caps block">Time</span>
-            <span className="font-semibold" style={{ color: "#1e1b4b" }}>{inst.estimated_minutes} min</span>
+            <span className="font-semibold" style={{ color: "#0A1E33" }}>{inst.estimated_minutes} min</span>
           </div>
         )}
         {inst.reliability_alpha !== null && inst.reliability_alpha !== undefined && (
           <div>
             <span className="label-caps block">α</span>
-            <span className="font-semibold" style={{ color: "#1e1b4b" }}>{inst.reliability_alpha.toFixed(2)}</span>
+            <span className="font-semibold" style={{ color: "#0A1E33" }}>{inst.reliability_alpha.toFixed(2)}</span>
           </div>
         )}
         <div>
           <span className="label-caps block">Format</span>
-          <span className="font-semibold" style={{ color: "#1e1b4b" }}>{inst.response_format}</span>
+          <span className="font-semibold" style={{ color: "#0A1E33" }}>{inst.response_format}</span>
         </div>
       </div>
 
@@ -237,7 +237,7 @@ function InstrumentCard({ inst, contextSummary, inCollection, onAddRemove, accen
         style={inCollection ? {
           background: "rgba(34,197,94,0.1)",
           border: "0.5px solid rgba(34,197,94,0.3)",
-          color: "#16a34a",
+          color: "#7E8A55",
         } : {
           background: `linear-gradient(135deg, ${accentColor}, ${accentColor}cc)`,
           color: "#fff",
@@ -291,7 +291,7 @@ function ThemeCard({ theme, expanded, onExpand, contextSummary, isInCollection, 
             {THEME_ICONS[theme.name]}
           </div>
           <div>
-            <h3 className="text-base font-bold leading-tight" style={{ color: "#1e1b4b" }}>
+            <h3 className="text-base font-bold leading-tight" style={{ color: "#0A1E33" }}>
               {theme.name}
             </h3>
             <p className="mt-0.5 text-[10px] font-semibold" style={{ color: colors.accent }}>
@@ -302,13 +302,13 @@ function ThemeCard({ theme, expanded, onExpand, contextSummary, isInCollection, 
       </div>
 
       {/* Description */}
-      <p className="text-sm leading-relaxed mb-4" style={{ color: "rgba(30,27,75,0.65)" }}>
+      <p className="text-sm leading-relaxed mb-4" style={{ color: "rgba(10,30,51,0.65)" }}>
         {description}
       </p>
 
       {/* Preview names */}
-      <p className="text-xs mb-5" style={{ color: "rgba(30,27,75,0.4)" }}>
-        <span className="font-semibold" style={{ color: "rgba(30,27,75,0.6)" }}>Includes: </span>
+      <p className="text-xs mb-5" style={{ color: "rgba(10,30,51,0.4)" }}>
+        <span className="font-semibold" style={{ color: "rgba(10,30,51,0.6)" }}>Includes: </span>
         {preview}{extra}
       </p>
 
@@ -372,31 +372,31 @@ function NotInLibraryCard({ skillName, requestState, onRequest }: NotInLibraryCa
       className="flex items-center gap-4 rounded-[14px] p-4"
       style={{
         background: "rgba(255,255,255,0.45)",
-        border: "0.5px dashed rgba(91,33,182,0.2)",
+        border: "0.5px dashed rgba(15,40,65,0.2)",
         backdropFilter: "blur(8px)",
       }}
     >
       <div
         className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-        style={{ background: "rgba(91,33,182,0.08)" }}
+        style={{ background: "rgba(15,40,65,0.08)" }}
       >
-        <svg className="h-4 w-4" style={{ color: "rgba(91,33,182,0.4)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="h-4 w-4" style={{ color: "rgba(15,40,65,0.4)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold truncate" style={{ color: "#1e1b4b" }}>{skillName}</p>
+        <p className="text-sm font-semibold truncate" style={{ color: "#0A1E33" }}>{skillName}</p>
         <span
           className="mt-0.5 inline-block rounded-full px-2 py-0.5 text-[9px] font-bold"
-          style={{ background: "rgba(30,27,75,0.06)", color: "rgba(30,27,75,0.4)" }}
+          style={{ background: "rgba(10,30,51,0.06)", color: "rgba(10,30,51,0.4)" }}
         >
           Not yet available
         </span>
       </div>
       {requestState === "sent" ? (
         <div className="shrink-0 text-center">
-          <p className="text-xs font-bold" style={{ color: "#16a34a" }}>✓ Requested</p>
-          <p className="text-[10px]" style={{ color: "rgba(30,27,75,0.4)" }}>We'll notify you</p>
+          <p className="text-xs font-bold" style={{ color: "#7E8A55" }}>✓ Requested</p>
+          <p className="text-[10px]" style={{ color: "rgba(10,30,51,0.4)" }}>We'll notify you</p>
         </div>
       ) : (
         <button
@@ -404,9 +404,9 @@ function NotInLibraryCard({ skillName, requestState, onRequest }: NotInLibraryCa
           disabled={requestState === "requesting"}
           className="shrink-0 rounded-full px-3 py-1.5 text-xs font-bold transition-all disabled:opacity-50"
           style={{
-            background: "rgba(91,33,182,0.1)",
-            color: "#5b21b6",
-            border: "0.5px solid rgba(91,33,182,0.2)",
+            background: "rgba(15,40,65,0.1)",
+            color: "#0F2841",
+            border: "0.5px solid rgba(15,40,65,0.2)",
           }}
         >
           {requestState === "requesting" ? "Sending…" : "Request Assessment"}
@@ -432,7 +432,7 @@ interface IndustryInstrumentRowProps {
 
 function IndustryInstrumentRow({ inst, inCollection, onToggle }: IndustryInstrumentRowProps) {
   const router = useRouter()
-  const accent = "#d97706"
+  const accent = "#E2B146"
   const pill = "rgba(217,119,6,0.1)"
   const [deploying, setDeploying] = useState(false)
   const [deployError, setDeployError] = useState<string | null>(null)
@@ -464,7 +464,7 @@ function IndustryInstrumentRow({ inst, inCollection, onToggle }: IndustryInstrum
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-sm" style={{ color: "#1e1b4b" }}>{inst.name}</span>
+              <span className="font-semibold text-sm" style={{ color: "#0A1E33" }}>{inst.name}</span>
               <span
                 className="rounded-full px-1.5 py-0.5 text-[9px] font-bold"
                 style={{ background: pill, color: accent }}
@@ -473,7 +473,7 @@ function IndustryInstrumentRow({ inst, inCollection, onToggle }: IndustryInstrum
               </span>
             </div>
             {inst.construct_measured && (
-              <p className="mt-0.5 text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>{inst.construct_measured}</p>
+              <p className="mt-0.5 text-xs" style={{ color: "rgba(10,30,51,0.5)" }}>{inst.construct_measured}</p>
             )}
           </div>
           <div className="flex gap-0.5 shrink-0">
@@ -483,9 +483,9 @@ function IndustryInstrumentRow({ inst, inCollection, onToggle }: IndustryInstrum
           </div>
         </div>
         {inst.use_case_note && (
-          <p className="mt-1.5 text-xs italic" style={{ color: "rgba(30,27,75,0.55)" }}>{inst.use_case_note}</p>
+          <p className="mt-1.5 text-xs italic" style={{ color: "rgba(10,30,51,0.55)" }}>{inst.use_case_note}</p>
         )}
-        <div className="mt-2 flex gap-3 text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>
+        <div className="mt-2 flex gap-3 text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>
           <span>{inst.total_items} items</span>
           {inst.estimated_minutes && <span>~{inst.estimated_minutes} min</span>}
           {inst.reliability_alpha !== null && <span>α = {inst.reliability_alpha?.toFixed(2)}</span>}
@@ -502,7 +502,7 @@ function IndustryInstrumentRow({ inst, inCollection, onToggle }: IndustryInstrum
           className="flex-1 rounded-full py-1.5 text-xs font-bold transition-all"
           style={inCollection ? {
             background: "rgba(34,197,94,0.12)",
-            color: "#16a34a",
+            color: "#7E8A55",
             border: "0.5px solid rgba(34,197,94,0.3)",
           } : {
             background: "rgba(217,119,6,0.08)",
@@ -518,7 +518,7 @@ function IndustryInstrumentRow({ inst, inCollection, onToggle }: IndustryInstrum
           style={{
             background: "rgba(255,255,255,0.6)",
             border: "0.5px solid rgba(217,119,6,0.15)",
-            color: "rgba(30,27,75,0.6)",
+            color: "rgba(10,30,51,0.6)",
           }}
         >
           {deploying ? "…" : "Deploy"}
@@ -526,7 +526,7 @@ function IndustryInstrumentRow({ inst, inCollection, onToggle }: IndustryInstrum
       </div>
 
       {deployError && (
-        <p className="px-4 pb-2.5 text-[11px]" style={{ color: "#dc2626" }}>{deployError}</p>
+        <p className="px-4 pb-2.5 text-[11px]" style={{ color: "#DD6334" }}>{deployError}</p>
       )}
     </div>
   )
@@ -547,7 +547,7 @@ interface IndustryCardProps {
 }
 
 function IndustryCard({ industryName, slug, instruments, expanded, onExpand, isInCollection, onToggle }: IndustryCardProps) {
-  const accent = "#d97706"
+  const accent = "#E2B146"
   const bg = "rgba(217,119,6,0.05)"
   const border = "rgba(217,119,6,0.18)"
   const pill = "rgba(217,119,6,0.1)"
@@ -575,7 +575,7 @@ function IndustryCard({ industryName, slug, instruments, expanded, onExpand, isI
             </svg>
           </div>
           <div>
-            <h3 className="text-base font-bold leading-tight" style={{ color: "#1e1b4b" }}>
+            <h3 className="text-base font-bold leading-tight" style={{ color: "#0A1E33" }}>
               Industry-Specific Scales
             </h3>
             <p className="mt-0.5 text-[10px] font-semibold" style={{ color: accent }}>
@@ -591,12 +591,12 @@ function IndustryCard({ industryName, slug, instruments, expanded, onExpand, isI
         </span>
       </div>
 
-      <p className="text-sm leading-relaxed mb-4" style={{ color: "rgba(30,27,75,0.65)" }}>
+      <p className="text-sm leading-relaxed mb-4" style={{ color: "rgba(10,30,51,0.65)" }}>
         Validated instruments tailored to the {industryName} sector — curated for context-specific psychological measurement.
       </p>
 
-      <p className="text-xs mb-5" style={{ color: "rgba(30,27,75,0.4)" }}>
-        <span className="font-semibold" style={{ color: "rgba(30,27,75,0.6)" }}>Includes: </span>
+      <p className="text-xs mb-5" style={{ color: "rgba(10,30,51,0.4)" }}>
+        <span className="font-semibold" style={{ color: "rgba(10,30,51,0.6)" }}>Includes: </span>
         {preview}{extra}
       </p>
 
@@ -729,23 +729,23 @@ export default function SkillsMapPage() {
                   <div
                     className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold"
                     style={step <= 2 ? {
-                      background: "linear-gradient(135deg, #5b21b6, #3777A8)",
+                      background: "linear-gradient(135deg, #0F2841, #2A5BA8)",
                       color: "#fff",
                     } : {
-                      background: "rgba(91,33,182,0.08)",
-                      color: "rgba(30,27,75,0.3)",
-                      border: "0.5px solid rgba(91,33,182,0.15)",
+                      background: "rgba(15,40,65,0.08)",
+                      color: "rgba(10,30,51,0.3)",
+                      border: "0.5px solid rgba(15,40,65,0.15)",
                     }}
                   >
                     {step < 2 ? "✓" : step}
                   </div>
                   {step < 3 && (
-                    <div className="h-px w-8" style={{ background: step < 2 ? "#5b21b6" : "rgba(91,33,182,0.15)" }} />
+                    <div className="h-px w-8" style={{ background: step < 2 ? "#0F2841" : "rgba(15,40,65,0.15)" }} />
                   )}
                 </div>
               ))}
             </div>
-            <span className="text-xs font-semibold" style={{ color: "#5b21b6" }}>
+            <span className="text-xs font-semibold" style={{ color: "#0F2841" }}>
               Step 2 of 3 — Your Skills Assessment Plan
             </span>
           </div>
@@ -762,7 +762,7 @@ export default function SkillsMapPage() {
             <p className="eyebrow mb-2">Skills Assessment Plan</p>
             <h1 className="page-title">Your Skills Assessment Plan</h1>
             {profile?.context_summary && (
-              <p className="mt-3 text-sm leading-relaxed max-w-2xl" style={{ color: "rgba(30,27,75,0.6)" }}>
+              <p className="mt-3 text-sm leading-relaxed max-w-2xl" style={{ color: "rgba(10,30,51,0.6)" }}>
                 {profile.context_summary}
               </p>
             )}
@@ -771,11 +771,11 @@ export default function SkillsMapPage() {
           {/* Loading state */}
           {!library && (
             <div className="flex items-center gap-3 py-8">
-              <svg className="h-5 w-5 animate-spin" style={{ color: "#5b21b6" }} fill="none" viewBox="0 0 24 24">
+              <svg className="h-5 w-5 animate-spin" style={{ color: "#0F2841" }} fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
                 <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              <span className="text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>Loading your assessment plan…</span>
+              <span className="text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>Loading your assessment plan…</span>
             </div>
           )}
 
@@ -828,7 +828,7 @@ export default function SkillsMapPage() {
                       <button
                         onClick={() => setExpandedTheme(null)}
                         className="flex h-7 w-7 items-center justify-center rounded-full"
-                        style={{ background: "rgba(30,27,75,0.06)" }}
+                        style={{ background: "rgba(10,30,51,0.06)" }}
                       >
                         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -858,7 +858,7 @@ export default function SkillsMapPage() {
             <section>
               <div className="mb-4">
                 <h2 className="section-heading">Also Recommended — Not Yet in Library</h2>
-                <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.45)" }}>
+                <p className="mt-1 text-xs" style={{ color: "rgba(10,30,51,0.45)" }}>
                   These instruments were recommended for your context but aren't in our library yet. Request them and we'll prioritize adding them.
                 </p>
               </div>

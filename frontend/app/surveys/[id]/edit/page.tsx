@@ -131,10 +131,10 @@ function FactorSelect({ value, factorNames, onChange, onCreateFactor }: FactorSe
           onKeyDown={e => { if (e.key === "Enter") saveNew(); if (e.key === "Escape") { setCreating(false); setNewName("") } }}
           placeholder="Factor name"
           className="w-28 rounded-lg border px-2 py-0.5 text-xs focus:outline-none"
-          style={{ background: "rgba(255,255,255,0.7)", borderColor: "rgba(91,33,182,0.3)", color: "#1e1b4b" }}
+          style={{ background: "rgba(255,255,255,0.7)", borderColor: "rgba(15,40,65,0.3)", color: "#0A1E33" }}
         />
-        <button type="button" onClick={saveNew} className="text-xs font-semibold" style={{ color: "#5b21b6" }}>Save</button>
-        <button type="button" onClick={() => { setCreating(false); setNewName("") }} className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>✕</button>
+        <button type="button" onClick={saveNew} className="text-xs font-semibold" style={{ color: "#0F2841" }}>Save</button>
+        <button type="button" onClick={() => { setCreating(false); setNewName("") }} className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>✕</button>
       </div>
     )
   }
@@ -147,7 +147,7 @@ function FactorSelect({ value, factorNames, onChange, onCreateFactor }: FactorSe
         else { onChange(e.target.value) }
       }}
       className="rounded-lg border px-2 py-0.5 text-xs focus:outline-none"
-      style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
+      style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#0A1E33" }}
     >
       <option value="">No factor</option>
       {factorNames.map(f => <option key={f} value={f}>{f}</option>)}
@@ -209,7 +209,7 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
   return (
     <div className="card">
       <div className="flex items-start gap-3 px-4 py-3">
-        <div className="mt-1.5 flex cursor-grab flex-col gap-0.5 active:cursor-grabbing" style={{ color: "rgba(30,27,75,0.2)" }}>
+        <div className="mt-1.5 flex cursor-grab flex-col gap-0.5 active:cursor-grabbing" style={{ color: "rgba(10,30,51,0.2)" }}>
           {[0,1,2].map(r => (
             <div key={r} className="flex gap-0.5">
               <span className="h-1 w-1 rounded-full bg-current" />
@@ -219,7 +219,7 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
         </div>
         <span
           className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-          style={{ background: "rgba(91,33,182,0.1)", color: "#5b21b6" }}
+          style={{ background: "rgba(15,40,65,0.1)", color: "#0F2841" }}
         >
           {index + 1}
         </span>
@@ -232,13 +232,13 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
             className="field w-full resize-none"
           />
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Type:</span>
+            <span className="text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>Type:</span>
             {QUESTION_TYPES.map(t => (
               <button key={t.value} type="button" onClick={() => handleTypeChange(t.value)}
                 className="rounded-full px-2.5 py-0.5 text-xs font-semibold transition-all"
                 style={q.question_type === t.value
-                  ? { background: "linear-gradient(135deg,#5b21b6,#3777A8)", color: "white" }
-                  : { background: "rgba(30,27,75,0.07)", color: "rgba(30,27,75,0.6)" }
+                  ? { background: "linear-gradient(135deg,#0F2841,#2A5BA8)", color: "white" }
+                  : { background: "rgba(10,30,51,0.07)", color: "rgba(10,30,51,0.6)" }
                 }>
                 {t.icon} {t.label}
               </button>
@@ -247,10 +247,10 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
 
           <div
             className="flex flex-wrap items-center gap-4 rounded-xl px-3 py-2"
-            style={{ background: "rgba(91,33,182,0.05)", border: "0.5px solid rgba(91,33,182,0.1)" }}
+            style={{ background: "rgba(15,40,65,0.05)", border: "0.5px solid rgba(15,40,65,0.1)" }}
           >
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-medium" style={{ color: "rgba(30,27,75,0.4)" }}>Factor:</span>
+              <span className="text-[11px] font-medium" style={{ color: "rgba(10,30,51,0.4)" }}>Factor:</span>
               <FactorSelect
                 value={q.factor}
                 factorNames={factorNames}
@@ -264,14 +264,14 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
                   <input type="checkbox" checked={q.reverse_scored}
                     onChange={e => onChange(q.localId, { reverse_scored: e.target.checked })}
                     className="h-3.5 w-3.5 rounded" />
-                  <span className="text-[11px] font-medium" style={{ color: "rgba(30,27,75,0.5)" }}>Reverse scored</span>
+                  <span className="text-[11px] font-medium" style={{ color: "rgba(10,30,51,0.5)" }}>Reverse scored</span>
                 </label>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-medium" style={{ color: "rgba(30,27,75,0.4)" }}>Weight:</span>
+                  <span className="text-[11px] font-medium" style={{ color: "rgba(10,30,51,0.4)" }}>Weight:</span>
                   <input type="number" value={q.score_weight} min="0" step="0.1"
                     onChange={e => onChange(q.localId, { score_weight: parseFloat(e.target.value) || 1.0 })}
                     className="w-16 rounded-lg border px-1.5 py-0.5 text-xs focus:outline-none"
-                    style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
+                    style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#0A1E33" }}
                   />
                 </div>
               </>
@@ -280,16 +280,16 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
               <input type="checkbox" checked={q.is_demographic}
                 onChange={e => onChange(q.localId, { is_demographic: e.target.checked, demographic_key: e.target.checked ? q.demographic_key : "" })}
                 className="h-3.5 w-3.5 rounded" />
-              <span className="text-[11px] font-medium" style={{ color: "rgba(30,27,75,0.5)" }}>Demographic</span>
+              <span className="text-[11px] font-medium" style={{ color: "rgba(10,30,51,0.5)" }}>Demographic</span>
             </label>
             {q.is_demographic && (
               <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-medium" style={{ color: "rgba(30,27,75,0.4)" }}>Key:</span>
+                <span className="text-[11px] font-medium" style={{ color: "rgba(10,30,51,0.4)" }}>Key:</span>
                 <input value={q.demographic_key}
                   onChange={e => onChange(q.localId, { demographic_key: e.target.value })}
                   placeholder="e.g. department"
                   className="w-32 rounded-lg border px-2 py-0.5 text-xs focus:outline-none"
-                  style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
+                  style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#0A1E33" }}
                 />
               </div>
             )}
@@ -301,29 +301,29 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
                 <div key={i}
                   className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold"
                   style={q.reverse_scored
-                    ? { background: "rgba(245,158,11,0.12)", border: "0.5px solid rgba(245,158,11,0.3)", color: "#b45309" }
-                    : { background: "rgba(91,33,182,0.07)", border: "0.5px solid rgba(91,33,182,0.12)", color: "rgba(30,27,75,0.5)" }
+                    ? { background: "rgba(245,158,11,0.12)", border: "0.5px solid rgba(245,158,11,0.3)", color: "#7A4F0B" }
+                    : { background: "rgba(15,40,65,0.07)", border: "0.5px solid rgba(15,40,65,0.12)", color: "rgba(10,30,51,0.5)" }
                   }>
                   {q.reverse_scored ? (q.question_type === "likert_5" ? 5 : 7) - i : i + 1}
                 </div>
               ))}
-              {q.reverse_scored && <span className="self-center text-[10px] font-semibold" style={{ color: "#b45309" }}>reversed</span>}
+              {q.reverse_scored && <span className="self-center text-[10px] font-semibold" style={{ color: "#7A4F0B" }}>reversed</span>}
             </div>
           )}
 
           {isFC && (
-            <div className="grid grid-cols-2 gap-2 rounded-xl p-3" style={{ background: "rgba(91,33,182,0.06)", border: "0.5px solid rgba(91,33,182,0.12)" }}>
+            <div className="grid grid-cols-2 gap-2 rounded-xl p-3" style={{ background: "rgba(15,40,65,0.06)", border: "0.5px solid rgba(15,40,65,0.12)" }}>
               <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider" style={{ color: "#5b21b6" }}>Label A</label>
+                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider" style={{ color: "#0F2841" }}>Label A</label>
                 <input value={q.forced_choice_labels[0]} onChange={e => setLabel(0, e.target.value)} placeholder="e.g. Most like me" className="field w-full" />
               </div>
               <div>
-                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider" style={{ color: "#5b21b6" }}>Label B</label>
+                <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider" style={{ color: "#0F2841" }}>Label B</label>
                 <input value={q.forced_choice_labels[1]} onChange={e => setLabel(1, e.target.value)} placeholder="e.g. Least like me" className="field w-full" />
               </div>
             </div>
           )}
-          {isRanking && <p className="text-[11px]" style={{ color: "rgba(30,27,75,0.4)" }}>Respondents will drag these items into their preferred order.</p>}
+          {isRanking && <p className="text-[11px]" style={{ color: "rgba(10,30,51,0.4)" }}>Respondents will drag these items into their preferred order.</p>}
 
           {needsList && (
             <div className="space-y-2">
@@ -335,7 +335,7 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
               )}
               {q.options.map((opt, i) => (
                 <div key={i} className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center text-xs font-medium" style={{ color: "rgba(30,27,75,0.4)" }}>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center text-xs font-medium" style={{ color: "rgba(10,30,51,0.4)" }}>
                     {isRanking ? i + 1 : isFC ? "·" : q.question_type === "multiple_choice" ? "☐" : "○"}
                   </span>
                   <input value={opt} onChange={e => setOption(i, e.target.value)}
@@ -345,11 +345,11 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
                       onChange={e => setOptionScore(i, e.target.value)} placeholder="0"
                       title={isFC ? "Weight for this item" : "Score for this option"}
                       className="w-16 rounded-lg border px-1.5 py-1 text-xs focus:outline-none"
-                      style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
+                      style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#0A1E33" }}
                     />
                   )}
                   {q.options.length > 2 && (
-                    <button type="button" onClick={() => removeOption(i)} className="transition-colors" style={{ color: "rgba(30,27,75,0.2)" }}>
+                    <button type="button" onClick={() => removeOption(i)} className="transition-colors" style={{ color: "rgba(10,30,51,0.2)" }}>
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                       </svg>
@@ -357,7 +357,7 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
                   )}
                 </div>
               ))}
-              <button type="button" onClick={addOption} className="flex items-center gap-1 text-xs font-semibold transition-colors" style={{ color: "#5b21b6" }}>
+              <button type="button" onClick={addOption} className="flex items-center gap-1 text-xs font-semibold transition-colors" style={{ color: "#0F2841" }}>
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
@@ -369,19 +369,19 @@ function QuestionCard({ q, index, total, factorNames, onChange, onDelete, onMove
 
         <div className="flex flex-col gap-1">
           <button type="button" onClick={() => onMoveUp(q.localId)} disabled={index === 0}
-            className="rounded p-1 disabled:opacity-20 transition-colors" style={{ color: "rgba(30,27,75,0.3)" }} title="Move up">
+            className="rounded p-1 disabled:opacity-20 transition-colors" style={{ color: "rgba(10,30,51,0.3)" }} title="Move up">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
             </svg>
           </button>
           <button type="button" onClick={() => onMoveDown(q.localId)} disabled={index === total - 1}
-            className="rounded p-1 disabled:opacity-20 transition-colors" style={{ color: "rgba(30,27,75,0.3)" }} title="Move down">
+            className="rounded p-1 disabled:opacity-20 transition-colors" style={{ color: "rgba(10,30,51,0.3)" }} title="Move down">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
           <button type="button" onClick={() => onDelete(q.localId)}
-            className="rounded p-1 transition-colors" style={{ color: "rgba(30,27,75,0.25)" }} title="Delete">
+            className="rounded p-1 transition-colors" style={{ color: "rgba(10,30,51,0.25)" }} title="Delete">
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
@@ -439,9 +439,9 @@ function FactorRow({ factor, onSave, onDelete }: {
           className="field w-full"
         />
       </div>
-      {saving && <span className="mt-2 text-xs" style={{ color: "rgba(30,27,75,0.4)" }}>Saving…</span>}
+      {saving && <span className="mt-2 text-xs" style={{ color: "rgba(10,30,51,0.4)" }}>Saving…</span>}
       <button type="button" onClick={handleDelete} disabled={deleting}
-        className="mt-1 rounded p-1 disabled:opacity-40 transition-colors" style={{ color: "rgba(30,27,75,0.25)" }}>
+        className="mt-1 rounded p-1 disabled:opacity-40 transition-colors" style={{ color: "rgba(10,30,51,0.25)" }}>
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
         </svg>
@@ -454,7 +454,7 @@ function FactorRow({ factor, onSave, onDelete }: {
 // Scoring algorithm form
 // ---------------------------------------------------------------------------
 
-const DEFAULT_COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
+const DEFAULT_COLORS = ["#7E8A55", "#2A5BA8", "#E2B146", "#DD6334", "#2A5BA8", "#2A5BA8"]
 
 function ScoringAlgorithmForm({ surveyId, factor, existing, onSaved }: {
   surveyId: string
@@ -528,30 +528,30 @@ function ScoringAlgorithmForm({ surveyId, factor, existing, onSaved }: {
       <div>
         <label className="label-caps mb-2 block">Label thresholds (on normalized scale)</label>
         {labels.length === 0 && (
-          <p className="text-xs mb-2" style={{ color: "rgba(30,27,75,0.4)" }}>No labels defined. Scores will be shown as numbers only.</p>
+          <p className="text-xs mb-2" style={{ color: "rgba(10,30,51,0.4)" }}>No labels defined. Scores will be shown as numbers only.</p>
         )}
         <div className="space-y-2">
           {labels.map((l, i) => (
             <div key={i} className="flex items-center gap-2">
               <div className="flex items-center gap-1">
-                <span className="text-[10px] w-14" style={{ color: "rgba(30,27,75,0.4)" }}>Threshold</span>
+                <span className="text-[10px] w-14" style={{ color: "rgba(10,30,51,0.4)" }}>Threshold</span>
                 <input type="number" value={l.threshold} min={normMin} max={normMax} step="1"
                   onChange={e => updateLabel(i, { threshold: parseFloat(e.target.value) || 0 })}
                   className="w-16 rounded-lg border px-1.5 py-1 text-xs focus:outline-none"
-                  style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
+                  style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#0A1E33" }}
                 />
               </div>
               <input value={l.label} onChange={e => updateLabel(i, { label: e.target.value })}
                 placeholder="Label"
                 className="flex-1 rounded-lg border px-2 py-1 text-xs focus:outline-none"
-                style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#1e1b4b" }}
+                style={{ background: "rgba(255,255,255,0.6)", borderColor: "rgba(255,255,255,0.7)", color: "#0A1E33" }}
               />
               <input type="color" value={l.color} onChange={e => updateLabel(i, { color: e.target.value })}
                 className="h-6 w-8 cursor-pointer rounded border p-0.5"
                 style={{ borderColor: "rgba(255,255,255,0.6)" }}
                 title="Label color"
               />
-              <button type="button" onClick={() => removeLabel(i)} className="transition-colors" style={{ color: "rgba(30,27,75,0.2)" }}>
+              <button type="button" onClick={() => removeLabel(i)} className="transition-colors" style={{ color: "rgba(10,30,51,0.2)" }}>
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -560,7 +560,7 @@ function ScoringAlgorithmForm({ surveyId, factor, existing, onSaved }: {
           ))}
         </div>
         <button type="button" onClick={addLabel}
-          className="mt-2 flex items-center gap-1 text-xs font-semibold transition-colors" style={{ color: "#5b21b6" }}>
+          className="mt-2 flex items-center gap-1 text-xs font-semibold transition-colors" style={{ color: "#0F2841" }}>
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
@@ -571,7 +571,7 @@ function ScoringAlgorithmForm({ surveyId, factor, existing, onSaved }: {
       {labels.length > 0 && (
         <div>
           <label className="label-caps mb-2 block">Preview</label>
-          <div className="relative h-8 w-full overflow-hidden rounded-lg" style={{ background: "rgba(91,33,182,0.08)" }}>
+          <div className="relative h-8 w-full overflow-hidden rounded-lg" style={{ background: "rgba(15,40,65,0.08)" }}>
             {sortedLabels.map((l, i) => {
               const next = sortedLabels[i + 1]
               const start = ((l.threshold - normMin) / (normMax - normMin)) * 100
@@ -584,18 +584,18 @@ function ScoringAlgorithmForm({ surveyId, factor, existing, onSaved }: {
               )
             })}
             {sortedLabels.length > 0 && sortedLabels[0].threshold > normMin && (
-              <div style={{ position: "absolute", left: 0, width: `${((sortedLabels[0].threshold - normMin) / (normMax - normMin)) * 100}%`, height: "100%", background: "rgba(30,27,75,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span className="text-[10px] truncate px-1" style={{ color: "rgba(30,27,75,0.3)" }}>—</span>
+              <div style={{ position: "absolute", left: 0, width: `${((sortedLabels[0].threshold - normMin) / (normMax - normMin)) * 100}%`, height: "100%", background: "rgba(10,30,51,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span className="text-[10px] truncate px-1" style={{ color: "rgba(10,30,51,0.3)" }}>—</span>
               </div>
             )}
           </div>
-          <div className="mt-1 flex justify-between text-[10px]" style={{ color: "rgba(30,27,75,0.35)" }}>
+          <div className="mt-1 flex justify-between text-[10px]" style={{ color: "rgba(10,30,51,0.35)" }}>
             <span>{normMin}</span><span>{normMax}</span>
           </div>
         </div>
       )}
 
-      {err && <p className="text-xs" style={{ color: "#dc2626" }}>{err}</p>}
+      {err && <p className="text-xs" style={{ color: "#DD6334" }}>{err}</p>}
 
       <button type="button" onClick={handleSave} disabled={saving} className="btn-primary text-xs px-4 py-1.5 disabled:opacity-50">
         {saving ? "Saving…" : existing ? "Update algorithm" : "Save algorithm"}
@@ -761,7 +761,7 @@ export default function EditSurveyPage() {
     return (
       <div className="flex min-h-screen flex-col">
         <Header backHref="/surveys" backLabel="Surveys" />
-        <main className="flex flex-1 items-center justify-center py-20 text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
+        <main className="flex flex-1 items-center justify-center py-20 text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>
           Loading survey…
         </main>
       </div>
@@ -773,7 +773,7 @@ export default function EditSurveyPage() {
       <div className="flex min-h-screen flex-col">
         <Header backHref="/surveys" backLabel="Surveys" />
         <main className="flex flex-1 items-center justify-center py-20">
-          <p className="text-sm" style={{ color: "#dc2626" }}>{loadError}</p>
+          <p className="text-sm" style={{ color: "#DD6334" }}>{loadError}</p>
         </main>
       </div>
     )
@@ -786,19 +786,19 @@ export default function EditSurveyPage() {
         <div className="mx-auto max-w-2xl space-y-6">
           <div>
             <h1 className="page-title">Edit Survey</h1>
-            <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>Changes are saved when you click Save.</p>
+            <p className="mt-1 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>Changes are saved when you click Save.</p>
           </div>
 
           {/* Metadata */}
           <div className="card p-5 space-y-4">
             <div>
-              <label className="label-caps mb-1.5 block">Title <span style={{ color: "#dc2626" }}>*</span></label>
+              <label className="label-caps mb-1.5 block">Title <span style={{ color: "#DD6334" }}>*</span></label>
               <input value={title} onChange={e => setTitle(e.target.value)}
                 placeholder="e.g. Job Satisfaction Survey" className="field w-full" />
             </div>
             <div>
               <label className="label-caps mb-1.5 block">
-                Description <span className="normal-case font-normal" style={{ color: "rgba(30,27,75,0.35)" }}>(optional)</span>
+                Description <span className="normal-case font-normal" style={{ color: "rgba(10,30,51,0.35)" }}>(optional)</span>
               </label>
               <textarea value={description} onChange={e => setDescription(e.target.value)}
                 placeholder="Briefly describe the purpose of this survey…" rows={2}
@@ -812,9 +812,9 @@ export default function EditSurveyPage() {
                     className="rounded-full px-4 py-1 text-xs font-semibold transition-all capitalize"
                     style={status === s
                       ? s === "published"
-                        ? { background: "linear-gradient(135deg,#059669,#047857)", color: "white" }
-                        : { background: "rgba(30,27,75,0.75)", color: "white" }
-                      : { background: "rgba(30,27,75,0.08)", color: "rgba(30,27,75,0.6)" }
+                        ? { background: "linear-gradient(135deg,#7E8A55,#047857)", color: "white" }
+                        : { background: "rgba(10,30,51,0.75)", color: "white" }
+                      : { background: "rgba(10,30,51,0.08)", color: "rgba(10,30,51,0.6)" }
                     }>
                     {s}
                   </button>
@@ -840,7 +840,7 @@ export default function EditSurveyPage() {
           {/* Questions tab */}
           {activeTab === "questions" && (
             <div className="space-y-3">
-              <p className="text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>Drag ⠿ to reorder</p>
+              <p className="text-xs" style={{ color: "rgba(10,30,51,0.35)" }}>Drag ⠿ to reorder</p>
 
               {questions.map((q, index) => (
                 <div key={q.localId}
@@ -851,7 +851,7 @@ export default function EditSurveyPage() {
                   onDragEnd={handleDragEnd}
                   className={`rounded-[14px] transition-all ${
                     dragOverId === q.localId && dragId.current !== q.localId
-                      ? "ring-2 ring-violet-400 ring-offset-1" : ""
+                      ? "ring-2 ring-[#0F2841] ring-offset-1" : ""
                   } ${dragId.current === q.localId ? "opacity-50" : ""}`}
                 >
                   <QuestionCard
@@ -865,9 +865,9 @@ export default function EditSurveyPage() {
 
               <div
                 className="rounded-[14px] p-4"
-                style={{ background: "rgba(255,255,255,0.25)", border: "1.5px dashed rgba(91,33,182,0.2)", backdropFilter: "blur(8px)" }}
+                style={{ background: "rgba(255,255,255,0.25)", border: "1.5px dashed rgba(15,40,65,0.2)", backdropFilter: "blur(8px)" }}
               >
-                <p className="mb-3 text-center text-xs font-semibold" style={{ color: "rgba(30,27,75,0.4)" }}>Add question</p>
+                <p className="mb-3 text-center text-xs font-semibold" style={{ color: "rgba(10,30,51,0.4)" }}>Add question</p>
                 <div className="flex flex-wrap justify-center gap-2">
                   {QUESTION_TYPES.map(t => (
                     <button key={t.value} type="button" onClick={() => addNewQuestion(t.value)}
@@ -883,17 +883,17 @@ export default function EditSurveyPage() {
           {/* Factors tab */}
           {activeTab === "factors" && (
             <div className="space-y-3">
-              <p className="text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>
+              <p className="text-xs" style={{ color: "rgba(10,30,51,0.5)" }}>
                 Define the factors (subscales) of your instrument. Changes are saved immediately.
               </p>
 
               {factors.length === 0 && (
                 <div
                   className="rounded-[14px] px-5 py-8 text-center"
-                  style={{ background: "rgba(255,255,255,0.25)", border: "1.5px dashed rgba(91,33,182,0.2)", backdropFilter: "blur(8px)" }}
+                  style={{ background: "rgba(255,255,255,0.25)", border: "1.5px dashed rgba(15,40,65,0.2)", backdropFilter: "blur(8px)" }}
                 >
-                  <p className="text-sm" style={{ color: "rgba(30,27,75,0.45)" }}>No factors defined yet.</p>
-                  <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>Add a factor below, or create one inline from any question card.</p>
+                  <p className="text-sm" style={{ color: "rgba(10,30,51,0.45)" }}>No factors defined yet.</p>
+                  <p className="mt-1 text-xs" style={{ color: "rgba(10,30,51,0.35)" }}>Add a factor below, or create one inline from any question card.</p>
                 </div>
               )}
 
@@ -903,7 +903,7 @@ export default function EditSurveyPage() {
 
               <button type="button" onClick={handleAddFactor}
                 className="flex w-full items-center justify-center gap-2 rounded-[14px] py-3 text-xs font-semibold transition-all"
-                style={{ background: "rgba(255,255,255,0.25)", border: "1.5px dashed rgba(91,33,182,0.2)", color: "rgba(30,27,75,0.5)", backdropFilter: "blur(8px)" }}>
+                style={{ background: "rgba(255,255,255,0.25)", border: "1.5px dashed rgba(15,40,65,0.2)", color: "rgba(10,30,51,0.5)", backdropFilter: "blur(8px)" }}>
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
@@ -915,16 +915,16 @@ export default function EditSurveyPage() {
           {/* Scoring tab */}
           {activeTab === "scoring" && (
             <div className="space-y-4">
-              <p className="text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>
+              <p className="text-xs" style={{ color: "rgba(10,30,51,0.5)" }}>
                 Configure how each factor&apos;s raw mean score is normalized and mapped to interpretable labels.
               </p>
               {factors.length === 0 ? (
                 <div
                   className="rounded-[14px] px-5 py-8 text-center"
-                  style={{ background: "rgba(255,255,255,0.25)", border: "1.5px dashed rgba(91,33,182,0.2)", backdropFilter: "blur(8px)" }}
+                  style={{ background: "rgba(255,255,255,0.25)", border: "1.5px dashed rgba(15,40,65,0.2)", backdropFilter: "blur(8px)" }}
                 >
-                  <p className="text-sm" style={{ color: "rgba(30,27,75,0.45)" }}>No factors defined yet.</p>
-                  <p className="mt-1 text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>Add factors in the Factors tab first.</p>
+                  <p className="text-sm" style={{ color: "rgba(10,30,51,0.45)" }}>No factors defined yet.</p>
+                  <p className="mt-1 text-xs" style={{ color: "rgba(10,30,51,0.35)" }}>Add factors in the Factors tab first.</p>
                 </div>
               ) : (
                 factors.map(factor => {

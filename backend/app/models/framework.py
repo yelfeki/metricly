@@ -79,6 +79,22 @@ class Competency(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     order_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
+    # Provenance: set when this competency was imported from the read-only library.
+    # On import, library name/definition/cluster are *copied* into this row;
+    # subsequent edits modify the columns above (framework-scoped). The library
+    # tables (competency_definitions, competency_proficiency_levels) are never
+    # mutated by framework-side edits. ON DELETE SET NULL preserves the user's
+    # framework even if a library competency is later removed.
+    library_competency_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("competency_definitions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    # Optional sub-grouping for visual organisation in the dashboard.
+    # Populated from library.cluster on import. NULL renders as "Uncategorised".
+    cluster: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
     framework: Mapped["Framework"] = relationship("Framework", back_populates="competencies")
     survey_links: Mapped[list["FrameworkSurvey"]] = relationship(
         "FrameworkSurvey", back_populates="competency", cascade="all, delete-orphan"

@@ -2,6 +2,20 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
+import {
+  IconArrowLeft,
+  IconCheck,
+  IconChevronDown,
+  IconCircleCheck,
+  IconDownload,
+  IconMailForward,
+  IconSparkles,
+  IconUserCheck,
+  IconUsersGroup,
+  IconX,
+} from "@tabler/icons-react"
+import type { ComponentType } from "react"
+import type { IconProps } from "@tabler/icons-react"
 import Header from "@/components/Header"
 import {
   getCompetencies,
@@ -19,58 +33,29 @@ import type {
   StrawManResponse,
   StrawManRow,
 } from "@/lib/types"
+import { colourForCluster } from "@/app/frameworks/[id]/lib/cluster-palette"
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Static option lists
 // ---------------------------------------------------------------------------
 
 const SENIORITY_OPTS: { value: SeniorityLevel; label: string; desc: string }[] = [
-  { value: "junior", label: "Junior / Entry Level", desc: "1–3 years, building foundational skills" },
-  { value: "mid", label: "Mid Level", desc: "3–7 years, operating independently" },
-  { value: "senior", label: "Senior / Lead", desc: "7+ years, leading projects or teams" },
-  { value: "executive", label: "Executive", desc: "Director+ managing teams or functions" },
+  { value: "junior",    label: "Junior / Entry Level", desc: "1–3 years, building foundational skills" },
+  { value: "mid",       label: "Mid Level",            desc: "3–7 years, operating independently" },
+  { value: "senior",    label: "Senior / Lead",        desc: "7+ years, leading projects or teams" },
+  { value: "executive", label: "Executive",            desc: "Director+ managing teams or functions" },
 ]
 
-const PURPOSE_OPTS: { value: BlueprintPurpose; label: string; desc: string; icon: string }[] = [
-  { value: "selection", label: "Selection", desc: "Hiring assessment — what does this person need to demonstrate?", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
-  { value: "development", label: "Development", desc: "Growth planning — where should we invest in this person?", icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
-  { value: "360", label: "360° Feedback", desc: "Multi-rater feedback — how do others experience this person?", icon: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" },
+const PURPOSE_OPTS: {
+  value: BlueprintPurpose
+  label: string
+  desc: string
+  Icon: ComponentType<IconProps>
+}[] = [
+  { value: "selection",   label: "Selection",      desc: "Hiring assessment — what does this person need to demonstrate?", Icon: IconCircleCheck },
+  { value: "development", label: "Development",    desc: "Growth planning — where should we invest in this person?",        Icon: IconUserCheck },
+  { value: "360",         label: "360° Feedback",  desc: "Multi-rater feedback — how do others experience this person?",   Icon: IconUsersGroup },
 ]
-
-const FACTOR_COLORS: Record<string, string> = {
-  Thought: "#1e40af",
-  Results: "#065f46",
-  People: "#4c1d95",
-  Self: "#78350f",
-  "Content Skills": "#991b1b",
-  "Process Skills": "#713f12",
-  "Social Skills": "#14532d",
-  "Complex Problem Solving": "#0c4a6e",
-  "Technical Skills": "#3b0764",
-  "Systems Skills": "#881337",
-  "Resource Management": "#14532d",
-}
-
-const FACTOR_BG: Record<string, string> = {
-  Thought: "rgba(219,234,254,0.5)",
-  Results: "rgba(209,250,229,0.5)",
-  People: "rgba(237,233,254,0.5)",
-  Self: "rgba(254,243,199,0.5)",
-  "Content Skills": "rgba(254,226,226,0.5)",
-  "Process Skills": "rgba(254,249,195,0.5)",
-  "Social Skills": "rgba(220,252,231,0.5)",
-  "Complex Problem Solving": "rgba(224,242,254,0.5)",
-  "Technical Skills": "rgba(243,232,255,0.5)",
-  "Systems Skills": "rgba(255,228,230,0.5)",
-  "Resource Management": "rgba(240,253,244,0.5)",
-}
-
-const LEVEL_LABELS: Record<number, string> = {
-  1: "Novice", 2: "Developing", 3: "Proficient", 4: "Advanced", 5: "Expert",
-}
-
-function factorBg(factor: string | null) { return FACTOR_BG[factor ?? ""] ?? "rgba(249,250,251,0.5)" }
-function factorFg(factor: string | null) { return FACTOR_COLORS[factor ?? ""] ?? "#374151" }
 
 // ---------------------------------------------------------------------------
 // Step 1 — Input form
@@ -99,194 +84,420 @@ function StepInput({
   const [compSearch, setCompSearch] = useState("")
   const [fwFilter, setFwFilter] = useState("")
 
-  const filteredComps = allComps.filter(c => {
+  const filteredComps = allComps.filter((c) => {
     if (fwFilter && c.framework_id !== fwFilter) return false
-    if (compSearch && !c.name.toLowerCase().includes(compSearch.toLowerCase())) return false
+    if (compSearch && !c.name.toLowerCase().includes(compSearch.toLowerCase()))
+      return false
     return true
   })
 
+  const inputStyle = {
+    fontFamily: "var(--mx-font-sans)",
+    fontSize: 13,
+    color: "var(--mx-ink)",
+    background: "var(--mx-paper)",
+    border: "1px solid var(--mx-line)",
+    borderRadius: 12,
+    padding: "10px 12px",
+    width: "100%",
+    outline: "none" as const,
+  }
+
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="mx-auto max-w-2xl space-y-5">
       {/* Role / initiative */}
-      <div className="rounded-2xl p-6 space-y-4" style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.7)", backdropFilter: "blur(12px)" }}>
-        <h2 className="text-base font-semibold" style={{ color: "#1e1b4b" }}>What are you assessing for?</h2>
+      <section className="mx-card space-y-4" style={{ padding: 24 }}>
+        <h2
+          style={{
+            fontFamily: "var(--mx-font-display)",
+            fontSize: 18,
+            letterSpacing: "-0.018em",
+            color: "var(--mx-ink)",
+          }}
+        >
+          What are you assessing for?
+        </h2>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: "rgba(30,27,75,0.6)" }}>Role title (optional)</label>
+            <label className="mx-eyebrow mb-1.5 block">Role title (optional)</label>
             <input
               type="text"
               placeholder="e.g. Sales Manager, Software Engineer, CHRO…"
               value={form.role_title ?? ""}
-              onChange={e => onChange({ role_title: e.target.value || null })}
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all"
-              style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(209,213,219,0.5)", color: "#1e1b4b" }}
+              onChange={(e) => onChange({ role_title: e.target.value || null })}
+              style={inputStyle}
             />
           </div>
-          <div className="text-center text-xs" style={{ color: "rgba(30,27,75,0.35)" }}>or</div>
+          <div
+            className="text-center"
+            style={{
+              fontFamily: "var(--mx-font-display)",
+              fontStyle: "italic",
+              fontSize: 12,
+              color: "var(--mx-ink-3)",
+            }}
+          >
+            or
+          </div>
           <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: "rgba(30,27,75,0.6)" }}>Initiative / programme name (optional)</label>
+            <label className="mx-eyebrow mb-1.5 block">
+              Initiative / programme (optional)
+            </label>
             <input
               type="text"
               placeholder="e.g. High-Potential Leadership Programme, Succession Planning…"
               value={form.initiative ?? ""}
-              onChange={e => onChange({ initiative: e.target.value || null })}
-              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition-all"
-              style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(209,213,219,0.5)", color: "#1e1b4b" }}
+              onChange={(e) => onChange({ initiative: e.target.value || null })}
+              style={inputStyle}
             />
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Seniority */}
-      <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.7)", backdropFilter: "blur(12px)" }}>
-        <h2 className="text-base font-semibold mb-4" style={{ color: "#1e1b4b" }}>Seniority level</h2>
+      <section className="mx-card" style={{ padding: 24 }}>
+        <h2
+          className="mb-4"
+          style={{
+            fontFamily: "var(--mx-font-display)",
+            fontSize: 18,
+            letterSpacing: "-0.018em",
+            color: "var(--mx-ink)",
+          }}
+        >
+          Seniority level
+        </h2>
         <div className="grid grid-cols-2 gap-2">
-          {SENIORITY_OPTS.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => onChange({ seniority_level: opt.value })}
-              className="rounded-xl p-3 text-left transition-all"
-              style={{
-                background: form.seniority_level === opt.value ? "rgba(91,33,182,0.08)" : "rgba(255,255,255,0.4)",
-                border: form.seniority_level === opt.value ? "1.5px solid rgba(91,33,182,0.35)" : "1px solid rgba(209,213,219,0.4)",
-              }}
-            >
-              <p className="text-xs font-semibold" style={{ color: form.seniority_level === opt.value ? "#5b21b6" : "#1e1b4b" }}>{opt.label}</p>
-              <p className="text-[10px] mt-0.5" style={{ color: "rgba(30,27,75,0.45)" }}>{opt.desc}</p>
-            </button>
-          ))}
+          {SENIORITY_OPTS.map((opt) => {
+            const active = form.seniority_level === opt.value
+            return (
+              <button
+                key={opt.value}
+                onClick={() => onChange({ seniority_level: opt.value })}
+                className="rounded-[12px] p-3 text-left transition-all"
+                style={{
+                  background: active ? "var(--mx-paper)" : "var(--mx-paper-2)",
+                  border: active
+                    ? "1.5px solid var(--mx-forest)"
+                    : "1px solid var(--mx-line)",
+                  boxShadow: active ? "var(--mx-shadow-card)" : "none",
+                }}
+              >
+                <p
+                  style={{
+                    fontFamily: "var(--mx-font-sans)",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: active ? "var(--mx-forest)" : "var(--mx-ink)",
+                  }}
+                >
+                  {opt.label}
+                </p>
+                <p
+                  className="mt-0.5"
+                  style={{
+                    fontFamily: "var(--mx-font-sans)",
+                    fontSize: 10.5,
+                    color: "var(--mx-ink-3)",
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {opt.desc}
+                </p>
+              </button>
+            )
+          })}
         </div>
-      </div>
+      </section>
 
       {/* Purpose */}
-      <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.7)", backdropFilter: "blur(12px)" }}>
-        <h2 className="text-base font-semibold mb-4" style={{ color: "#1e1b4b" }}>Assessment purpose</h2>
+      <section className="mx-card" style={{ padding: 24 }}>
+        <h2
+          className="mb-4"
+          style={{
+            fontFamily: "var(--mx-font-display)",
+            fontSize: 18,
+            letterSpacing: "-0.018em",
+            color: "var(--mx-ink)",
+          }}
+        >
+          Assessment purpose
+        </h2>
         <div className="space-y-2">
-          {PURPOSE_OPTS.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => onChange({ purpose: opt.value })}
-              className="w-full rounded-xl p-3 text-left flex items-center gap-3 transition-all"
-              style={{
-                background: form.purpose === opt.value ? "rgba(91,33,182,0.08)" : "rgba(255,255,255,0.4)",
-                border: form.purpose === opt.value ? "1.5px solid rgba(91,33,182,0.35)" : "1px solid rgba(209,213,219,0.4)",
-              }}
-            >
-              <div className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ background: form.purpose === opt.value ? "rgba(91,33,182,0.12)" : "rgba(243,244,246,0.8)" }}>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                  style={{ color: form.purpose === opt.value ? "#5b21b6" : "#6b7280" }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d={opt.icon} />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-semibold" style={{ color: form.purpose === opt.value ? "#5b21b6" : "#1e1b4b" }}>{opt.label}</p>
-                <p className="text-xs" style={{ color: "rgba(30,27,75,0.45)" }}>{opt.desc}</p>
-              </div>
-            </button>
-          ))}
+          {PURPOSE_OPTS.map((opt) => {
+            const active = form.purpose === opt.value
+            const Icon = opt.Icon
+            return (
+              <button
+                key={opt.value}
+                onClick={() => onChange({ purpose: opt.value })}
+                className="flex w-full items-center gap-3 rounded-[12px] p-3 text-left transition-all"
+                style={{
+                  background: active ? "var(--mx-paper)" : "var(--mx-paper-2)",
+                  border: active
+                    ? "1.5px solid var(--mx-forest)"
+                    : "1px solid var(--mx-line)",
+                  boxShadow: active ? "var(--mx-shadow-card)" : "none",
+                }}
+              >
+                <div
+                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center"
+                  style={{
+                    background: active
+                      ? "rgba(15,40,65,0.10)"
+                      : "var(--mx-paper)",
+                    color: active ? "var(--mx-forest)" : "var(--mx-ink-3)",
+                    borderRadius: "var(--mx-r-md)",
+                    border: "1px solid var(--mx-line)",
+                  }}
+                >
+                  <Icon size={16} stroke={1.6} />
+                </div>
+                <div>
+                  <p
+                    style={{
+                      fontFamily: "var(--mx-font-sans)",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: active ? "var(--mx-forest)" : "var(--mx-ink)",
+                    }}
+                  >
+                    {opt.label}
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: "var(--mx-font-sans)",
+                      fontSize: 11,
+                      color: "var(--mx-ink-3)",
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    {opt.desc}
+                  </p>
+                </div>
+              </button>
+            )
+          })}
         </div>
-      </div>
+      </section>
 
       {/* Optional competency picker */}
-      <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.7)", backdropFilter: "blur(12px)" }}>
-        <div className="flex items-center justify-between mb-3">
+      <section className="mx-card" style={{ padding: 24 }}>
+        <div className="mb-3 flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold" style={{ color: "#1e1b4b" }}>Specific competencies</h2>
-            <p className="text-xs mt-0.5" style={{ color: "rgba(30,27,75,0.45)" }}>
+            <h2
+              style={{
+                fontFamily: "var(--mx-font-display)",
+                fontSize: 18,
+                letterSpacing: "-0.018em",
+                color: "var(--mx-ink)",
+              }}
+            >
+              Specific competencies
+            </h2>
+            <p
+              className="mt-0.5"
+              style={{
+                fontFamily: "var(--mx-font-sans)",
+                fontSize: 11.5,
+                color: "var(--mx-ink-3)",
+              }}
+            >
               {selectedCompIds.size > 0
                 ? `${selectedCompIds.size} selected — will override auto-suggestion`
                 : "Optional — leave empty for AI-suggested competencies"}
             </p>
           </div>
           <button
-            onClick={() => setShowCompPicker(v => !v)}
-            className="rounded-full px-3 py-1.5 text-xs font-semibold transition-all"
-            style={{ background: "rgba(91,33,182,0.08)", color: "#5b21b6", border: "1px solid rgba(91,33,182,0.2)" }}
+            onClick={() => setShowCompPicker((v) => !v)}
+            className="mx-pill flex-shrink-0"
+            style={{ fontSize: 11 }}
           >
-            {showCompPicker ? "Done" : selectedCompIds.size > 0 ? `Edit (${selectedCompIds.size})` : "Browse"}
+            {showCompPicker
+              ? "Done"
+              : selectedCompIds.size > 0
+              ? `Edit (${selectedCompIds.size})`
+              : "Browse"}
           </button>
         </div>
 
         {selectedCompIds.size > 0 && !showCompPicker && (
           <div className="flex flex-wrap gap-1.5">
-            {allComps.filter(c => selectedCompIds.has(c.id)).map(c => (
-              <span key={c.id} className="rounded-full px-2 py-0.5 text-[11px] font-medium flex items-center gap-1"
-                style={{ background: "rgba(91,33,182,0.08)", color: "#5b21b6", border: "0.5px solid rgba(91,33,182,0.2)" }}>
-                {c.name}
-                <button onClick={() => onCompToggle(c.id)} className="ml-0.5 opacity-60 hover:opacity-100">×</button>
-              </span>
-            ))}
+            {allComps
+              .filter((c) => selectedCompIds.has(c.id))
+              .map((c) => {
+                const fc = colourForCluster(c.factor ?? c.category)
+                return (
+                  <span
+                    key={c.id}
+                    className="flex items-center gap-1"
+                    style={{
+                      fontFamily: "var(--mx-font-sans)",
+                      fontSize: 11,
+                      fontWeight: 500,
+                      padding: "2px 8px 2px 8px",
+                      borderRadius: 999,
+                      background: fc.bg,
+                      color: fc.text,
+                    }}
+                  >
+                    {c.name}
+                    <button
+                      onClick={() => onCompToggle(c.id)}
+                      className="opacity-60 hover:opacity-100"
+                      aria-label="Remove"
+                    >
+                      <IconX size={11} stroke={2} />
+                    </button>
+                  </span>
+                )
+              })}
           </div>
         )}
 
         {showCompPicker && (
           <div className="mt-3 space-y-3">
-            {/* Framework filter */}
-            <div className="flex gap-2 flex-wrap">
-              <button onClick={() => setFwFilter("")}
-                className="rounded-full px-2.5 py-1 text-[10px] font-medium"
-                style={{ background: !fwFilter ? "rgba(91,33,182,0.12)" : "rgba(243,244,246,0.8)", color: !fwFilter ? "#5b21b6" : "#6b7280" }}>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setFwFilter("")}
+                className="rounded-[999px] px-2.5 py-1"
+                style={{
+                  fontFamily: "var(--mx-font-sans)",
+                  fontSize: 10,
+                  fontWeight: 500,
+                  background: !fwFilter ? "var(--mx-forest)" : "var(--mx-paper-2)",
+                  color: !fwFilter ? "var(--mx-paper)" : "var(--mx-ink-2)",
+                  border: "1px solid var(--mx-line)",
+                }}
+              >
                 All
               </button>
-              {frameworks.map(fw => (
-                <button key={fw.id} onClick={() => setFwFilter(fw.id)}
-                  className="rounded-full px-2.5 py-1 text-[10px] font-medium"
-                  style={{ background: fwFilter === fw.id ? "rgba(91,33,182,0.12)" : "rgba(243,244,246,0.8)", color: fwFilter === fw.id ? "#5b21b6" : "#6b7280" }}>
-                  {fw.name.split(" ").slice(0, 2).join(" ")}
-                </button>
-              ))}
+              {frameworks.map((fw) => {
+                const active = fwFilter === fw.id
+                return (
+                  <button
+                    key={fw.id}
+                    onClick={() => setFwFilter(fw.id)}
+                    className="rounded-[999px] px-2.5 py-1"
+                    style={{
+                      fontFamily: "var(--mx-font-sans)",
+                      fontSize: 10,
+                      fontWeight: 500,
+                      background: active ? "var(--mx-forest)" : "var(--mx-paper-2)",
+                      color: active ? "var(--mx-paper)" : "var(--mx-ink-2)",
+                      border: "1px solid var(--mx-line)",
+                    }}
+                  >
+                    {fw.name.split(" ").slice(0, 2).join(" ")}
+                  </button>
+                )
+              })}
             </div>
-            <input type="text" placeholder="Search competencies…" value={compSearch}
-              onChange={e => setCompSearch(e.target.value)}
-              className="w-full rounded-xl px-3 py-2 text-xs outline-none"
-              style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(209,213,219,0.5)", color: "#1e1b4b" }} />
-            <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
-              {filteredComps.slice(0, 50).map(c => (
-                <button key={c.id} onClick={() => onCompToggle(c.id)}
-                  className="w-full text-left rounded-lg px-3 py-2 flex items-center gap-2 transition-all"
-                  style={{
-                    background: selectedCompIds.has(c.id) ? "rgba(91,33,182,0.08)" : "rgba(255,255,255,0.4)",
-                    border: selectedCompIds.has(c.id) ? "1px solid rgba(91,33,182,0.25)" : "1px solid rgba(209,213,219,0.3)",
-                  }}>
-                  <div className="h-3.5 w-3.5 rounded flex-shrink-0 flex items-center justify-center"
-                    style={{ background: selectedCompIds.has(c.id) ? "#5b21b6" : "rgba(209,213,219,0.6)" }}>
-                    {selectedCompIds.has(c.id) && (
-                      <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                  <div>
-                    <span className="text-xs font-medium" style={{ color: "#1e1b4b" }}>{c.name}</span>
-                    {c.factor && <span className="ml-1.5 text-[10px]" style={{ color: "rgba(30,27,75,0.4)" }}>{c.factor}</span>}
-                  </div>
-                </button>
-              ))}
+            <input
+              type="text"
+              placeholder="Search competencies…"
+              value={compSearch}
+              onChange={(e) => setCompSearch(e.target.value)}
+              style={{ ...inputStyle, fontSize: 12, padding: "8px 10px" }}
+            />
+            <div className="max-h-56 space-y-1 overflow-y-auto pr-1">
+              {filteredComps.slice(0, 60).map((c) => {
+                const checked = selectedCompIds.has(c.id)
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => onCompToggle(c.id)}
+                    className="flex w-full items-center gap-2 rounded-[10px] px-3 py-2 text-left transition-colors"
+                    style={{
+                      background: checked
+                        ? "var(--mx-paper)"
+                        : "var(--mx-paper-2)",
+                      border: checked
+                        ? "1px solid var(--mx-forest)"
+                        : "1px solid var(--mx-line)",
+                    }}
+                  >
+                    <div
+                      className="flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center"
+                      style={{
+                        background: checked
+                          ? "var(--mx-forest)"
+                          : "var(--mx-paper)",
+                        border: "1px solid var(--mx-line)",
+                        borderRadius: 4,
+                      }}
+                    >
+                      {checked && (
+                        <IconCheck
+                          size={10}
+                          stroke={3}
+                          style={{ color: "var(--mx-paper)" }}
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <span
+                        style={{
+                          fontFamily: "var(--mx-font-sans)",
+                          fontSize: 12,
+                          fontWeight: 500,
+                          color: "var(--mx-ink)",
+                        }}
+                      >
+                        {c.name}
+                      </span>
+                      {c.factor && (
+                        <span
+                          className="ml-1.5"
+                          style={{
+                            fontFamily: "var(--mx-font-sans)",
+                            fontSize: 10,
+                            color: "var(--mx-ink-3)",
+                          }}
+                        >
+                          {c.factor}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Submit */}
       <button
         onClick={onSubmit}
         disabled={loading}
-        className="w-full rounded-full py-3.5 text-sm font-semibold transition-all relative overflow-hidden"
+        className="relative w-full overflow-hidden rounded-[999px] py-3.5 transition-all"
         style={{
-          background: "linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%)",
-          color: "white",
-          boxShadow: "0 4px 24px rgba(91,33,182,0.35)",
+          fontFamily: "var(--mx-font-sans)",
+          fontSize: 14,
+          fontWeight: 500,
+          background: "var(--mx-forest)",
+          color: "var(--mx-paper)",
+          boxShadow: "var(--mx-shadow-hover)",
           opacity: loading ? 0.7 : 1,
         }}
       >
         {loading ? (
           <span className="flex items-center justify-center gap-2">
-            <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+            <span
+              className="h-4 w-4 animate-spin rounded-full"
+              style={{
+                border: "2px solid rgba(250,247,242,0.4)",
+                borderTopColor: "var(--mx-paper)",
+              }}
+            />
             Generating blueprint…
           </span>
         ) : (
-          "Generate Assessment Blueprint"
+          <span className="inline-flex items-center justify-center gap-2">
+            <IconSparkles size={15} stroke={1.8} />
+            Generate assessment blueprint
+          </span>
         )}
       </button>
     </div>
@@ -294,7 +505,7 @@ function StepInput({
 }
 
 // ---------------------------------------------------------------------------
-// Blueprint row component
+// Blueprint row
 // ---------------------------------------------------------------------------
 
 function BlueprintRow({
@@ -307,154 +518,337 @@ function BlueprintRow({
   onRemove: () => void
 }) {
   const [expanded, setExpanded] = useState(false)
-  const bg = factorBg(row.factor)
-  const fg = factorFg(row.factor)
+  const fc = colourForCluster(row.factor)
 
   return (
-    <div className="rounded-2xl overflow-hidden transition-all"
-      style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.7)", backdropFilter: "blur(8px)" }}>
-      {/* Main row */}
-      <div className="p-4 flex items-start gap-3">
-        <div className="flex-shrink-0 h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold"
-          style={{ background: bg, color: fg }}>
+    <div className="mx-card overflow-hidden" style={{ padding: 0 }}>
+      <div className="flex items-start gap-3 p-4">
+        <div
+          className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full"
+          style={{
+            fontFamily: "var(--mx-font-mono)",
+            fontSize: 12,
+            fontWeight: 600,
+            fontFeatureSettings: '"tnum"',
+            background: fc.bg,
+            color: fc.text,
+          }}
+        >
           {index + 1}
         </div>
 
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>{row.competency}</p>
-              <div className="flex flex-wrap gap-1.5 mt-1">
+              <p
+                style={{
+                  fontFamily: "var(--mx-font-sans)",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "var(--mx-ink)",
+                  lineHeight: 1.3,
+                }}
+              >
+                {row.competency}
+              </p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
                 {row.factor && (
-                  <span className="rounded-full px-2 py-0.5 text-[10px] font-medium"
-                    style={{ background: bg, color: fg }}>
+                  <span
+                    style={{
+                      fontFamily: "var(--mx-font-sans)",
+                      fontSize: 10,
+                      fontWeight: 500,
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      background: fc.bg,
+                      color: fc.text,
+                    }}
+                  >
                     {row.factor}
                   </span>
                 )}
                 {row.cluster && (
-                  <span className="rounded-full px-2 py-0.5 text-[10px]"
-                    style={{ background: "rgba(243,244,246,0.8)", color: "#6b7280" }}>
+                  <span
+                    style={{
+                      fontFamily: "var(--mx-font-sans)",
+                      fontSize: 10,
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      background: "var(--mx-paper-2)",
+                      border: "1px solid var(--mx-line)",
+                      color: "var(--mx-ink-2)",
+                    }}
+                  >
                     {row.cluster}
                   </span>
                 )}
-                <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                  style={{ background: "rgba(91,33,182,0.08)", color: "#5b21b6" }}>
+                <span
+                  style={{
+                    fontFamily: "var(--mx-font-sans)",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    padding: "2px 8px",
+                    borderRadius: 999,
+                    background: "var(--mx-forest)",
+                    color: "var(--mx-paper)",
+                  }}
+                >
                   Level {row.required_proficiency_level} — {row.proficiency_label}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex flex-shrink-0 items-center gap-1">
               <button
-                onClick={() => setExpanded(v => !v)}
-                className="p-1.5 rounded-full transition-all"
-                style={{ color: "rgba(30,27,75,0.4)" }}
-                title={expanded ? "Collapse" : "Expand"}
+                onClick={() => setExpanded((v) => !v)}
+                className="rounded-full p-1.5 transition-colors hover:bg-[var(--mx-paper-2)]"
+                style={{ color: "var(--mx-ink-3)" }}
+                aria-label={expanded ? "Collapse" : "Expand"}
               >
-                <svg className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
+                <IconChevronDown
+                  size={15}
+                  stroke={1.8}
+                  style={{
+                    transform: expanded ? "rotate(180deg)" : "none",
+                    transition: "transform var(--mx-dur-fast) var(--mx-ease)",
+                  }}
+                />
               </button>
               <button
                 onClick={onRemove}
-                className="p-1.5 rounded-full transition-all"
-                style={{ color: "rgba(30,27,75,0.3)" }}
-                title="Remove"
+                className="rounded-full p-1.5 transition-colors hover:bg-[var(--mx-paper-2)]"
+                style={{ color: "var(--mx-ink-3)" }}
+                aria-label="Remove"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <IconX size={15} stroke={1.8} />
               </button>
             </div>
           </div>
 
-          {/* Instruments summary */}
+          {/* Instrument chips summary */}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {row.primary_instrument ? (
-              <span className="rounded-lg px-2 py-1 text-[11px] font-semibold"
-                style={{ background: "rgba(91,33,182,0.1)", color: "#5b21b6" }}>
+              <span
+                style={{
+                  fontFamily: "var(--mx-font-sans)",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: "3px 8px",
+                  borderRadius: 6,
+                  background: "rgba(15,40,65,0.10)",
+                  color: "var(--mx-forest)",
+                }}
+              >
                 {row.primary_instrument.short_name}
-                {row.primary_instrument.subscale && ` (${row.primary_instrument.subscale})`}
+                {row.primary_instrument.subscale &&
+                  ` (${row.primary_instrument.subscale})`}
               </span>
             ) : (
-              <span className="rounded-lg px-2 py-1 text-[11px]"
-                style={{ background: "rgba(243,244,246,0.8)", color: "#6b7280" }}>
+              <span
+                style={{
+                  fontFamily: "var(--mx-font-sans)",
+                  fontSize: 11,
+                  padding: "3px 8px",
+                  borderRadius: 6,
+                  background: "var(--mx-paper-2)",
+                  border: "1px solid var(--mx-line)",
+                  color: "var(--mx-ink-2)",
+                }}
+              >
                 Behavioural Interview
               </span>
             )}
-            {row.supporting_instruments.slice(0, 2).map(s => (
-              <span key={s.short_name} className="rounded-lg px-2 py-1 text-[11px]"
-                style={{ background: "rgba(243,244,246,0.8)", color: "#6b7280" }}>
+            {row.supporting_instruments.slice(0, 2).map((s) => (
+              <span
+                key={s.short_name}
+                style={{
+                  fontFamily: "var(--mx-font-sans)",
+                  fontSize: 11,
+                  padding: "3px 8px",
+                  borderRadius: 6,
+                  background: "var(--mx-paper-2)",
+                  border: "1px solid var(--mx-line)",
+                  color: "var(--mx-ink-2)",
+                }}
+              >
                 + {s.short_name}
               </span>
             ))}
-            <span className="text-[10px]" style={{ color: "rgba(30,27,75,0.35)" }}>
+            <span
+              style={{
+                fontFamily: "var(--mx-font-sans)",
+                fontSize: 10,
+                color: "var(--mx-ink-3)",
+              }}
+            >
               {row.assessment_method}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Expanded detail */}
       {expanded && (
-        <div className="px-4 pb-4 border-t" style={{ borderColor: "rgba(209,213,219,0.3)" }}>
-          <div className="pt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Behavioral indicators */}
+        <div
+          className="border-t px-4 pb-4"
+          style={{ borderColor: "var(--mx-line)" }}
+        >
+          <div className="grid grid-cols-1 gap-4 pt-3 sm:grid-cols-2">
             {row.behavioral_indicators.length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "rgba(30,27,75,0.4)" }}>
-                  Behavioural Indicators (Level {row.required_proficiency_level})
+                <p className="mx-eyebrow mb-2">
+                  Behavioural indicators (level {row.required_proficiency_level})
                 </p>
                 <ul className="space-y-1">
                   {row.behavioral_indicators.map((ind, i) => (
                     <li key={i} className="flex items-start gap-1.5">
-                      <span className="mt-1.5 h-1 w-1 rounded-full flex-shrink-0" style={{ background: fg }} />
-                      <span className="text-xs leading-relaxed" style={{ color: "rgba(30,27,75,0.65)" }}>{ind}</span>
+                      <span
+                        className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full"
+                        style={{ background: fc.main }}
+                      />
+                      <span
+                        style={{
+                          fontFamily: "var(--mx-font-sans)",
+                          fontSize: 12,
+                          lineHeight: 1.55,
+                          color: "var(--mx-ink-2)",
+                        }}
+                      >
+                        {ind}
+                      </span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
 
-            {/* Instruments detail */}
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: "rgba(30,27,75,0.4)" }}>Measurement</p>
+              <p className="mx-eyebrow mb-2">Measurement</p>
               {row.primary_instrument && (
-                <div className="rounded-lg p-2.5 mb-2"
-                  style={{ background: "rgba(91,33,182,0.06)", border: "0.5px solid rgba(91,33,182,0.15)" }}>
-                  <p className="text-xs font-bold" style={{ color: "#5b21b6" }}>{row.primary_instrument.short_name}
-                    <span className="font-normal text-[10px] ml-1" style={{ color: "rgba(30,27,75,0.4)" }}>Primary</span>
+                <div
+                  className="mb-2 rounded-[10px] p-2.5"
+                  style={{
+                    background: "var(--mx-paper-2)",
+                    border: "1px solid var(--mx-line)",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontFamily: "var(--mx-font-sans)",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "var(--mx-forest)",
+                    }}
+                  >
+                    {row.primary_instrument.short_name}
+                    <span
+                      className="ml-1"
+                      style={{
+                        fontFamily: "var(--mx-font-sans)",
+                        fontWeight: 400,
+                        fontSize: 10,
+                        color: "var(--mx-ink-3)",
+                      }}
+                    >
+                      Primary
+                    </span>
                   </p>
                   {row.primary_instrument.subscale && (
-                    <p className="text-[10px]" style={{ color: "rgba(30,27,75,0.5)" }}>Subscale: {row.primary_instrument.subscale}</p>
+                    <p
+                      style={{
+                        fontFamily: "var(--mx-font-sans)",
+                        fontSize: 10,
+                        color: "var(--mx-ink-3)",
+                      }}
+                    >
+                      Subscale: {row.primary_instrument.subscale}
+                    </p>
                   )}
-                  <div className="flex gap-3 mt-1">
-                    <span className="text-[10px]" style={{ color: "rgba(30,27,75,0.4)" }}>{row.primary_instrument.items} items</span>
+                  <div className="mt-1 flex gap-3">
+                    <span
+                      className="mx-tnum"
+                      style={{ fontSize: 10, color: "var(--mx-ink-3)" }}
+                    >
+                      {row.primary_instrument.items} items
+                    </span>
                     {row.primary_instrument.alpha && (
-                      <span className="text-[10px]" style={{ color: "rgba(30,27,75,0.4)" }}>α = {row.primary_instrument.alpha.toFixed(2)}</span>
+                      <span
+                        className="mx-tnum"
+                        style={{ fontSize: 10, color: "var(--mx-ink-3)" }}
+                      >
+                        α = {row.primary_instrument.alpha.toFixed(2)}
+                      </span>
                     )}
                   </div>
                   {row.primary_instrument.rationale && (
-                    <p className="text-[11px] mt-1 leading-relaxed" style={{ color: "rgba(30,27,75,0.55)" }}>
+                    <p
+                      className="mt-1"
+                      style={{
+                        fontFamily: "var(--mx-font-sans)",
+                        fontSize: 11,
+                        lineHeight: 1.55,
+                        color: "var(--mx-ink-2)",
+                      }}
+                    >
                       {row.primary_instrument.rationale}
                     </p>
                   )}
                 </div>
               )}
-              {row.supporting_instruments.map(s => (
-                <div key={s.short_name} className="rounded-lg px-2.5 py-2 mb-1.5"
-                  style={{ background: "rgba(243,244,246,0.6)", border: "0.5px solid rgba(209,213,219,0.4)" }}>
-                  <p className="text-xs font-medium" style={{ color: "#374151" }}>
+              {row.supporting_instruments.map((s) => (
+                <div
+                  key={s.short_name}
+                  className="mb-1.5 rounded-[10px] px-2.5 py-2"
+                  style={{
+                    background: "var(--mx-paper)",
+                    border: "1px solid var(--mx-line)",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontFamily: "var(--mx-font-sans)",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: "var(--mx-ink)",
+                    }}
+                  >
                     {s.short_name}
-                    {s.subscale && <span className="font-normal text-[10px] ml-1" style={{ color: "rgba(30,27,75,0.4)" }}>({s.subscale})</span>}
-                    <span className="ml-1 text-[10px]" style={{ color: "#6b7280" }}>Supporting</span>
+                    {s.subscale && (
+                      <span
+                        className="ml-1"
+                        style={{
+                          fontFamily: "var(--mx-font-sans)",
+                          fontWeight: 400,
+                          fontSize: 10,
+                          color: "var(--mx-ink-3)",
+                        }}
+                      >
+                        ({s.subscale})
+                      </span>
+                    )}
+                    <span
+                      className="ml-1"
+                      style={{
+                        fontFamily: "var(--mx-font-sans)",
+                        fontSize: 10,
+                        color: "var(--mx-ink-3)",
+                      }}
+                    >
+                      Supporting
+                    </span>
                   </p>
                 </div>
               ))}
 
-              {/* Rationale */}
               {row.rationale && (
-                <p className="text-[11px] mt-2 leading-relaxed italic" style={{ color: "rgba(30,27,75,0.5)" }}>
-                  "{row.rationale}"
+                <p
+                  className="mt-2 italic"
+                  style={{
+                    fontFamily: "var(--mx-font-display)",
+                    fontSize: 12,
+                    lineHeight: 1.55,
+                    color: "var(--mx-ink-2)",
+                  }}
+                >
+                  &ldquo;{row.rationale}&rdquo;
                 </p>
               )}
             </div>
@@ -479,8 +873,10 @@ function buildBlueprintSummary(blueprint: StrawManResponse): string {
   blueprint.rows.forEach((row, i) => {
     lines.push(
       `${i + 1}. ${row.competency} (${row.framework})` +
-      ` — Required Level ${row.required_proficiency_level}: ${row.proficiency_label}` +
-      (row.primary_instrument ? ` | Primary measure: ${row.primary_instrument.short_name}` : "")
+        ` — Required Level ${row.required_proficiency_level}: ${row.proficiency_label}` +
+        (row.primary_instrument
+          ? ` | Primary measure: ${row.primary_instrument.short_name}`
+          : "")
     )
   })
   return lines.join("\n")
@@ -502,6 +898,18 @@ function RequestModal({
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const inputStyle = {
+    fontFamily: "var(--mx-font-sans)",
+    fontSize: 13,
+    color: "var(--mx-ink)",
+    background: "var(--mx-paper)",
+    border: "1px solid var(--mx-line)",
+    borderRadius: 12,
+    padding: "10px 12px",
+    width: "100%",
+    outline: "none" as const,
+  }
+
   const handleSubmit = async () => {
     if (!name.trim() || !email.trim()) return
     setSubmitting(true)
@@ -513,12 +921,14 @@ function RequestModal({
         notes.trim() ? `Notes: ${notes.trim()}` : null,
         "",
         summary,
-      ].filter(Boolean).join("\n")
+      ]
+        .filter(Boolean)
+        .join("\n")
 
       await requestAssessment(
         `Competency Measurement Plan: ${roleName}`,
         context,
-        email.trim(),
+        email.trim()
       )
       setSubmitted(true)
     } catch {
@@ -530,133 +940,191 @@ function RequestModal({
 
   return (
     <>
-      {/* Backdrop */}
       <div
         className="fixed inset-0 z-50"
-        style={{ background: "rgba(30,27,75,0.35)", backdropFilter: "blur(4px)" }}
+        style={{
+          background: "rgba(10,30,51,0.4)",
+          backdropFilter: "blur(4px)",
+        }}
         onClick={submitted ? onClose : undefined}
       />
 
-      {/* Modal */}
       <div
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        onClick={e => e.target === e.currentTarget && submitted && onClose()}
+        onClick={(e) => e.target === e.currentTarget && submitted && onClose()}
       >
         <div
-          className="w-full max-w-md rounded-2xl p-6 relative"
+          className="relative w-full max-w-md"
           style={{
-            background: "rgba(248,246,255,0.98)",
-            border: "1px solid rgba(255,255,255,0.8)",
-            boxShadow: "0 24px 64px rgba(30,27,75,0.2)",
-            backdropFilter: "blur(24px)",
+            background: "var(--mx-paper)",
+            border: "1px solid var(--mx-line)",
+            borderRadius: "var(--mx-r-xl)",
+            padding: 28,
+            boxShadow: "0 24px 64px rgba(10,30,51,0.20)",
           }}
         >
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-full transition-all"
-            style={{ color: "rgba(30,27,75,0.4)" }}
-            onMouseEnter={e => (e.currentTarget.style.background = "rgba(91,33,182,0.08)")}
-            onMouseLeave={e => (e.currentTarget.style.background = "")}
+            className="absolute top-4 right-4 rounded-full p-1.5 transition-colors hover:bg-[var(--mx-paper-2)]"
+            style={{ color: "var(--mx-ink-3)" }}
+            aria-label="Close"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <IconX size={16} stroke={1.8} />
           </button>
 
           {submitted ? (
-            <div className="text-center py-4">
-              <div className="mx-auto mb-4 h-12 w-12 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(91,33,182,0.1)" }}>
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                  style={{ color: "#5b21b6" }}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            <div className="py-4 text-center">
+              <div
+                className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full"
+                style={{
+                  background: "rgba(126,138,85,0.18)",
+                  color: "#3F4A2A",
+                }}
+              >
+                <IconCircleCheck size={24} stroke={1.6} />
               </div>
-              <h3 className="text-base font-bold font-playfair mb-2" style={{ color: "#1e1b4b" }}>Request submitted!</h3>
-              <p className="text-sm leading-relaxed" style={{ color: "rgba(30,27,75,0.6)" }}>
-                An IO psychologist will review your blueprint and recommend validated measures within 2–3 business days.
+              <h3
+                className="mb-2"
+                style={{
+                  fontFamily: "var(--mx-font-display)",
+                  fontSize: 20,
+                  letterSpacing: "-0.018em",
+                  color: "var(--mx-ink)",
+                }}
+              >
+                Request <em className="mx-text-grad-warm">submitted.</em>
+              </h3>
+              <p
+                style={{
+                  fontFamily: "var(--mx-font-sans)",
+                  fontSize: 13,
+                  lineHeight: 1.55,
+                  color: "var(--mx-ink-2)",
+                }}
+              >
+                An IO psychologist will review your blueprint and recommend
+                validated measures within 2–3 business days.
               </p>
               <button
                 onClick={onClose}
-                className="mt-5 rounded-full px-5 py-2 text-xs font-semibold transition-all"
-                style={{ background: "linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%)", color: "white" }}
+                className="mt-5 rounded-[999px] px-5 py-2"
+                style={{
+                  fontFamily: "var(--mx-font-sans)",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  background: "var(--mx-forest)",
+                  color: "var(--mx-paper)",
+                }}
               >
                 Done
               </button>
             </div>
           ) : (
             <>
-              <h3 className="text-base font-bold font-playfair mb-1" style={{ color: "#1e1b4b" }}>
-                Request Competency Measurement Plan
+              <h3
+                style={{
+                  fontFamily: "var(--mx-font-display)",
+                  fontSize: 22,
+                  letterSpacing: "-0.018em",
+                  color: "var(--mx-ink)",
+                  lineHeight: 1.15,
+                }}
+              >
+                Request measurement{" "}
+                <em className="mx-text-grad-warm">plan.</em>
               </h3>
-              <p className="text-xs mb-5" style={{ color: "rgba(30,27,75,0.5)" }}>
-                An IO psychologist will review your blueprint and recommend validated measures.
+              <p
+                className="mb-5 mt-1"
+                style={{
+                  fontFamily: "var(--mx-font-sans)",
+                  fontSize: 12,
+                  color: "var(--mx-ink-3)",
+                }}
+              >
+                An IO psychologist will review your blueprint and recommend
+                validated measures.
               </p>
 
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: "rgba(30,27,75,0.6)" }}>
-                    Your name <span style={{ color: "#7c3aed" }}>*</span>
+                  <label className="mx-eyebrow mb-1.5 block">
+                    Your name <span style={{ color: "var(--mx-clay)" }}>*</span>
                   </label>
                   <input
                     type="text"
                     placeholder="Jane Smith"
                     value={name}
-                    onChange={e => setName(e.target.value)}
-                    className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-                    style={{ background: "rgba(255,255,255,0.8)", border: "1px solid rgba(209,213,219,0.6)", color: "#1e1b4b" }}
+                    onChange={(e) => setName(e.target.value)}
+                    style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: "rgba(30,27,75,0.6)" }}>
-                    Email address <span style={{ color: "#7c3aed" }}>*</span>
+                  <label className="mx-eyebrow mb-1.5 block">
+                    Email <span style={{ color: "var(--mx-clay)" }}>*</span>
                   </label>
                   <input
                     type="email"
                     placeholder="jane@company.com"
                     value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
-                    style={{ background: "rgba(255,255,255,0.8)", border: "1px solid rgba(209,213,219,0.6)", color: "#1e1b4b" }}
+                    onChange={(e) => setEmail(e.target.value)}
+                    style={inputStyle}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: "rgba(30,27,75,0.6)" }}>
-                    Additional notes <span style={{ color: "rgba(30,27,75,0.35)" }}>(optional)</span>
+                  <label className="mx-eyebrow mb-1.5 block">
+                    Additional notes <span style={{ color: "var(--mx-ink-3)" }}>(optional)</span>
                   </label>
                   <textarea
                     placeholder="Any context that would help — team size, timeline, constraints…"
                     value={notes}
-                    onChange={e => setNotes(e.target.value)}
+                    onChange={(e) => setNotes(e.target.value)}
                     rows={3}
-                    className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
-                    style={{ background: "rgba(255,255,255,0.8)", border: "1px solid rgba(209,213,219,0.6)", color: "#1e1b4b" }}
+                    style={{ ...inputStyle, resize: "none" }}
                   />
                 </div>
               </div>
 
               {error && (
-                <p className="mt-3 text-xs" style={{ color: "#991b1b" }}>{error}</p>
+                <p
+                  className="mt-3"
+                  style={{
+                    fontFamily: "var(--mx-font-sans)",
+                    fontSize: 12,
+                    color: "var(--mx-rose)",
+                  }}
+                >
+                  {error}
+                </p>
               )}
 
               <button
                 onClick={handleSubmit}
                 disabled={submitting || !name.trim() || !email.trim()}
-                className="mt-5 w-full rounded-full py-2.5 text-sm font-semibold transition-all"
+                className="mt-5 w-full rounded-[999px] py-2.5 transition-all"
                 style={{
-                  background: "linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%)",
-                  color: "white",
-                  boxShadow: "0 2px 12px rgba(91,33,182,0.3)",
-                  opacity: submitting || !name.trim() || !email.trim() ? 0.6 : 1,
+                  fontFamily: "var(--mx-font-sans)",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  background: "var(--mx-forest)",
+                  color: "var(--mx-paper)",
+                  boxShadow: "var(--mx-shadow-card)",
+                  opacity:
+                    submitting || !name.trim() || !email.trim() ? 0.5 : 1,
                 }}
               >
                 {submitting ? (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="h-3.5 w-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                    <span
+                      className="h-3.5 w-3.5 animate-spin rounded-full"
+                      style={{
+                        border: "2px solid rgba(250,247,242,0.4)",
+                        borderTopColor: "var(--mx-paper)",
+                      }}
+                    />
                     Submitting…
                   </span>
                 ) : (
-                  "Submit Request"
+                  "Submit request"
                 )}
               </button>
             </>
@@ -668,7 +1136,7 @@ function RequestModal({
 }
 
 // ---------------------------------------------------------------------------
-// Step 2 — Blueprint review
+// Step 2 — Review
 // ---------------------------------------------------------------------------
 
 function StepReview({
@@ -689,56 +1157,108 @@ function StepReview({
   const [showModal, setShowModal] = useState(false)
 
   return (
-    <div className="max-w-3xl mx-auto">
-      {/* Blueprint header */}
-      <div className="rounded-2xl p-6 mb-6"
-        style={{ background: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.8)", backdropFilter: "blur(12px)" }}>
+    <div className="mx-auto max-w-3xl">
+      {/* Header */}
+      <section className="mx-card mb-6" style={{ padding: 24 }}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold font-playfair" style={{ color: "#1e1b4b" }}>{blueprint.title}</h2>
-            <div className="flex flex-wrap gap-2 mt-2">
-              <span className="rounded-full px-2.5 py-1 text-xs font-medium capitalize"
-                style={{ background: "rgba(91,33,182,0.08)", color: "#5b21b6" }}>
+            <p className="mx-eyebrow mb-2">Assessment blueprint</p>
+            <h2
+              style={{
+                fontFamily: "var(--mx-font-display)",
+                fontSize: 26,
+                letterSpacing: "-0.018em",
+                lineHeight: 1.1,
+                color: "var(--mx-ink)",
+              }}
+            >
+              {blueprint.title}
+            </h2>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <span
+                style={{
+                  fontFamily: "var(--mx-font-sans)",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  padding: "3px 9px",
+                  borderRadius: 999,
+                  background: "rgba(15,40,65,0.10)",
+                  color: "var(--mx-forest)",
+                  textTransform: "capitalize",
+                }}
+              >
                 {blueprint.seniority_level} level
               </span>
-              <span className="rounded-full px-2.5 py-1 text-xs font-medium capitalize"
-                style={{ background: "rgba(91,33,182,0.08)", color: "#5b21b6" }}>
-                {blueprint.purpose === "360" ? "360° Feedback" : blueprint.purpose}
+              <span
+                style={{
+                  fontFamily: "var(--mx-font-sans)",
+                  fontSize: 11,
+                  fontWeight: 500,
+                  padding: "3px 9px",
+                  borderRadius: 999,
+                  background: "rgba(15,40,65,0.10)",
+                  color: "var(--mx-forest)",
+                  textTransform: "capitalize",
+                }}
+              >
+                {blueprint.purpose === "360"
+                  ? "360° Feedback"
+                  : blueprint.purpose}
               </span>
-              <span className="rounded-full px-2.5 py-1 text-xs"
-                style={{ background: "rgba(243,244,246,0.8)", color: "#6b7280" }}>
-                {blueprint.rows.length} competenc{blueprint.rows.length === 1 ? "y" : "ies"}
+              <span
+                style={{
+                  fontFamily: "var(--mx-font-sans)",
+                  fontSize: 11,
+                  padding: "3px 9px",
+                  borderRadius: 999,
+                  background: "var(--mx-paper-2)",
+                  border: "1px solid var(--mx-line)",
+                  color: "var(--mx-ink-2)",
+                }}
+              >
+                {blueprint.rows.length} competenc
+                {blueprint.rows.length === 1 ? "y" : "ies"}
               </span>
             </div>
           </div>
-          <button onClick={onBack}
-            className="rounded-full px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 flex-shrink-0 transition-all"
-            style={{ background: "rgba(243,244,246,0.8)", color: "#6b7280", border: "1px solid rgba(209,213,219,0.5)" }}>
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
+          <button
+            onClick={onBack}
+            className="mx-pill flex flex-shrink-0 items-center gap-1.5"
+            style={{ fontSize: 11 }}
+          >
+            <IconArrowLeft size={12} stroke={1.8} />
             Edit
           </button>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex gap-3 mt-4 pt-4 border-t" style={{ borderColor: "rgba(209,213,219,0.3)" }}>
+        <div
+          className="mt-4 flex flex-wrap gap-3 border-t pt-4"
+          style={{ borderColor: "var(--mx-line)" }}
+        >
           <button
             onClick={onExport}
             disabled={exporting}
-            className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-all"
+            className="inline-flex items-center gap-2 rounded-[999px] px-4 py-2 transition-all"
             style={{
-              background: "rgba(255,255,255,0.7)",
-              border: "1px solid rgba(91,33,182,0.2)",
-              color: "#5b21b6",
+              fontFamily: "var(--mx-font-sans)",
+              fontSize: 12,
+              fontWeight: 500,
+              background: "var(--mx-paper)",
+              border: "1px solid var(--mx-forest)",
+              color: "var(--mx-forest)",
+              opacity: exporting ? 0.7 : 1,
             }}
           >
             {exporting ? (
-              <span className="h-3.5 w-3.5 rounded-full border-2 border-violet-500/40 border-t-violet-500 animate-spin" />
+              <span
+                className="h-3.5 w-3.5 animate-spin rounded-full"
+                style={{
+                  border: "2px solid rgba(15,40,65,0.25)",
+                  borderTopColor: "var(--mx-forest)",
+                }}
+              />
             ) : (
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
+              <IconDownload size={13} stroke={1.8} />
             )}
             {exporting ? "Generating…" : "Download Excel"}
           </button>
@@ -746,21 +1266,22 @@ function StepReview({
           <button
             onClick={() => setShowModal(true)}
             disabled={blueprint.rows.length === 0}
-            className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-all"
+            className="inline-flex items-center gap-2 rounded-[999px] px-4 py-2 transition-all"
             style={{
-              background: "linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%)",
-              color: "white",
-              boxShadow: "0 2px 12px rgba(91,33,182,0.3)",
-              opacity: blueprint.rows.length === 0 ? 0.6 : 1,
+              fontFamily: "var(--mx-font-sans)",
+              fontSize: 12,
+              fontWeight: 500,
+              background: "var(--mx-forest)",
+              color: "var(--mx-paper)",
+              boxShadow: "var(--mx-shadow-card)",
+              opacity: blueprint.rows.length === 0 ? 0.5 : 1,
             }}
           >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-            Request Competency Measurement Plan
+            <IconMailForward size={13} stroke={1.8} />
+            Request measurement plan
           </button>
         </div>
-      </div>
+      </section>
 
       {/* Rows */}
       <div className="space-y-3">
@@ -775,8 +1296,15 @@ function StepReview({
       </div>
 
       {blueprint.rows.length === 0 && (
-        <div className="rounded-2xl p-10 text-center" style={{ background: "rgba(255,255,255,0.5)" }}>
-          <p className="text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>All rows removed. Go back to regenerate.</p>
+        <div
+          className="mx-card p-10 text-center"
+          style={{
+            fontFamily: "var(--mx-font-sans)",
+            fontSize: 13,
+            color: "var(--mx-ink-3)",
+          }}
+        >
+          All rows removed. Go back to regenerate.
         </div>
       )}
 
@@ -816,23 +1344,28 @@ export default function StrawManPage() {
 
   const [exporting, setExporting] = useState(false)
 
-  // Pre-select from URL param
   useEffect(() => {
     const compId = searchParams.get("competency")
     if (compId) setSelectedCompIds(new Set([compId]))
   }, [searchParams])
 
-  // Load frameworks and all competencies for the picker
   useEffect(() => {
     Promise.all([getCompetencyFrameworks(), getCompetencies()])
-      .then(([fws, comps]) => { setFrameworks(fws); setAllComps(comps) })
+      .then(([fws, comps]) => {
+        setFrameworks(fws)
+        setAllComps(comps)
+      })
       .catch(() => {})
   }, [])
 
   const handleCompToggle = useCallback((id: string) => {
-    setSelectedCompIds(prev => {
+    setSelectedCompIds((prev) => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
       return next
     })
   }, [])
@@ -843,7 +1376,8 @@ export default function StrawManPage() {
     try {
       const body: StrawManRequest = {
         ...form,
-        competency_ids: selectedCompIds.size > 0 ? Array.from(selectedCompIds) : null,
+        competency_ids:
+          selectedCompIds.size > 0 ? Array.from(selectedCompIds) : null,
       }
       const result = await generateStrawMan(body)
       setBlueprint(result)
@@ -856,7 +1390,10 @@ export default function StrawManPage() {
 
   const handleRowRemove = (competencyId: string) => {
     if (!blueprint) return
-    setBlueprint({ ...blueprint, rows: blueprint.rows.filter(r => r.competency_id !== competencyId) })
+    setBlueprint({
+      ...blueprint,
+      rows: blueprint.rows.filter((r) => r.competency_id !== competencyId),
+    })
   }
 
   const handleExport = async () => {
@@ -865,17 +1402,19 @@ export default function StrawManPage() {
     try {
       const body: StrawManRequest = {
         ...form,
-        competency_ids: blueprint.rows.map(r => r.competency_id),
+        competency_ids: blueprint.rows.map((r) => r.competency_id),
       }
       const blob = await exportStrawMan(body)
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
       const role = form.role_title || form.initiative || "Blueprint"
-      a.download = `Metricly_Assessment_Blueprint_${role.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`
+      a.download = `Metricly_Assessment_Blueprint_${role.replace(/\s+/g, "_")}_${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`
       a.click()
       URL.revokeObjectURL(url)
-    } catch (e) {
+    } catch {
       setError("Export failed. Please try again.")
     } finally {
       setExporting(false)
@@ -883,36 +1422,42 @@ export default function StrawManPage() {
   }
 
   return (
-    <div className="min-h-screen pb-20" style={{ background: "linear-gradient(135deg, #f0eeff 0%, #e8e4ff 50%, #ede9ff 100%)" }}>
+    <div className="min-h-screen pb-20">
+      {/* No page-bg override — atelier washes show through from <html>. */}
       <Header pageTitle="Blueprint Generator" />
 
-      <div className="mx-auto max-w-3xl px-6 py-8">
-        {/* Page header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-8 w-8 rounded-xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%)" }}>
-              <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold font-playfair" style={{ color: "#1e1b4b" }}>Assessment Blueprint Generator</h1>
-          </div>
-          <p className="text-sm ml-11" style={{ color: "rgba(30,27,75,0.55)" }}>
-            Generate a structured assessment blueprint with competencies, proficiency targets, and instrument recommendations.
+      <main className="mx-auto max-w-3xl px-6 py-8">
+        {/* Subpage hero — light cream card */}
+        <section className="mx-hero mb-6" style={{ padding: "28px 32px" }}>
+          <p className="mx-eyebrow mb-2">Plan an assessment</p>
+          <h1 className="mx-h2" style={{ fontSize: 32, lineHeight: 1.1 }}>
+            Blueprint <em className="mx-text-grad-warm">generator.</em>
+          </h1>
+          <p className="mx-caption mt-2 max-w-xl" style={{ fontSize: 13 }}>
+            Generate a structured blueprint with competencies, proficiency
+            targets, and instrument recommendations.
           </p>
-        </div>
+        </section>
 
         {error && (
-          <div className="mb-4 rounded-xl px-4 py-3" style={{ background: "rgba(254,226,226,0.8)", border: "1px solid rgba(252,165,165,0.5)" }}>
-            <p className="text-xs" style={{ color: "#991b1b" }}>{error}</p>
+          <div
+            className="mb-4 rounded-[14px] px-4 py-3"
+            style={{
+              background: "rgba(194,78,78,0.06)",
+              border: "1px solid rgba(194,78,78,0.25)",
+              color: "var(--mx-rose)",
+              fontFamily: "var(--mx-font-sans)",
+              fontSize: 13,
+            }}
+          >
+            {error}
           </div>
         )}
 
         {!blueprint ? (
           <StepInput
             form={form}
-            onChange={updates => setForm(prev => ({ ...prev, ...updates }))}
+            onChange={(updates) => setForm((prev) => ({ ...prev, ...updates }))}
             onSubmit={handleSubmit}
             loading={loading}
             frameworks={frameworks}
@@ -930,7 +1475,7 @@ export default function StrawManPage() {
             exporting={exporting}
           />
         )}
-      </div>
+      </main>
     </div>
   )
 }

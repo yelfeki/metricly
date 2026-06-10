@@ -11,17 +11,17 @@ import type { CompetencyTeamStats, FrameworkOut, TeamGapReport, TeamHeatmapRow }
 // ---------------------------------------------------------------------------
 
 const LEVEL_COLORS: Record<number, { bg: string; text: string; label: string }> = {
-  1: { bg: "rgba(239,68,68,0.18)",   text: "#dc2626", label: "L1" },
-  2: { bg: "rgba(245,158,11,0.18)",  text: "#d97706", label: "L2" },
-  3: { bg: "rgba(59,130,246,0.15)",  text: "#3777A8", label: "L3" },
-  4: { bg: "rgba(34,197,94,0.15)",   text: "#16a34a", label: "L4" },
-  5: { bg: "rgba(16,185,129,0.18)",  text: "#059669", label: "L5" },
+  1: { bg: "rgba(239,68,68,0.18)",   text: "#DD6334", label: "L1" },
+  2: { bg: "rgba(245,158,11,0.18)",  text: "#E2B146", label: "L2" },
+  3: { bg: "rgba(59,130,246,0.15)",  text: "#2A5BA8", label: "L3" },
+  4: { bg: "rgba(34,197,94,0.15)",   text: "#7E8A55", label: "L4" },
+  5: { bg: "rgba(16,185,129,0.18)",  text: "#7E8A55", label: "L5" },
 }
 
 function levelStyle(level: number | null) {
-  if (level === null) return { bg: "rgba(30,27,75,0.05)", text: "rgba(30,27,75,0.25)" }
+  if (level === null) return { bg: "rgba(10,30,51,0.05)", text: "rgba(10,30,51,0.25)" }
   const c = LEVEL_COLORS[Math.min(Math.max(level, 1), 5)]
-  return c ? { bg: c.bg, text: c.text } : { bg: "rgba(30,27,75,0.05)", text: "rgba(30,27,75,0.25)" }
+  return c ? { bg: c.bg, text: c.text } : { bg: "rgba(10,30,51,0.05)", text: "rgba(10,30,51,0.25)" }
 }
 
 // ---------------------------------------------------------------------------
@@ -39,7 +39,7 @@ function Heatmap({
 }) {
   if (rows.length === 0) {
     return (
-      <p className="text-sm py-6 text-center" style={{ color: "rgba(30,27,75,0.4)" }}>
+      <p className="text-sm py-6 text-center" style={{ color: "rgba(10,30,51,0.4)" }}>
         No employees assessed yet.
       </p>
     )
@@ -52,7 +52,7 @@ function Heatmap({
           <tr>
             <th
               className="py-2 pr-4 text-left font-semibold sticky left-0"
-              style={{ color: "rgba(30,27,75,0.5)", background: "transparent", minWidth: 140 }}
+              style={{ color: "rgba(10,30,51,0.5)", background: "transparent", minWidth: 140 }}
             >
               Employee
             </th>
@@ -60,7 +60,7 @@ function Heatmap({
               <th
                 key={c.id}
                 className="py-2 px-2 text-center font-semibold"
-                style={{ color: "rgba(30,27,75,0.5)", minWidth: 80 }}
+                style={{ color: "rgba(10,30,51,0.5)", minWidth: 80 }}
                 title={c.name}
               >
                 <span className="block max-w-[72px] truncate mx-auto">{c.name}</span>
@@ -73,7 +73,7 @@ function Heatmap({
             <tr key={row.employee_id}>
               <td
                 className="py-1.5 pr-4 font-medium sticky left-0"
-                style={{ color: "#1e1b4b", background: "transparent" }}
+                style={{ color: "#0A1E33", background: "transparent" }}
               >
                 {row.employee_name}
               </td>
@@ -113,9 +113,9 @@ function Heatmap({
         <span className="flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wide">
           <span
             className="inline-block h-3 w-5 rounded-sm"
-            style={{ background: "rgba(30,27,75,0.05)", outline: "1.5px solid rgba(239,68,68,0.4)" }}
+            style={{ background: "rgba(10,30,51,0.05)", outline: "1.5px solid rgba(239,68,68,0.4)" }}
           />
-          <span style={{ color: "rgba(30,27,75,0.45)" }}>Below req.</span>
+          <span style={{ color: "rgba(10,30,51,0.45)" }}>Below req.</span>
         </span>
       </div>
     </div>
@@ -132,20 +132,20 @@ function DistributionBar({ stats, maxLevel }: { stats: CompetencyTeamStats; maxL
   return (
     <div className="card p-4">
       <div className="mb-3 flex items-start justify-between gap-2">
-        <p className="text-sm font-semibold leading-tight" style={{ color: "#1e1b4b" }}>
+        <p className="text-sm font-semibold leading-tight" style={{ color: "#0A1E33" }}>
           {stats.competency_name}
         </p>
         <div className="flex shrink-0 items-center gap-2">
           {stats.critical && (
             <span
               className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-              style={{ background: "rgba(239,68,68,0.12)", border: "0.5px solid rgba(239,68,68,0.3)", color: "#dc2626" }}
+              style={{ background: "rgba(239,68,68,0.12)", border: "0.5px solid rgba(239,68,68,0.3)", color: "#DD6334" }}
             >
               Critical
             </span>
           )}
           {stats.mean_score !== null && (
-            <span className="text-xs font-semibold" style={{ color: "rgba(30,27,75,0.5)" }}>
+            <span className="text-xs font-semibold" style={{ color: "rgba(10,30,51,0.5)" }}>
               avg {stats.mean_score.toFixed(0)}
             </span>
           )}
@@ -171,7 +171,7 @@ function DistributionBar({ stats, maxLevel }: { stats: CompetencyTeamStats; maxL
                   opacity: pct === 0 ? 0.25 : 1,
                 }}
               />
-              <span className="text-[9px]" style={{ color: "rgba(30,27,75,0.4)" }}>L{level}</span>
+              <span className="text-[9px]" style={{ color: "rgba(10,30,51,0.4)" }}>L{level}</span>
             </div>
           )
         })}
@@ -210,7 +210,7 @@ export default function TeamReportPage() {
     return (
       <div className="flex min-h-screen flex-col">
         <Header backHref="/frameworks" backLabel="Frameworks" />
-        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(30,27,75,0.4)" }}>
+        <div className="flex flex-1 items-center justify-center text-sm" style={{ color: "rgba(10,30,51,0.4)" }}>
           Loading…
         </div>
       </div>
@@ -229,11 +229,11 @@ export default function TeamReportPage() {
       : null
 
   const readinessColor =
-    avgReadiness === null ? "#1e1b4b"
-    : avgReadiness >= 80 ? "#059669"
-    : avgReadiness >= 60 ? "#3b82f6"
-    : avgReadiness >= 40 ? "#f59e0b"
-    : "#ef4444"
+    avgReadiness === null ? "#0A1E33"
+    : avgReadiness >= 80 ? "#7E8A55"
+    : avgReadiness >= 60 ? "#2A5BA8"
+    : avgReadiness >= 40 ? "#E2B146"
+    : "#DD6334"
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -247,7 +247,7 @@ export default function TeamReportPage() {
             <p className="eyebrow mb-1">Team Gap Analysis</p>
             <h1 className="page-title">{framework?.title ?? "…"}</h1>
             {framework?.role_title && (
-              <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>{framework.role_title}</p>
+              <p className="mt-1 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>{framework.role_title}</p>
             )}
           </div>
 
@@ -259,7 +259,7 @@ export default function TeamReportPage() {
               <div className="mb-6 grid grid-cols-3 gap-4">
                 <div className="card p-5 text-center">
                   <p className="label-caps mb-1">Employees</p>
-                  <p className="metric-value text-3xl font-bold" style={{ color: "#1e1b4b" }}>
+                  <p className="metric-value text-3xl font-bold" style={{ color: "#0A1E33" }}>
                     {report.employee_count}
                   </p>
                 </div>
@@ -273,7 +273,7 @@ export default function TeamReportPage() {
                   <p className="label-caps mb-1">Critical Gaps</p>
                   <p
                     className="metric-value text-3xl font-bold"
-                    style={{ color: report.critical_gaps.length > 0 ? "#dc2626" : "#059669" }}
+                    style={{ color: report.critical_gaps.length > 0 ? "#DD6334" : "#7E8A55" }}
                   >
                     {report.critical_gaps.length}
                   </p>
@@ -284,21 +284,21 @@ export default function TeamReportPage() {
               {report.critical_gaps.length > 0 && (
                 <div className="mb-6 card p-5" style={{ background: "rgba(239,68,68,0.06)", borderColor: "rgba(239,68,68,0.2)" }}>
                   <div className="mb-3 flex items-center gap-2">
-                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#dc2626" }}>
+                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#DD6334" }}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                     </svg>
-                    <h2 className="section-heading" style={{ color: "#dc2626" }}>Critical Gaps</h2>
+                    <h2 className="section-heading" style={{ color: "#DD6334" }}>Critical Gaps</h2>
                   </div>
-                  <p className="mb-3 text-xs" style={{ color: "rgba(30,27,75,0.55)" }}>
+                  <p className="mb-3 text-xs" style={{ color: "rgba(10,30,51,0.55)" }}>
                     Over 50% of the team is below the required proficiency level for these competencies.
                   </p>
                   <div className="space-y-2">
                     {report.critical_gaps.map(gap => (
                       <div key={gap.competency_id} className="flex items-center justify-between gap-4">
-                        <span className="text-sm font-semibold" style={{ color: "#1e1b4b" }}>{gap.competency_name}</span>
+                        <span className="text-sm font-semibold" style={{ color: "#0A1E33" }}>{gap.competency_name}</span>
                         <div className="flex items-center gap-3">
                           {gap.mean_score !== null && (
-                            <span className="text-xs" style={{ color: "rgba(30,27,75,0.5)" }}>
+                            <span className="text-xs" style={{ color: "rgba(10,30,51,0.5)" }}>
                               avg {gap.mean_score.toFixed(0)}
                             </span>
                           )}
@@ -310,7 +310,7 @@ export default function TeamReportPage() {
                             return (
                               <span
                                 className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                                style={{ background: "rgba(239,68,68,0.12)", color: "#dc2626" }}
+                                style={{ background: "rgba(239,68,68,0.12)", color: "#DD6334" }}
                               >
                                 {Math.round(belowPct)}% below L{requiredLevel}
                               </span>
@@ -351,9 +351,9 @@ export default function TeamReportPage() {
               {report.employee_count === 0 && (
                 <div className="card p-8 text-center">
                   <p className="section-heading mb-2">No employees assessed yet</p>
-                  <p className="text-sm" style={{ color: "rgba(30,27,75,0.45)" }}>
+                  <p className="text-sm" style={{ color: "rgba(10,30,51,0.45)" }}>
                     Add employees and submit assessment scores in the{" "}
-                    <a href={`/frameworks/${id}/gap-report`} className="underline" style={{ color: "#5b21b6" }}>
+                    <a href={`/frameworks/${id}/gap-report`} className="underline" style={{ color: "#0F2841" }}>
                       individual gap report
                     </a>{" "}
                     to populate this dashboard.

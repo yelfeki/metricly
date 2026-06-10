@@ -26,10 +26,10 @@ function FormField({
     <div className="mb-4">
       <label className="label-caps mb-1 block">
         {label}
-        {required && <span style={{ color: "#dc2626" }}> *</span>}
+        {required && <span style={{ color: "#DD6334" }}> *</span>}
       </label>
       {children}
-      {hint && <p className="mt-1 text-[11px]" style={{ color: "rgba(30,27,75,0.4)" }}>{hint}</p>}
+      {hint && <p className="mt-1 text-[11px]" style={{ color: "rgba(10,30,51,0.4)" }}>{hint}</p>}
     </div>
   )
 }
@@ -144,7 +144,7 @@ export default function AdminNewInstrumentPage() {
           <div className="mb-8">
             <p className="eyebrow mb-1">Admin</p>
             <h1 className="page-title">Add New Instrument</h1>
-            <p className="mt-1 text-sm" style={{ color: "rgba(30,27,75,0.5)" }}>
+            <p className="mt-1 text-sm" style={{ color: "rgba(10,30,51,0.5)" }}>
               Add a validated psychometric instrument to the library.
             </p>
           </div>
@@ -155,7 +155,7 @@ export default function AdminNewInstrumentPage() {
 
             {/* Identity */}
             <div className="card mb-6 p-5">
-              <p className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(30,27,75,0.4)" }}>Identity</p>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(10,30,51,0.4)" }}>Identity</p>
 
               <FormField label="Instrument Name" required>
                 <input
@@ -212,7 +212,7 @@ export default function AdminNewInstrumentPage() {
 
             {/* Measurement */}
             <div className="card mb-6 p-5">
-              <p className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(30,27,75,0.4)" }}>Measurement</p>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(10,30,51,0.4)" }}>Measurement</p>
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Response Format">
@@ -279,7 +279,7 @@ export default function AdminNewInstrumentPage() {
 
             {/* License & Access */}
             <div className="card mb-6 p-5">
-              <p className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(30,27,75,0.4)" }}>License & Access</p>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(10,30,51,0.4)" }}>License & Access</p>
 
               <FormField label="License Type">
                 <select
@@ -298,15 +298,15 @@ export default function AdminNewInstrumentPage() {
                   type="checkbox"
                   checked={form.is_proprietary}
                   onChange={e => set("is_proprietary", e.target.checked)}
-                  className="h-3.5 w-3.5 accent-[#5b21b6]"
+                  className="h-3.5 w-3.5 accent-[#0F2841]"
                 />
-                <span className="text-xs font-medium" style={{ color: "#1e1b4b" }}>Mark as proprietary</span>
+                <span className="text-xs font-medium" style={{ color: "#0A1E33" }}>Mark as proprietary</span>
               </label>
             </div>
 
             {/* Validation */}
             <div className="card mb-6 p-5">
-              <p className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(30,27,75,0.4)" }}>Validation</p>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(10,30,51,0.4)" }}>Validation</p>
 
               <FormField label="Validated Populations" hint="Comma-separated, e.g. healthcare teams, university students">
                 <input
@@ -329,7 +329,7 @@ export default function AdminNewInstrumentPage() {
 
             {/* Citation */}
             <div className="card mb-6 p-5">
-              <p className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(30,27,75,0.4)" }}>Citation</p>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(10,30,51,0.4)" }}>Citation</p>
 
               <FormField label="Theoretical Framework">
                 <input

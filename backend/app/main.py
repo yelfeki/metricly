@@ -24,7 +24,10 @@ from .models import library as _library_models  # noqa: F401 — registers ORM m
 from .models import report as _report_models  # noqa: F401 — registers ORM metadata
 from .models import competency as _competency_models  # noqa: F401 — registers ORM metadata
 from .services.library_seed import seed_library
-from .services.competency_seed import seed_competency_frameworks
+from .services.competency_seed import (
+    seed_competency_frameworks,
+    seed_role_family_competencies,
+)
 from .services.instrument_competency_mapper import seed_instrument_competency_mappings
 from .services.industry_library_seed import seed_industry_library
 
@@ -53,6 +56,8 @@ async def lifespan(app: FastAPI):
     try:
         async with AsyncSessionLocal() as session:
             await seed_competency_frameworks(session)
+        async with AsyncSessionLocal() as session:
+            await seed_role_family_competencies(session)
         async with AsyncSessionLocal() as session:
             await seed_instrument_competency_mappings(session)
     except Exception as exc:

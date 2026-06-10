@@ -1,0 +1,246 @@
+<div style="background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1.25rem; font-family: var(--font-sans);">
+
+<h2 class="sr-only">Competency framework presentation for the client, showing the role context, cluster composition, proficiency profile, and detailed competency cards.</h2>
+
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 12px;">
+  <div>
+    <div style="font-size: 11px; color: var(--color-text-tertiary); letter-spacing: 0.5px; margin-bottom: 4px;">YOUR COMPETENCY FRAMEWORK</div>
+    <div style="font-size: 20px; font-weight: 500;">Senior product manager</div>
+    <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 2px;">Product \u00b7 Senior IC \u00b7 Technology / SaaS</div>
+  </div>
+  <div style="display: flex; gap: 6px;">
+    <button onclick="sendPrompt('Export framework as PDF')" style="font-size: 12px;"><i class="ti ti-download" style="font-size: 13px; vertical-align: -2px;" aria-hidden="true"></i> Export</button>
+    <button onclick="sendPrompt('Launch baseline assessment with this framework')" style="font-size: 12px; background: #534AB7; color: white; border-color: #534AB7;"><i class="ti ti-rocket" style="font-size: 13px; vertical-align: -2px;" aria-hidden="true"></i> Launch assessment ↗</button>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px;">
+  <div style="background: var(--color-background-primary); border-radius: var(--border-radius-md); padding: 12px;">
+    <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px;">Competencies</div>
+    <div style="font-size: 22px; font-weight: 500;">12</div>
+  </div>
+  <div style="background: var(--color-background-primary); border-radius: var(--border-radius-md); padding: 12px;">
+    <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px;">Clusters</div>
+    <div style="font-size: 22px; font-weight: 500;">5</div>
+  </div>
+  <div style="background: var(--color-background-primary); border-radius: var(--border-radius-md); padding: 12px;">
+    <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px;">Behavioural indicators</div>
+    <div style="font-size: 22px; font-weight: 500;">62</div>
+  </div>
+  <div style="background: var(--color-background-primary); border-radius: var(--border-radius-md); padding: 12px;">
+    <div style="font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px;">Proficiency range</div>
+    <div style="font-size: 22px; font-weight: 500;">L3<span style="font-size: 14px; color: var(--color-text-secondary); font-weight: 400;"> \u2013 </span>L5</div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+
+  <div style="background: var(--color-background-primary); border-radius: var(--border-radius-lg); padding: 14px;">
+    <div style="font-size: 13px; font-weight: 500; margin-bottom: 12px;">Cluster composition</div>
+    <div id="clusterBars"></div>
+  </div>
+
+  <div style="background: var(--color-background-primary); border-radius: var(--border-radius-lg); padding: 14px;">
+    <div style="font-size: 13px; font-weight: 500; margin-bottom: 12px;">Proficiency profile</div>
+    <div style="position: relative; height: 130px;">
+      <canvas id="profileChart" role="img" aria-label="Distribution of target proficiency levels across the twelve competencies."></canvas>
+    </div>
+  </div>
+</div>
+
+<div style="background: var(--color-background-primary); border-radius: var(--border-radius-lg); padding: 14px; margin-bottom: 12px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+    <div style="font-size: 13px; font-weight: 500;">Competencies</div>
+    <div style="display: flex; gap: 4px; font-size: 11px; flex-wrap: wrap;">
+      <button class="filter-btn active" data-cluster="all">All <span style="opacity: 0.5; margin-left: 2px;">12</span></button>
+      <button class="filter-btn" data-cluster="leadership">Leadership <span style="opacity: 0.5; margin-left: 2px;">3</span></button>
+      <button class="filter-btn" data-cluster="strategic">Strategic <span style="opacity: 0.5; margin-left: 2px;">3</span></button>
+      <button class="filter-btn" data-cluster="execution">Execution <span style="opacity: 0.5; margin-left: 2px;">3</span></button>
+      <button class="filter-btn" data-cluster="interpersonal">Interpersonal <span style="opacity: 0.5; margin-left: 2px;">2</span></button>
+      <button class="filter-btn" data-cluster="business">Business <span style="opacity: 0.5; margin-left: 2px;">1</span></button>
+    </div>
+  </div>
+  <div id="competencyGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;"></div>
+</div>
+
+<div style="background: var(--color-background-primary); border-radius: var(--border-radius-lg); padding: 14px; margin-bottom: 12px;">
+  <div style="font-size: 13px; font-weight: 500; margin-bottom: 4px;">Proficiency scale</div>
+  <div style="font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 12px;">Each competency is rated on a five-level behaviourally anchored scale</div>
+  <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;">
+    <div style="background: #E6F1FB; padding: 10px; border-radius: var(--border-radius-md); text-align: center;">
+      <div style="font-size: 11px; font-weight: 500; color: #0C447C;">L1</div>
+      <div style="font-size: 10px; color: #0C447C; opacity: 0.8; margin-top: 2px;">Novice</div>
+    </div>
+    <div style="background: #B5D4F4; padding: 10px; border-radius: var(--border-radius-md); text-align: center;">
+      <div style="font-size: 11px; font-weight: 500; color: #042C53;">L2</div>
+      <div style="font-size: 10px; color: #042C53; opacity: 0.8; margin-top: 2px;">Developing</div>
+    </div>
+    <div style="background: #85B7EB; padding: 10px; border-radius: var(--border-radius-md); text-align: center;">
+      <div style="font-size: 11px; font-weight: 500; color: #042C53;">L3</div>
+      <div style="font-size: 10px; color: #042C53; opacity: 0.8; margin-top: 2px;">Proficient</div>
+    </div>
+    <div style="background: #378ADD; padding: 10px; border-radius: var(--border-radius-md); text-align: center;">
+      <div style="font-size: 11px; font-weight: 500; color: white;">L4</div>
+      <div style="font-size: 10px; color: white; opacity: 0.9; margin-top: 2px;">Advanced</div>
+    </div>
+    <div style="background: #185FA5; padding: 10px; border-radius: var(--border-radius-md); text-align: center;">
+      <div style="font-size: 11px; font-weight: 500; color: white;">L5</div>
+      <div style="font-size: 10px; color: white; opacity: 0.9; margin-top: 2px;">Expert</div>
+    </div>
+  </div>
+</div>
+
+<div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 0.5px solid var(--color-border-tertiary); gap: 8px; flex-wrap: wrap;">
+  <div style="font-size: 11px; color: var(--color-text-tertiary);">
+    <i class="ti ti-shield-check" style="font-size: 12px; vertical-align: -2px;" aria-hidden="true"></i>
+    Grounded in validated psychometric instruments
+  </div>
+  <div style="display: flex; gap: 6px;">
+    <button onclick="sendPrompt('Edit this competency framework')" style="font-size: 12px;"><i class="ti ti-edit" style="font-size: 13px; vertical-align: -2px;" aria-hidden="true"></i> Edit framework</button>
+    <button onclick="sendPrompt('Share this framework with a colleague')" style="font-size: 12px;"><i class="ti ti-share" style="font-size: 13px; vertical-align: -2px;" aria-hidden="true"></i> Share</button>
+  </div>
+</div>
+
+</div>
+
+<style>
+.filter-btn { padding: 4px 9px; background: transparent; border: 0.5px solid var(--color-border-tertiary); border-radius: 10px; cursor: pointer; color: var(--color-text-secondary); transition: all 0.15s; }
+.filter-btn:hover { background: var(--color-background-secondary); }
+.filter-btn.active { background: #26215C; color: white; border-color: #26215C; }
+.cluster-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 11px; }
+.cluster-bar-label { width: 90px; color: var(--color-text-secondary); }
+.cluster-bar-track { flex: 1; height: 18px; background: var(--color-background-secondary); border-radius: 4px; overflow: hidden; }
+.cluster-bar-fill { height: 100%; border-radius: 4px; transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
+.cluster-bar-val { width: 16px; text-align: right; font-weight: 500; }
+.comp-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 11px; cursor: pointer; transition: all 0.2s; border: 0.5px solid transparent; animation: fadeUp 0.4s ease both; }
+.comp-card:hover { border-color: var(--color-border-secondary); transform: translateY(-1px); background: var(--color-background-primary); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.level-dots { display: flex; gap: 3px; }
+.level-dot { width: 12px; height: 4px; border-radius: 1px; background: var(--color-border-tertiary); transition: background 0.2s; }
+</style>
+
+<script>
+(function() {
+  const clusters = {
+    leadership:    { color: '#534AB7', bg: '#EEEDFE', text: '#26215C', label: 'Leadership' },
+    strategic:     { color: '#0F6E56', bg: '#E1F5EE', text: '#04342C', label: 'Strategic' },
+    interpersonal: { color: '#993556', bg: '#FBEAF0', text: '#4B1528', label: 'Interpersonal' },
+    execution:     { color: '#185FA5', bg: '#E6F1FB', text: '#042C53', label: 'Execution' },
+    business:      { color: '#993C1D', bg: '#FAECE7', text: '#4A1B0C', label: 'Business' }
+  };
+
+  const levelLabels = ['', 'Novice', 'Developing', 'Proficient', 'Advanced', 'Expert'];
+
+  const competencies = [
+    { id: 'vision', name: 'Vision setting', cluster: 'leadership', target: 4, icon: 'ti-target-arrow', indicators: 5 },
+    { id: 'influ', name: 'Influence without authority', cluster: 'leadership', target: 5, icon: 'ti-bolt', indicators: 6 },
+    { id: 'coach', name: 'Coaching ICs', cluster: 'leadership', target: 4, icon: 'ti-users', indicators: 5 },
+
+    { id: 'strat', name: 'Product strategy', cluster: 'strategic', target: 5, icon: 'ti-chart-arrows', indicators: 6 },
+    { id: 'market', name: 'Market sensing', cluster: 'strategic', target: 4, icon: 'ti-trending-up', indicators: 5 },
+    { id: 'systems', name: 'Systems thinking', cluster: 'strategic', target: 4, icon: 'ti-share-3', indicators: 5 },
+
+    { id: 'deliver', name: 'Roadmap delivery', cluster: 'execution', target: 4, icon: 'ti-checklist', indicators: 6 },
+    { id: 'prio', name: 'Prioritisation', cluster: 'execution', target: 4, icon: 'ti-list-numbers', indicators: 5 },
+    { id: 'data', name: 'Data literacy', cluster: 'execution', target: 4, icon: 'ti-chart-dots', indicators: 4 },
+
+    { id: 'collab', name: 'Cross-functional collab', cluster: 'interpersonal', target: 4, icon: 'ti-users-group', indicators: 5 },
+    { id: 'comm', name: 'Stakeholder comms', cluster: 'interpersonal', target: 4, icon: 'ti-message', indicators: 5 },
+
+    { id: 'customer', name: 'Customer empathy', cluster: 'business', target: 5, icon: 'ti-heart-handshake', indicators: 6 }
+  ];
+
+  function renderClusterBars() {
+    const counts = {};
+    competencies.forEach(c => { counts[c.cluster] = (counts[c.cluster] || 0) + 1; });
+    const max = Math.max(...Object.values(counts), 3);
+    const order = ['leadership', 'strategic', 'execution', 'interpersonal', 'business'];
+    const html = order.map(k => {
+      const v = counts[k] || 0;
+      const pct = (v / max) * 100;
+      return `
+        <div class="cluster-bar">
+          <span class="cluster-bar-label">${clusters[k].label}</span>
+          <div class="cluster-bar-track">
+            <div class="cluster-bar-fill" style="background: ${clusters[k].color}; width: 0;" data-w="${pct}"></div>
+          </div>
+          <span class="cluster-bar-val">${v}</span>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('clusterBars').innerHTML = html;
+    setTimeout(() => {
+      document.querySelectorAll('.cluster-bar-fill').forEach(el => { el.style.width = el.dataset.w + '%'; });
+    }, 100);
+  }
+
+  function renderCompetencies(filter) {
+    const filtered = filter === 'all' ? competencies : competencies.filter(c => c.cluster === filter);
+    const html = filtered.map((c, i) => {
+      const cl = clusters[c.cluster];
+      const dots = [1,2,3,4,5].map(n => `<span class="level-dot" style="${n <= c.target ? `background: ${cl.color};` : ''}"></span>`).join('');
+      return `
+        <div class="comp-card" style="animation-delay: ${i * 0.04}s;" onclick="window._mc_inspect('${c.id}')">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div style="width: 30px; height: 30px; border-radius: var(--border-radius-md); background: ${cl.bg}; display: flex; align-items: center; justify-content: center; color: ${cl.color};">
+              <i class="ti ${c.icon}" style="font-size: 16px;" aria-hidden="true"></i>
+            </div>
+            <span style="background: ${cl.color}; color: white; font-size: 10px; font-weight: 500; padding: 3px 7px; border-radius: 4px;">L${c.target}</span>
+          </div>
+          <div style="font-size: 13px; font-weight: 500; color: var(--color-text-primary); line-height: 1.3; margin-bottom: 3px;">${c.name}</div>
+          <div style="font-size: 10px; color: var(--color-text-tertiary); margin-bottom: 10px;">${levelLabels[c.target]} \u00b7 ${cl.label.toLowerCase()}</div>
+          <div class="level-dots" style="margin-bottom: 8px;">${dots}</div>
+          <div style="font-size: 10px; color: var(--color-text-tertiary); display: flex; align-items: center; gap: 4px;">
+            <i class="ti ti-list-check" style="font-size: 11px;" aria-hidden="true"></i>
+            <span>${c.indicators} behavioural indicators</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+    document.getElementById('competencyGrid').innerHTML = html;
+  }
+
+  window._mc_inspect = (id) => {
+    const c = competencies.find(x => x.id === id);
+    sendPrompt(`Show the proficiency levels for ${c.name}`);
+  };
+
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      renderCompetencies(b.dataset.cluster);
+    });
+  });
+
+  renderClusterBars();
+  renderCompetencies('all');
+
+  function loadChart() {
+    if (typeof Chart === 'undefined') { setTimeout(loadChart, 100); return; }
+    const counts = [0,0,0,0,0];
+    competencies.forEach(c => counts[c.target - 1]++);
+    const colors = ['#B5D4F4', '#85B7EB', '#378ADD', '#185FA5', '#0C447C'];
+    new Chart(document.getElementById('profileChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['Novice','Developing','Proficient','Advanced','Expert'],
+        datasets: [{ data: counts, backgroundColor: colors, borderRadius: 4, barThickness: 28 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => Math.round(c.parsed.y) + ' competencies' } } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1, color: 'rgba(125,125,125,0.7)', font: { size: 10 } }, grid: { color: 'rgba(125,125,125,0.08)' } },
+          x: { ticks: { color: 'rgba(125,125,125,0.8)', font: { size: 10 } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+  script.onload = loadChart;
+  document.head.appendChild(script);
+})();
+</script>

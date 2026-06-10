@@ -446,6 +446,76 @@ async def test_report_requires_completion(client, db_session):
 
 
 @pytest.mark.asyncio
+async def test_team_report_aggregates_and_coedits(client, db_session):
+    instrument_id = await _seed_instrument(db_session, short_name="TEAM-3")
+
+    client.set_user("instructor-1")
+    course = await _create_course(client)
+    cid = course["id"]
+    code = course["join_code"]
+    mod = (
+        await client.post(
+            f"{BASE}/courses/{cid}/modules",
+            json={"week_no": 12, "topic": "Stress", "instrument_id": instrument_id, "order_index": 0},
+        )
+    ).json()
+    team = (await client.post(f"{BASE}/courses/{cid}/teams", json={"name": "Lighthouse"})).json()
+
+    # two students join, both placed on the team
+    for uid, name in [("stu-a", "Aya"), ("stu-b", "Ben")]:
+        client.set_user(uid)
+        await client.post(f"{BASE}/courses/join", json={"join_code": code, "name": name})
+    client.set_user("instructor-1")
+    roster = (await client.get(f"{BASE}/courses/{cid}/roster")).json()
+    for e in roster:
+        if e["role"] == "student":
+            await client.post(f"{BASE}/courses/{cid}/enrollments/{e['id']}/team", json={"team_id": team["id"]})
+
+    # A answers all 5s, B answers all 1s → team avg composite = 50
+    for uid, val in [("stu-a", "5"), ("stu-b", "1")]:
+        client.set_user(uid)
+        measure = (await client.get(f"{BASE}/courses/{cid}/modules/{mod['id']}/measure")).json()
+        answers = [{"question_id": q["id"], "value": val} for q in measure["questions"]]
+        await client.post(f"{BASE}/courses/{cid}/modules/{mod['id']}/submit", json={"answers": answers})
+
+    # team report as student A
+    client.set_user("stu-a")
+    tr = (await client.get(f"{BASE}/courses/{cid}/team-report")).json()
+    assert tr["team_name"] == "Lighthouse"
+    m0 = tr["modules"][0]
+    assert m0["team_n"] == 2
+    assert m0["team_composite"] == 50.0
+    assert m0["my_composite"] == 100.0  # A answered all 5s
+    assert len(m0["members"]) == 2
+    assert all(mem["completed"] for mem in m0["members"])
+
+    # A co-writes the shared section
+    saved = await client.put(
+        f"{BASE}/courses/{cid}/modules/{mod['id']}/team-section",
+        json={"synthesis": "Team stress was mixed.", "recommendations": [{"concept": "Demand–Control", "action": "Planning block"}]},
+    )
+    assert saved.status_code == 200
+
+    # B sees the same shared section (co-edit)
+    client.set_user("stu-b")
+    tr_b = (await client.get(f"{BASE}/courses/{cid}/team-report")).json()
+    assert tr_b["modules"][0]["section"]["synthesis"] == "Team stress was mixed."
+    assert tr_b["modules"][0]["my_composite"] == 0.0  # B answered all 1s
+
+
+@pytest.mark.asyncio
+async def test_team_report_requires_team(client):
+    client.set_user("instructor-1")
+    course = await _create_course(client)
+    cid = course["id"]
+    code = course["join_code"]
+    client.set_user("loner")
+    await client.post(f"{BASE}/courses/join", json={"join_code": code})
+    resp = await client.get(f"{BASE}/courses/{cid}/team-report")
+    assert resp.status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_student_cannot_create_module(client):
     client.set_user("instructor-1")
     course = await _create_course(client)

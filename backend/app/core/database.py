@@ -413,6 +413,19 @@ async def run_migrations() -> None:
         )""",
         "CREATE INDEX IF NOT EXISTS ix_module_reflections_module_id ON module_reflections (module_id)",
         "CREATE INDEX IF NOT EXISTS ix_module_reflections_enrollment_id ON module_reflections (enrollment_id)",
+        # v2.2 — co-edited team report sections
+        """CREATE TABLE IF NOT EXISTS team_report_sections (
+            id VARCHAR(36) PRIMARY KEY,
+            team_id VARCHAR(36) NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+            module_id VARCHAR(36) NOT NULL REFERENCES course_modules(id) ON DELETE CASCADE,
+            synthesis TEXT,
+            recommendations_json TEXT,
+            updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+            updated_by VARCHAR(36),
+            CONSTRAINT uq_team_section_team_module UNIQUE (team_id, module_id)
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_team_report_sections_team_id ON team_report_sections (team_id)",
+        "CREATE INDEX IF NOT EXISTS ix_team_report_sections_module_id ON team_report_sections (module_id)",
     ]
     for stmt in migrations:
         try:

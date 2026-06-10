@@ -168,6 +168,14 @@ export default function CourseDashboard() {
                       You’re not on a team yet. Your instructor will assign you to one for the group project.
                     </p>
                   )}
+                  {teamStatus?.team_id && (
+                    <Link href={`/classroom/${course.id}/team-report`} style={{ textDecoration: "none" }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, color: "var(--mx-forest)", fontSize: 12.5, fontWeight: 500 }}>
+                        Open the team report
+                        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="5 3 10 7 5 11" /></svg>
+                      </span>
+                    </Link>
+                  )}
                 </div>
               </div>
 

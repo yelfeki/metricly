@@ -27,6 +27,7 @@ from ..models.classroom import (
     ModuleCompletion,
     ModuleReflection,
     Team,
+    TeamReportSection,
 )
 from ..models.survey import Answer, Question, Response, ScoringAlgorithm, Survey
 from ..services.classroom_deploy import deploy_module_survey, ensure_module_survey
@@ -54,10 +55,17 @@ from ..schemas.classroom import (
     ReflectionUpdate,
     ReportFactor,
     ReportItem,
+    MyFactor,
+    TeamFactorMean,
     TeamMemberOut,
     TeamMemberStatus,
     TeamModuleStatus,
     TeamOut,
+    TeamReportMember,
+    TeamReportModule,
+    TeamReportOut,
+    TeamSectionOut,
+    TeamSectionUpdate,
     TemplateOut,
 )
 from ..services.course_templates import apply_course_template, list_templates
@@ -978,16 +986,23 @@ async def get_module_report(
     )
 
 
+def _recs_from_json(raw: str | None) -> list[Recommendation]:
+    if not raw:
+        return []
+    try:
+        return [Recommendation(**r) for r in json.loads(raw)]
+    except (json.JSONDecodeError, TypeError):
+        return []
+
+
 def _reflection_out(refl: ModuleReflection | None) -> ReflectionOut:
     if refl is None:
         return ReflectionOut(synthesis=None, recommendations=[], updated_at=None)
-    recs = []
-    if refl.recommendations_json:
-        try:
-            recs = [Recommendation(**r) for r in json.loads(refl.recommendations_json)]
-        except (json.JSONDecodeError, TypeError):
-            recs = []
-    return ReflectionOut(synthesis=refl.synthesis, recommendations=recs, updated_at=refl.updated_at)
+    return ReflectionOut(
+        synthesis=refl.synthesis,
+        recommendations=_recs_from_json(refl.recommendations_json),
+        updated_at=refl.updated_at,
+    )
 
 
 @classroom_router.get(
@@ -1045,6 +1060,224 @@ async def put_reflection(
     await db.commit()
     await db.refresh(refl)
     return _reflection_out(refl)
+
+
+# ---------------------------------------------------------------------------
+# Co-edited team report
+# ---------------------------------------------------------------------------
+
+
+def _section_out(section: TeamReportSection | None) -> TeamSectionOut:
+    if section is None:
+        return TeamSectionOut()
+    return TeamSectionOut(
+        synthesis=section.synthesis,
+        recommendations=_recs_from_json(section.recommendations_json),
+        updated_at=section.updated_at,
+    )
+
+
+@classroom_router.get("/courses/{course_id}/team-report", response_model=TeamReportOut)
+async def get_team_report(
+    course_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: AuthUser = Depends(require_user),
+) -> TeamReportOut:
+    """The team's integrated report: per-topic team figures + co-written sections,
+    plus the requesting student's own figures (for their personalized export)."""
+    member = await _require_member(db, course_id, user)
+    course = (await db.execute(select(Course).where(Course.id == course_id))).scalar_one()
+    if not member.team_id:
+        raise HTTPException(status_code=400, detail="You are not on a team yet.")
+    team = (await db.execute(select(Team).where(Team.id == member.team_id))).scalar_one()
+
+    team_members = list(
+        (
+            await db.execute(
+                select(Enrollment)
+                .where(Enrollment.team_id == member.team_id, Enrollment.status == "active")
+                .order_by(Enrollment.name)
+            )
+        ).scalars().all()
+    )
+    team_enr_ids = [e.id for e in team_members]
+
+    modules = list(
+        (
+            await db.execute(
+                select(CourseModule)
+                .where(CourseModule.course_id == course_id)
+                .order_by(CourseModule.order_index)
+            )
+        ).scalars().all()
+    )
+    sections = {
+        s.module_id: s
+        for s in (
+            await db.execute(
+                select(TeamReportSection).where(TeamReportSection.team_id == member.team_id)
+            )
+        ).scalars().all()
+    }
+
+    out_modules: list[TeamReportModule] = []
+    for m in modules:
+        prompts = json.loads(m.prompts_json) if m.prompts_json else {}
+        concept = json.loads(m.concept_json) if m.concept_json else {}
+        tm = TeamReportModule(
+            module_id=m.id,
+            topic=m.topic,
+            week_no=m.week_no,
+            reading_ref=m.reading_ref,
+            has_measure=bool(m.survey_id),
+            team_total=len(team_members),
+            section=_section_out(sections.get(m.id)),
+            concept_options=prompts.get("concept_options", []),
+            lenses=concept.get("lenses", []),
+        )
+
+        if m.survey_id:
+            questions = list(
+                (
+                    await db.execute(
+                        select(Question)
+                        .where(Question.survey_id == m.survey_id)
+                        .order_by(Question.position)
+                    )
+                ).scalars().all()
+            )
+            algos = list(
+                (
+                    await db.execute(
+                        select(ScoringAlgorithm).where(ScoringAlgorithm.survey_id == m.survey_id)
+                    )
+                ).scalars().all()
+            )
+            tm.scale_min, tm.scale_max = _derive_scale(questions, algos)
+
+            comps = (
+                await db.execute(
+                    select(ModuleCompletion).where(
+                        ModuleCompletion.module_id == m.id,
+                        ModuleCompletion.enrollment_id.in_(team_enr_ids),
+                        ModuleCompletion.completed_at.is_not(None),
+                    )
+                )
+            ).scalars().all()
+            resp_by_enr = {c.enrollment_id: c.survey_response_id for c in comps if c.survey_response_id}
+
+            answers = (
+                await db.execute(
+                    select(Answer).where(Answer.response_id.in_(list(resp_by_enr.values())))
+                )
+            ).scalars().all() if resp_by_enr else []
+            by_resp: dict[str, dict[str, float | None]] = defaultdict(dict)
+            for a in answers:
+                by_resp[a.response_id][a.question_id] = a.numeric_score
+
+            factor_order: list[str] = []
+            seen: set[str] = set()
+            for q in questions:
+                if q.factor and q.factor not in seen:
+                    seen.add(q.factor)
+                    factor_order.append(q.factor)
+
+            team_factor_lists: dict[str, list[float]] = defaultdict(list)
+            team_comps: list[float] = []
+            for e in team_members:
+                rid = resp_by_enr.get(e.id)
+                comp = None
+                facs: dict[str, dict] = {}
+                if rid:
+                    facs, comp = response_factor_scores(
+                        by_resp.get(rid, {}), questions, tm.scale_min, tm.scale_max
+                    )
+                    for fn, fd in facs.items():
+                        if fd["normalized"] is not None:
+                            team_factor_lists[fn].append(fd["normalized"])
+                    if comp is not None:
+                        team_comps.append(comp)
+                tm.members.append(
+                    TeamReportMember(
+                        enrollment_id=e.id,
+                        name=e.name,
+                        is_me=(e.id == member.id),
+                        completed=rid is not None,
+                        composite=comp,
+                    )
+                )
+                if e.id == member.id and rid:
+                    tm.my_composite = comp
+                    tm.my_factors = [
+                        MyFactor(name=fn, normalized=facs[fn]["normalized"])
+                        for fn in factor_order
+                        if fn in facs
+                    ]
+
+            tm.team_n = len(team_comps)
+            tm.team_composite = round(sum(team_comps) / len(team_comps), 1) if team_comps else None
+            tm.team_factor_means = [
+                TeamFactorMean(
+                    name=fn,
+                    mean=round(sum(team_factor_lists[fn]) / len(team_factor_lists[fn]), 1)
+                    if team_factor_lists.get(fn)
+                    else None,
+                )
+                for fn in factor_order
+            ]
+
+        out_modules.append(tm)
+
+    return TeamReportOut(
+        course_code=course.code,
+        course_title=course.title,
+        term=course.term,
+        project_title=course.project_title,
+        team_id=team.id,
+        team_name=team.name,
+        my_name=member.name,
+        modules=out_modules,
+    )
+
+
+@classroom_router.put(
+    "/courses/{course_id}/modules/{module_id}/team-section", response_model=TeamSectionOut
+)
+async def put_team_section(
+    course_id: str,
+    module_id: str,
+    payload: TeamSectionUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: AuthUser = Depends(require_user),
+) -> TeamSectionOut:
+    """Save the team's shared synthesis/recommendations for a module (any teammate)."""
+    member = await _require_member(db, course_id, user)
+    if not member.team_id:
+        raise HTTPException(status_code=400, detail="You are not on a team yet.")
+    await _load_module(db, course_id, module_id)
+
+    section = (
+        await db.execute(
+            select(TeamReportSection).where(
+                TeamReportSection.team_id == member.team_id,
+                TeamReportSection.module_id == module_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if section is None:
+        section = TeamReportSection(team_id=member.team_id, module_id=module_id)
+        db.add(section)
+    if payload.synthesis is not None:
+        section.synthesis = payload.synthesis
+    if payload.recommendations is not None:
+        section.recommendations_json = json.dumps(
+            [r.model_dump() for r in payload.recommendations], ensure_ascii=False
+        )
+    section.updated_at = _now()
+    section.updated_by = member.id
+    await db.commit()
+    await db.refresh(section)
+    return _section_out(section)
 
 
 @classroom_router.post("/courses/{course_id}/apply-template", response_model=list[ModuleOut])

@@ -282,3 +282,68 @@ class ReflectionOut(BaseModel):
 class ReflectionUpdate(BaseModel):
     synthesis: Optional[str] = None
     recommendations: Optional[list[Recommendation]] = None
+
+
+# ---------------------------------------------------------------------------
+# Co-edited team report
+# ---------------------------------------------------------------------------
+
+
+class TeamSectionOut(BaseModel):
+    synthesis: Optional[str] = None
+    recommendations: list[Recommendation] = []
+    updated_at: Optional[datetime] = None
+
+
+class TeamSectionUpdate(BaseModel):
+    synthesis: Optional[str] = None
+    recommendations: Optional[list[Recommendation]] = None
+
+
+class TeamReportMember(BaseModel):
+    enrollment_id: str
+    name: Optional[str] = None
+    is_me: bool = False
+    completed: bool = False
+    composite: Optional[float] = None
+
+
+class TeamFactorMean(BaseModel):
+    name: str
+    mean: Optional[float] = None
+
+
+class MyFactor(BaseModel):
+    name: str
+    normalized: Optional[float] = None
+
+
+class TeamReportModule(BaseModel):
+    module_id: str
+    topic: str
+    week_no: Optional[int] = None
+    reading_ref: Optional[str] = None
+    has_measure: bool = False
+    scale_min: int = 1
+    scale_max: int = 5
+    team_n: int = 0
+    team_total: int = 0
+    team_composite: Optional[float] = None
+    team_factor_means: list[TeamFactorMean] = []
+    members: list[TeamReportMember] = []
+    my_composite: Optional[float] = None
+    my_factors: list[MyFactor] = []
+    section: TeamSectionOut = TeamSectionOut()
+    concept_options: list[str] = []
+    lenses: list[str] = []
+
+
+class TeamReportOut(BaseModel):
+    course_code: str
+    course_title: str
+    term: Optional[str] = None
+    project_title: Optional[str] = None
+    team_id: str
+    team_name: str
+    my_name: Optional[str] = None
+    modules: list[TeamReportModule] = []

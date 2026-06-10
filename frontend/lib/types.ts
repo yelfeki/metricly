@@ -1107,3 +1107,58 @@ export interface ClassroomReflection {
   recommendations: ClassroomRecommendation[]
   updated_at: string | null
 }
+
+export interface ClassroomTeamSection {
+  synthesis: string | null
+  recommendations: ClassroomRecommendation[]
+  updated_at: string | null
+}
+
+export interface ClassroomTeamReportMember {
+  enrollment_id: string
+  name: string | null
+  is_me: boolean
+  completed: boolean
+  composite: number | null
+}
+
+export interface ClassroomTeamFactorMean {
+  name: string
+  mean: number | null
+}
+
+export interface ClassroomMyFactor {
+  name: string
+  normalized: number | null
+}
+
+export interface ClassroomTeamReportModule {
+  module_id: string
+  topic: string
+  week_no: number | null
+  reading_ref: string | null
+  has_measure: boolean
+  scale_min: number
+  scale_max: number
+  team_n: number
+  team_total: number
+  team_composite: number | null
+  team_factor_means: ClassroomTeamFactorMean[]
+  members: ClassroomTeamReportMember[]
+  my_composite: number | null
+  my_factors: ClassroomMyFactor[]
+  section: ClassroomTeamSection
+  concept_options: string[]
+  lenses: string[]
+}
+
+export interface ClassroomTeamReport {
+  course_code: string
+  course_title: string
+  term: string | null
+  project_title: string | null
+  team_id: string
+  team_name: string
+  my_name: string | null
+  modules: ClassroomTeamReportModule[]
+}

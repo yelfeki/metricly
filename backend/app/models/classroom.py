@@ -276,3 +276,36 @@ class ModuleReflection(Base):
         return (
             f"<ModuleReflection module={self.module_id!r} enrollment={self.enrollment_id!r}>"
         )
+
+
+class TeamReportSection(Base):
+    """
+    The team's shared write-up for one module — co-edited by every team member
+    (last write wins). One row per (team, module). This is the graded
+    integrated-report content; each student exports it alongside their own
+    figures.
+    """
+
+    __tablename__ = "team_report_sections"
+    __table_args__ = (
+        UniqueConstraint("team_id", "module_id", name="uq_team_section_team_module"),
+    )
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    team_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("teams.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    module_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("course_modules.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    synthesis: Mapped[str | None] = mapped_column(Text, nullable=True)
+    recommendations_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+    updated_by: Mapped[str | None] = mapped_column(String(36), nullable=True)  # enrollment id
+
+    def __repr__(self) -> str:
+        return f"<TeamReportSection team={self.team_id!r} module={self.module_id!r}>"

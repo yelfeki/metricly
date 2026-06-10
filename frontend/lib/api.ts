@@ -992,3 +992,26 @@ async function patchReflection(path: string, body: unknown): Promise<ClassroomRe
   if (!res.ok) throw new Error(`Save failed: ${res.status}`)
   return res.json() as Promise<ClassroomReflection>
 }
+
+import type { ClassroomTeamReport, ClassroomTeamSection } from "./types"
+
+export const getTeamReport = (courseId: string): Promise<ClassroomTeamReport> =>
+  get(`${CL}/courses/${courseId}/team-report`)
+
+export const saveTeamSection = (
+  courseId: string,
+  moduleId: string,
+  body: { synthesis?: string | null; recommendations?: ClassroomRecommendation[] }
+): Promise<ClassroomTeamSection> =>
+  patchTeamSection(`${CL}/courses/${courseId}/modules/${moduleId}/team-section`, body)
+
+async function patchTeamSection(path: string, body: unknown): Promise<ClassroomTeamSection> {
+  const res = await apiFetch(path, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    _auth: true,
+  })
+  if (!res.ok) throw new Error(`Save failed: ${res.status}`)
+  return res.json() as Promise<ClassroomTeamSection>
+}

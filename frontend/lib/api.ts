@@ -955,3 +955,40 @@ export const submitModuleMeasure = (
 
 export const deployModule = (courseId: string, moduleId: string) =>
   post(`${CL}/courses/${courseId}/modules/${moduleId}/deploy`, {})
+
+import type {
+  ClassroomModuleReport,
+  ClassroomReflection,
+  ClassroomRecommendation,
+} from "./types"
+
+export const getModuleReport = (
+  courseId: string,
+  moduleId: string
+): Promise<ClassroomModuleReport> =>
+  get(`${CL}/courses/${courseId}/modules/${moduleId}/report`)
+
+export const getReflection = (
+  courseId: string,
+  moduleId: string
+): Promise<ClassroomReflection> =>
+  get(`${CL}/courses/${courseId}/modules/${moduleId}/reflection`)
+
+export const saveReflection = (
+  courseId: string,
+  moduleId: string,
+  body: { synthesis?: string | null; recommendations?: ClassroomRecommendation[] }
+): Promise<ClassroomReflection> =>
+  patchReflection(`${CL}/courses/${courseId}/modules/${moduleId}/reflection`, body)
+
+// reflection uses PUT
+async function patchReflection(path: string, body: unknown): Promise<ClassroomReflection> {
+  const res = await apiFetch(path, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    _auth: true,
+  })
+  if (!res.ok) throw new Error(`Save failed: ${res.status}`)
+  return res.json() as Promise<ClassroomReflection>
+}

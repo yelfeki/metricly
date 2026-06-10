@@ -1058,3 +1058,52 @@ export interface ClassroomMeasureSubmitOut {
   module_id: string
   completed: boolean
 }
+
+export interface ClassroomReportFactor {
+  name: string
+  raw_mean: number | null
+  normalized: number | null
+  item_count: number
+  team_mean: number | null
+}
+
+export interface ClassroomReportItem {
+  question_id: string
+  text: string
+  value: number | null
+  factor: string | null
+  reverse_scored: boolean
+}
+
+export interface ClassroomModuleReport {
+  module_id: string
+  topic: string
+  week_no: number | null
+  reading_ref: string | null
+  response_id: string
+  submitted_at: string | null
+  scale_min: number
+  scale_max: number
+  composite: number | null
+  team_composite: number | null
+  team_n: number
+  factors: ClassroomReportFactor[]
+  items: ClassroomReportItem[]
+  guiding_questions: string[]
+  concept_options: string[]
+  lenses: string[]
+  key_terms: string[]
+}
+
+export interface ClassroomRecommendation {
+  observation?: string | null
+  concept?: string | null
+  action?: string | null
+  feasibility?: string | null
+}
+
+export interface ClassroomReflection {
+  synthesis: string | null
+  recommendations: ClassroomRecommendation[]
+  updated_at: string | null
+}

@@ -50,7 +50,7 @@ export default function MeasurePage() {
         value: String(answers[q.id]),
       }))
       await submitModuleMeasure(courseId, moduleId, payload)
-      router.push(`/classroom/${courseId}`)
+      router.push(`/classroom/${courseId}/modules/${moduleId}/report`)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
       setSubmitting(false)

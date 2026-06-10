@@ -222,3 +222,63 @@ class MeasureSubmitOut(BaseModel):
     response_id: str
     module_id: str
     completed: bool = True
+
+
+# ---------------------------------------------------------------------------
+# Report workbook
+# ---------------------------------------------------------------------------
+
+
+class ReportFactor(BaseModel):
+    name: str
+    raw_mean: Optional[float] = None
+    normalized: Optional[float] = None  # 0–100
+    item_count: int
+    team_mean: Optional[float] = None  # team's mean normalized for this factor
+
+
+class ReportItem(BaseModel):
+    question_id: str
+    text: str
+    value: Optional[float] = None  # the student's response as a number
+    factor: Optional[str] = None
+    reverse_scored: bool = False
+
+
+class ModuleReportOut(BaseModel):
+    module_id: str
+    topic: str
+    week_no: Optional[int] = None
+    reading_ref: Optional[str] = None
+    response_id: str
+    submitted_at: Optional[datetime] = None
+    scale_min: int
+    scale_max: int
+    composite: Optional[float] = None
+    team_composite: Optional[float] = None
+    team_n: int = 0
+    factors: list[ReportFactor] = []
+    items: list[ReportItem] = []
+    # echoed from the module so the workbook can scaffold the writing
+    guiding_questions: list[str] = []
+    concept_options: list[str] = []
+    lenses: list[str] = []
+    key_terms: list[str] = []
+
+
+class Recommendation(BaseModel):
+    observation: Optional[str] = None
+    concept: Optional[str] = None
+    action: Optional[str] = None
+    feasibility: Optional[str] = None
+
+
+class ReflectionOut(BaseModel):
+    synthesis: Optional[str] = None
+    recommendations: list[Recommendation] = []
+    updated_at: Optional[datetime] = None
+
+
+class ReflectionUpdate(BaseModel):
+    synthesis: Optional[str] = None
+    recommendations: Optional[list[Recommendation]] = None

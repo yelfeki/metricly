@@ -367,6 +367,85 @@ async def test_measure_without_instrument_is_400(client):
 
 
 @pytest.mark.asyncio
+async def test_report_and_reflection(client, db_session):
+    instrument_id = await _seed_instrument(db_session, short_name="RPT-3")
+
+    client.set_user("instructor-1")
+    course = await _create_course(client)
+    cid = course["id"]
+    code = course["join_code"]
+    mod = (
+        await client.post(
+            f"{BASE}/courses/{cid}/modules",
+            json={"week_no": 12, "topic": "Stress", "instrument_id": instrument_id, "order_index": 0},
+        )
+    ).json()
+
+    # student joins, takes the measure (all 5s → top of scale)
+    client.set_user("student-1")
+    await client.post(f"{BASE}/courses/join", json={"join_code": code, "name": "Maya"})
+    measure = (await client.get(f"{BASE}/courses/{cid}/modules/{mod['id']}/measure")).json()
+    answers = [{"question_id": q["id"], "value": "5"} for q in measure["questions"]]
+    await client.post(f"{BASE}/courses/{cid}/modules/{mod['id']}/submit", json={"answers": answers})
+
+    # report figures
+    report = (await client.get(f"{BASE}/courses/{cid}/modules/{mod['id']}/report")).json()
+    assert report["scale_min"] == 1 and report["scale_max"] == 5
+    assert report["composite"] == 100.0  # all 5s on a 1–5 scale
+    assert len(report["items"]) == 3
+    assert report["items"][0]["value"] == 5.0
+    assert len(report["factors"]) >= 1
+    assert report["factors"][0]["normalized"] == 100.0
+    # workbook scaffolding echoed
+    assert isinstance(report["guiding_questions"], list)
+
+    # reflection starts empty
+    refl = (await client.get(f"{BASE}/courses/{cid}/modules/{mod['id']}/reflection")).json()
+    assert refl["synthesis"] is None
+    assert refl["recommendations"] == []
+
+    # save synthesis + a recommendation
+    saved = await client.put(
+        f"{BASE}/courses/{cid}/modules/{mod['id']}/reflection",
+        json={
+            "synthesis": "My stress was high, driven by workload.",
+            "recommendations": [
+                {"observation": "Workload items highest", "concept": "Demand–Control", "action": "Planning block", "feasibility": "Low cost"}
+            ],
+        },
+    )
+    assert saved.status_code == 200
+    body = saved.json()
+    assert body["synthesis"].startswith("My stress")
+    assert body["recommendations"][0]["concept"] == "Demand–Control"
+
+    # persisted
+    refl2 = (await client.get(f"{BASE}/courses/{cid}/modules/{mod['id']}/reflection")).json()
+    assert refl2["recommendations"][0]["action"] == "Planning block"
+
+
+@pytest.mark.asyncio
+async def test_report_requires_completion(client, db_session):
+    instrument_id = await _seed_instrument(db_session, short_name="NOCOMP-3")
+    client.set_user("instructor-1")
+    course = await _create_course(client)
+    cid = course["id"]
+    code = course["join_code"]
+    mod = (
+        await client.post(
+            f"{BASE}/courses/{cid}/modules",
+            json={"topic": "Stress", "instrument_id": instrument_id, "order_index": 0},
+        )
+    ).json()
+    await client.post(f"{BASE}/courses/{cid}/modules/{mod['id']}/deploy")
+
+    client.set_user("student-1")
+    await client.post(f"{BASE}/courses/join", json={"join_code": code})
+    resp = await client.get(f"{BASE}/courses/{cid}/modules/{mod['id']}/report")
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_student_cannot_create_module(client):
     client.set_user("instructor-1")
     course = await _create_course(client)

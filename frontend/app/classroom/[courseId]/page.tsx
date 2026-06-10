@@ -208,10 +208,10 @@ function HeroCard({ courseId, module: m }: { courseId: string; module: Classroom
           {m.reading_ref && <Chip>{m.reading_ref}</Chip>}
           {(concept.lenses ?? []).slice(0, 2).map((l) => <Chip key={l}>{l}</Chip>)}
         </div>
-        <div style={{ marginTop: 18 }}>
-          <Link href={`/classroom/${courseId}/modules/${m.id}`} style={{ textDecoration: "none" }}>
+        <div style={{ marginTop: 18, display: "flex", gap: 10 }}>
+          <Link href={done ? `/classroom/${courseId}/modules/${m.id}/report` : `/classroom/${courseId}/modules/${m.id}`} style={{ textDecoration: "none" }}>
             <span style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "var(--mx-paper)", color: "var(--mx-forest)", fontSize: 13, fontWeight: 500, padding: "9px 16px", borderRadius: "var(--mx-r-pill)" }}>
-              {done ? "Revisit the concept" : "Read the concept & begin"}
+              {done ? "Open your report" : "Read the concept & begin"}
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="5 3 10 7 5 11" /></svg>
             </span>
           </Link>

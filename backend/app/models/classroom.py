@@ -238,3 +238,41 @@ class ModuleCompletion(Base):
             f"<ModuleCompletion module={self.module_id!r} "
             f"enrollment={self.enrollment_id!r} done={self.completed_at is not None}>"
         )
+
+
+class ModuleReflection(Base):
+    """
+    A student's own write-up for a module's report workbook — the synthesis they
+    author from the figures, plus their evidence-based recommendations. Metricly
+    never fills these in; the student does.
+
+    recommendations_json is a JSON array of
+    {observation, concept, action, feasibility}.
+    """
+
+    __tablename__ = "module_reflections"
+    __table_args__ = (
+        UniqueConstraint(
+            "module_id", "enrollment_id", name="uq_reflection_module_enrollment"
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    module_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("course_modules.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    enrollment_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("enrollments.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    synthesis: Mapped[str | None] = mapped_column(Text, nullable=True)
+    recommendations_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<ModuleReflection module={self.module_id!r} enrollment={self.enrollment_id!r}>"
+        )

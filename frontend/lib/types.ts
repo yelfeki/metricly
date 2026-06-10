@@ -1162,3 +1162,31 @@ export interface ClassroomTeamReport {
   my_name: string | null
   modules: ClassroomTeamReportModule[]
 }
+
+export interface ClassroomInstrumentBrief {
+  id: string
+  short_name: string
+  name: string
+}
+
+export interface ClassroomProgressModule {
+  id: string
+  week_no: number | null
+  topic: string
+  has_measure: boolean
+}
+
+export interface ClassroomProgressStudent {
+  enrollment_id: string
+  name: string | null
+  email: string | null
+  team_id: string | null
+  team_name: string | null
+  completed_module_ids: string[]
+  completed_count: number
+}
+
+export interface ClassroomProgress {
+  modules: ClassroomProgressModule[]
+  students: ClassroomProgressStudent[]
+}

@@ -516,6 +516,86 @@ async def test_team_report_requires_team(client):
 
 
 @pytest.mark.asyncio
+async def test_auto_form_teams(client):
+    client.set_user("instructor-1")
+    course = await _create_course(client)
+    cid = course["id"]
+    code = course["join_code"]
+
+    for uid in ["s1", "s2", "s3", "s4", "s5"]:
+        client.set_user(uid)
+        await client.post(f"{BASE}/courses/join", json={"join_code": code, "name": uid})
+
+    client.set_user("instructor-1")
+    teams = (await client.post(f"{BASE}/courses/{cid}/teams/auto", json={"team_size": 2})).json()
+    # 5 students, size 2 → 3 teams (2,2,1)
+    assert len(teams) == 3
+    sizes = sorted(len(t["members"]) for t in teams)
+    assert sizes == [1, 2, 2]
+
+    # re-running assigns nobody new (all have teams)
+    again = (await client.post(f"{BASE}/courses/{cid}/teams/auto", json={"team_size": 2})).json()
+    assert again == []
+
+
+@pytest.mark.asyncio
+async def test_update_module_attaches_instrument(client, db_session):
+    instrument_id = await _seed_instrument(db_session, short_name="ATTACH-3")
+    client.set_user("instructor-1")
+    course = await _create_course(client)
+    cid = course["id"]
+    mod = (
+        await client.post(f"{BASE}/courses/{cid}/modules", json={"topic": "Diversity", "order_index": 0})
+    ).json()
+    assert mod["instrument_id"] is None
+
+    patched = await client.patch(
+        f"{BASE}/courses/{cid}/modules/{mod['id']}",
+        json={"instrument_id": instrument_id, "reading_ref": "Levy ch. 16"},
+    )
+    assert patched.status_code == 200
+    assert patched.json()["instrument_id"] == instrument_id
+    assert patched.json()["reading_ref"] == "Levy ch. 16"
+
+    # students may not edit modules
+    code = course["join_code"]
+    client.set_user("student-1")
+    await client.post(f"{BASE}/courses/join", json={"join_code": code})
+    forbidden = await client.patch(f"{BASE}/courses/{cid}/modules/{mod['id']}", json={"topic": "Hacked"})
+    assert forbidden.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_progress_matrix(client, db_session):
+    instrument_id = await _seed_instrument(db_session, short_name="PROG-3")
+    client.set_user("instructor-1")
+    course = await _create_course(client)
+    cid = course["id"]
+    code = course["join_code"]
+    mod = (
+        await client.post(
+            f"{BASE}/courses/{cid}/modules",
+            json={"week_no": 12, "topic": "Stress", "instrument_id": instrument_id, "order_index": 0},
+        )
+    ).json()
+
+    client.set_user("student-1")
+    await client.post(f"{BASE}/courses/join", json={"join_code": code, "name": "Maya"})
+    measure = (await client.get(f"{BASE}/courses/{cid}/modules/{mod['id']}/measure")).json()
+    await client.post(
+        f"{BASE}/courses/{cid}/modules/{mod['id']}/submit",
+        json={"answers": [{"question_id": q["id"], "value": "3"} for q in measure["questions"]]},
+    )
+
+    client.set_user("instructor-1")
+    prog = (await client.get(f"{BASE}/courses/{cid}/progress")).json()
+    assert len(prog["modules"]) == 1
+    maya = next(s for s in prog["students"] if s["name"] == "Maya")
+    assert maya["completed_count"] == 1
+    assert mod["id"] in maya["completed_module_ids"]
+
+
+@pytest.mark.asyncio
 async def test_student_cannot_create_module(client):
     client.set_user("instructor-1")
     course = await _create_course(client)

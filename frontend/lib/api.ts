@@ -1015,3 +1015,47 @@ async function patchTeamSection(path: string, body: unknown): Promise<ClassroomT
   if (!res.ok) throw new Error(`Save failed: ${res.status}`)
   return res.json() as Promise<ClassroomTeamSection>
 }
+
+import type {
+  ClassroomInstrumentBrief,
+  ClassroomProgress,
+} from "./types"
+
+export const createTeam = (courseId: string, name: string): Promise<ClassroomTeam> =>
+  post(`${CL}/courses/${courseId}/teams`, { name })
+
+export const assignTeam = (
+  courseId: string,
+  enrollmentId: string,
+  teamId: string | null
+): Promise<ClassroomEnrollment> =>
+  post(`${CL}/courses/${courseId}/enrollments/${enrollmentId}/team`, { team_id: teamId })
+
+export const autoFormTeams = (
+  courseId: string,
+  teamSize: number
+): Promise<ClassroomTeam[]> =>
+  post(`${CL}/courses/${courseId}/teams/auto`, { team_size: teamSize })
+
+export const listInstruments = (): Promise<ClassroomInstrumentBrief[]> =>
+  get(`${CL}/instruments`)
+
+export const updateModule = (
+  courseId: string,
+  moduleId: string,
+  body: Partial<{ instrument_id: string | null; reading_ref: string | null; topic: string; week_no: number; due_date: string | null }>
+): Promise<ClassroomModule> => patchModule(`${CL}/courses/${courseId}/modules/${moduleId}`, body)
+
+async function patchModule(path: string, body: unknown): Promise<ClassroomModule> {
+  const res = await apiFetch(path, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    _auth: true,
+  })
+  if (!res.ok) throw new Error(`Update failed: ${res.status}`)
+  return res.json() as Promise<ClassroomModule>
+}
+
+export const getProgress = (courseId: string): Promise<ClassroomProgress> =>
+  get(`${CL}/courses/${courseId}/progress`)

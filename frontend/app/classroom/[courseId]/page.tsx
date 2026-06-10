@@ -105,6 +105,9 @@ export default function CourseDashboard() {
                     You’re seeing the student experience. Share join code{" "}
                     <b className="mx-mono" style={{ color: "var(--mx-forest)" }}>{course.join_code}</b> with your class.
                   </span>
+                  <Link href={`/classroom/${course.id}/manage`} style={{ marginLeft: "auto", textDecoration: "none" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, border: "1px solid var(--mx-forest)", background: "var(--mx-grad-cool)", color: "var(--mx-paper)", fontSize: 12.5, fontWeight: 500, padding: "7px 14px", borderRadius: "var(--mx-r-pill)", whiteSpace: "nowrap" }}>Manage class</span>
+                  </Link>
                 </div>
               )}
 

@@ -29,6 +29,7 @@ from ..models.classroom import (
     Team,
     TeamReportSection,
 )
+from ..models.library import Instrument
 from ..models.survey import Answer, Question, Response, ScoringAlgorithm, Survey
 from ..services.classroom_deploy import deploy_module_survey, ensure_module_survey
 from ..services.classroom_reports import response_factor_scores
@@ -44,12 +45,18 @@ from ..schemas.classroom import (
     ModuleOut,
     MyEnrollmentOut,
     TeamCreate,
+    AutoTeamRequest,
+    InstrumentBrief,
     MeasureAnswer,
     MeasureQuestion,
     MeasureSubmit,
     MeasureSubmitOut,
     ModuleMeasureOut,
     ModuleReportOut,
+    ModuleUpdate,
+    ProgressModule,
+    ProgressOut,
+    ProgressStudent,
     Recommendation,
     ReflectionOut,
     ReflectionUpdate,
@@ -1278,6 +1285,198 @@ async def put_team_section(
     await db.commit()
     await db.refresh(section)
     return _section_out(section)
+
+
+# ---------------------------------------------------------------------------
+# Instructor console
+# ---------------------------------------------------------------------------
+
+
+@classroom_router.get("/instruments", response_model=list[InstrumentBrief])
+async def list_instruments(
+    db: AsyncSession = Depends(get_db),
+    user: AuthUser = Depends(require_user),
+) -> list[InstrumentBrief]:
+    """Flat instrument list for the module instrument-picker."""
+    rows = (
+        await db.execute(
+            select(Instrument)
+            .where(Instrument.is_active == True)  # noqa: E712
+            .order_by(Instrument.name)
+        )
+    ).scalars().all()
+    return [InstrumentBrief(id=i.id, short_name=i.short_name, name=i.name) for i in rows]
+
+
+@classroom_router.patch(
+    "/courses/{course_id}/modules/{module_id}", response_model=ModuleOut
+)
+async def update_module(
+    course_id: str,
+    module_id: str,
+    payload: ModuleUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: AuthUser = Depends(require_user),
+) -> ModuleOut:
+    """Edit a module — e.g. attach an instrument to a gap week. Manager only."""
+    await _require_manager(db, course_id, user)
+    module = await _load_module(db, course_id, module_id)
+    data = payload.model_dump(exclude_unset=True)
+    # Changing the instrument invalidates a previously deployed survey.
+    if "instrument_id" in data and data["instrument_id"] != module.instrument_id:
+        module.survey_id = None
+    for field, value in data.items():
+        setattr(module, field, value)
+    await db.commit()
+    await db.refresh(module)
+    return ModuleOut.model_validate(module)
+
+
+@classroom_router.post("/courses/{course_id}/teams/auto", response_model=list[TeamOut])
+async def auto_form_teams(
+    course_id: str,
+    payload: AutoTeamRequest,
+    db: AsyncSession = Depends(get_db),
+    user: AuthUser = Depends(require_user),
+) -> list[TeamOut]:
+    """
+    Distribute students who don't yet have a team into new teams of `team_size`.
+    Existing teams and assignments are left untouched. Manager only.
+    """
+    await _require_manager(db, course_id, user)
+    unassigned = list(
+        (
+            await db.execute(
+                select(Enrollment)
+                .where(
+                    Enrollment.course_id == course_id,
+                    Enrollment.role == "student",
+                    Enrollment.status == "active",
+                    Enrollment.team_id.is_(None),
+                )
+                .order_by(Enrollment.name)
+            )
+        ).scalars().all()
+    )
+    if not unassigned:
+        return []
+
+    # continue numbering after existing teams
+    existing_count = (
+        await db.execute(
+            select(func.count(Team.id)).where(Team.course_id == course_id)
+        )
+    ).scalar_one()
+
+    new_teams: list[Team] = []
+    for idx in range(0, len(unassigned), payload.team_size):
+        team = Team(
+            course_id=course_id,
+            name=f"{payload.name_prefix} {existing_count + len(new_teams) + 1}",
+        )
+        db.add(team)
+        await db.flush()
+        for member in unassigned[idx : idx + payload.team_size]:
+            member.team_id = team.id
+        new_teams.append(team)
+
+    await db.commit()
+    out: list[TeamOut] = []
+    for t in new_teams:
+        await db.refresh(t)
+        members = (
+            await db.execute(
+                select(Enrollment).where(
+                    Enrollment.team_id == t.id, Enrollment.status == "active"
+                )
+            )
+        ).scalars().all()
+        out.append(
+            TeamOut(
+                id=t.id,
+                course_id=t.course_id,
+                name=t.name,
+                created_at=t.created_at,
+                members=[
+                    TeamMemberOut(id=m.id, user_id=m.user_id, name=m.name, email=m.email, role=m.role)
+                    for m in members
+                ],
+            )
+        )
+    return out
+
+
+@classroom_router.get("/courses/{course_id}/progress", response_model=ProgressOut)
+async def get_progress(
+    course_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: AuthUser = Depends(require_user),
+) -> ProgressOut:
+    """Completion matrix (students × modules) — the grading signal. Manager only."""
+    await _require_manager(db, course_id, user)
+
+    modules = list(
+        (
+            await db.execute(
+                select(CourseModule)
+                .where(CourseModule.course_id == course_id)
+                .order_by(CourseModule.order_index)
+            )
+        ).scalars().all()
+    )
+    students = list(
+        (
+            await db.execute(
+                select(Enrollment)
+                .where(
+                    Enrollment.course_id == course_id,
+                    Enrollment.role == "student",
+                    Enrollment.status == "active",
+                )
+                .order_by(Enrollment.name)
+            )
+        ).scalars().all()
+    )
+    teams = {
+        t.id: t.name
+        for t in (
+            await db.execute(select(Team).where(Team.course_id == course_id))
+        ).scalars().all()
+    }
+    module_ids = [m.id for m in modules]
+    student_ids = [s.id for s in students]
+    done: dict[str, set[str]] = defaultdict(set)
+    if module_ids and student_ids:
+        comps = (
+            await db.execute(
+                select(ModuleCompletion).where(
+                    ModuleCompletion.module_id.in_(module_ids),
+                    ModuleCompletion.enrollment_id.in_(student_ids),
+                    ModuleCompletion.completed_at.is_not(None),
+                )
+            )
+        ).scalars().all()
+        for c in comps:
+            done[c.enrollment_id].add(c.module_id)
+
+    return ProgressOut(
+        modules=[
+            ProgressModule(id=m.id, week_no=m.week_no, topic=m.topic, has_measure=bool(m.survey_id))
+            for m in modules
+        ],
+        students=[
+            ProgressStudent(
+                enrollment_id=s.id,
+                name=s.name,
+                email=s.email,
+                team_id=s.team_id,
+                team_name=teams.get(s.team_id) if s.team_id else None,
+                completed_module_ids=sorted(done.get(s.id, set())),
+                completed_count=len(done.get(s.id, set())),
+            )
+            for s in students
+        ],
+    )
 
 
 @classroom_router.post("/courses/{course_id}/apply-template", response_model=list[ModuleOut])

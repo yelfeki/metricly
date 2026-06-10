@@ -130,6 +130,17 @@ class ModuleCreate(BaseModel):
     status: str = "scheduled"
 
 
+class ModuleUpdate(BaseModel):
+    week_no: Optional[int] = None
+    topic: Optional[str] = None
+    title: Optional[str] = None
+    instrument_id: Optional[str] = None
+    reading_ref: Optional[str] = None
+    due_date: Optional[date] = None
+    order_index: Optional[int] = None
+    status: Optional[str] = None
+
+
 class ModuleOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -347,3 +358,41 @@ class TeamReportOut(BaseModel):
     team_name: str
     my_name: Optional[str] = None
     modules: list[TeamReportModule] = []
+
+
+# ---------------------------------------------------------------------------
+# Instructor console
+# ---------------------------------------------------------------------------
+
+
+class InstrumentBrief(BaseModel):
+    id: str
+    short_name: str
+    name: str
+
+
+class AutoTeamRequest(BaseModel):
+    team_size: int = Field(5, ge=2, le=20)
+    name_prefix: str = Field("Team", max_length=40)
+
+
+class ProgressModule(BaseModel):
+    id: str
+    week_no: Optional[int] = None
+    topic: str
+    has_measure: bool = False
+
+
+class ProgressStudent(BaseModel):
+    enrollment_id: str
+    name: Optional[str] = None
+    email: Optional[str] = None
+    team_id: Optional[str] = None
+    team_name: Optional[str] = None
+    completed_module_ids: list[str] = []
+    completed_count: int = 0
+
+
+class ProgressOut(BaseModel):
+    modules: list[ProgressModule] = []
+    students: list[ProgressStudent] = []

@@ -159,8 +159,8 @@ export default function ModuleConceptPage() {
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 7, border: "1px solid var(--mx-line)", color: "var(--mx-ink)", fontSize: 13, fontWeight: 500, padding: "9px 16px", borderRadius: "var(--mx-r-pill)" }}>Back to this week</span>
                       </Link>
                     </div>
-                  ) : module.survey_id ? (
-                    <Link href={`/surveys/${module.survey_id}/respond`} style={{ textDecoration: "none" }}>
+                  ) : module.instrument_id || module.survey_id ? (
+                    <Link href={`/classroom/${courseId}/modules/${moduleId}/measure`} style={{ textDecoration: "none" }}>
                       <span style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 7, border: "1px solid var(--mx-forest)", background: "var(--mx-grad-cool)", color: "var(--mx-paper)", fontSize: 13, fontWeight: 500, padding: "12px 16px", borderRadius: "var(--mx-r-pill)" }}>
                         Begin the measure
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="5 3 10 7 5 11" /></svg>

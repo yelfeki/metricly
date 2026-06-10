@@ -275,4 +275,16 @@ async def apply_course_template(db: AsyncSession, course: Course, key: str) -> l
         db.add(module)
         created.append(module)
 
+    # Deploy a published survey for each new module that has a bound instrument,
+    # so students can take the measure immediately. (No-op for the gap weeks.)
+    await db.flush()
+    from .classroom_deploy import deploy_module_survey  # local import avoids cycle
+
+    for module in created:
+        if module.instrument_id and not module.survey_id:
+            try:
+                await deploy_module_survey(db, course, module)
+            except ValueError:
+                pass  # instrument vanished or invalid — leave as a gap
+
     return created

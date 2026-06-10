@@ -937,3 +937,21 @@ export const getCourseRoster = (courseId: string): Promise<ClassroomEnrollment[]
 
 export const listCourseTeams = (courseId: string): Promise<ClassroomTeam[]> =>
   get(`${CL}/courses/${courseId}/teams`)
+
+import type { ClassroomModuleMeasure, ClassroomMeasureSubmitOut } from "./types"
+
+export const getModuleMeasure = (
+  courseId: string,
+  moduleId: string
+): Promise<ClassroomModuleMeasure> =>
+  get(`${CL}/courses/${courseId}/modules/${moduleId}/measure`)
+
+export const submitModuleMeasure = (
+  courseId: string,
+  moduleId: string,
+  answers: { question_id: string; value: string }[]
+): Promise<ClassroomMeasureSubmitOut> =>
+  post(`${CL}/courses/${courseId}/modules/${moduleId}/submit`, { answers })
+
+export const deployModule = (courseId: string, moduleId: string) =>
+  post(`${CL}/courses/${courseId}/modules/${moduleId}/deploy`, {})

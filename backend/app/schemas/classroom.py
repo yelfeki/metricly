@@ -180,3 +180,45 @@ class TeamModuleStatus(BaseModel):
     total: int
     submitted: int
     members: list[TeamMemberStatus] = []
+
+
+# ---------------------------------------------------------------------------
+# Measure taking
+# ---------------------------------------------------------------------------
+
+
+class MeasureQuestion(BaseModel):
+    id: str
+    text: str
+    question_type: str
+    options: Optional[object] = None  # parsed list/dict for choice types; None for Likert
+    position: int
+    factor: Optional[str] = None
+    reverse_scored: bool = False
+
+
+class ModuleMeasureOut(BaseModel):
+    module_id: str
+    survey_id: str
+    topic: str
+    week_no: Optional[int] = None
+    reading_ref: Optional[str] = None
+    scale_min: int
+    scale_max: int
+    already_completed: bool = False
+    questions: list[MeasureQuestion] = []
+
+
+class MeasureAnswer(BaseModel):
+    question_id: str
+    value: str
+
+
+class MeasureSubmit(BaseModel):
+    answers: list[MeasureAnswer]
+
+
+class MeasureSubmitOut(BaseModel):
+    response_id: str
+    module_id: str
+    completed: bool = True

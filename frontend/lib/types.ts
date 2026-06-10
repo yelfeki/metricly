@@ -1030,3 +1030,31 @@ export interface ModulePrompts {
   guiding_questions?: string[]
   concept_options?: string[]
 }
+
+export interface ClassroomMeasureQuestion {
+  id: string
+  text: string
+  question_type: string
+  options: unknown
+  position: number
+  factor: string | null
+  reverse_scored: boolean
+}
+
+export interface ClassroomModuleMeasure {
+  module_id: string
+  survey_id: string
+  topic: string
+  week_no: number | null
+  reading_ref: string | null
+  scale_min: number
+  scale_max: number
+  already_completed: boolean
+  questions: ClassroomMeasureQuestion[]
+}
+
+export interface ClassroomMeasureSubmitOut {
+  response_id: string
+  module_id: string
+  completed: boolean
+}

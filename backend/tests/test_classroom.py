@@ -1,8 +1,44 @@
-"""Integration tests for the Classroom API (Phase 0 foundation)."""
+"""Integration tests for the Classroom API (foundation + measure-taking)."""
+
+from datetime import datetime, timezone
 
 import pytest
 
+from app.models.library import Instrument, InstrumentItem, InstrumentSubscale
+
 BASE = "/api/v1/classroom"
+
+
+async def _seed_instrument(db, short_name="TEST-3", n_items=3) -> str:
+    """Insert a minimal 3-item Likert-5 instrument; return its id."""
+    inst = Instrument(
+        name="Test Scale",
+        short_name=short_name,
+        description="A tiny test instrument.",
+        response_format="likert5",
+        scoring_type="mean",
+        total_items=n_items,
+        license_type="open",
+        is_active=True,
+        created_at=datetime.now(timezone.utc),
+    )
+    db.add(inst)
+    await db.flush()
+    sub = InstrumentSubscale(instrument_id=inst.id, name="Overall", item_count=n_items)
+    db.add(sub)
+    await db.flush()
+    for i in range(n_items):
+        db.add(
+            InstrumentItem(
+                instrument_id=inst.id,
+                subscale_id=sub.id,
+                item_text=f"Item {i + 1}",
+                order_index=i + 1,
+                is_reverse_scored=False,
+            )
+        )
+    await db.commit()
+    return inst.id
 
 
 async def _create_course(client) -> dict:
@@ -246,6 +282,88 @@ async def test_team_module_status(client):
     assert status["submitted"] == 1
     me = next(m for m in status["members"] if m["is_me"])
     assert me["completed"] is True
+
+
+@pytest.mark.asyncio
+async def test_deploy_measure_submit_loop(client, db_session):
+    instrument_id = await _seed_instrument(db_session)
+
+    client.set_user("instructor-1")
+    course = await _create_course(client)
+    cid = course["id"]
+    code = course["join_code"]
+    mod = (
+        await client.post(
+            f"{BASE}/courses/{cid}/modules",
+            json={"week_no": 12, "topic": "Stress", "instrument_id": instrument_id, "order_index": 0},
+        )
+    ).json()
+
+    # instructor deploys the measure → a survey id is set
+    deployed = await client.post(f"{BASE}/courses/{cid}/modules/{mod['id']}/deploy")
+    assert deployed.status_code == 200, deployed.text
+    assert deployed.json()["survey_id"]
+
+    # student joins and fetches the measure
+    client.set_user("student-1")
+    await client.post(f"{BASE}/courses/join", json={"join_code": code, "name": "Maya"})
+    measure = (await client.get(f"{BASE}/courses/{cid}/modules/{mod['id']}/measure")).json()
+    assert len(measure["questions"]) == 3
+    assert measure["scale_min"] == 1 and measure["scale_max"] == 5
+    assert measure["already_completed"] is False
+
+    # student submits answers
+    answers = [{"question_id": q["id"], "value": "4"} for q in measure["questions"]]
+    submit = await client.post(f"{BASE}/courses/{cid}/modules/{mod['id']}/submit", json={"answers": answers})
+    assert submit.status_code == 200, submit.text
+    assert submit.json()["completed"] is True
+    assert submit.json()["response_id"]
+
+    # the measure now reads as completed, and the module shows done
+    measure2 = (await client.get(f"{BASE}/courses/{cid}/modules/{mod['id']}/measure")).json()
+    assert measure2["already_completed"] is True
+    mods = (await client.get(f"{BASE}/courses/{cid}/modules")).json()
+    assert mods[0]["completed"] is True
+
+
+@pytest.mark.asyncio
+async def test_measure_lazy_deploys_when_not_deployed(client, db_session):
+    instrument_id = await _seed_instrument(db_session, short_name="LAZY-3")
+
+    client.set_user("instructor-1")
+    course = await _create_course(client)
+    cid = course["id"]
+    code = course["join_code"]
+    mod = (
+        await client.post(
+            f"{BASE}/courses/{cid}/modules",
+            json={"topic": "Teams", "instrument_id": instrument_id, "order_index": 0},
+        )
+    ).json()
+    assert mod["survey_id"] is None  # not deployed yet
+
+    # student opens the measure → it deploys on demand
+    client.set_user("student-1")
+    await client.post(f"{BASE}/courses/join", json={"join_code": code})
+    measure = (await client.get(f"{BASE}/courses/{cid}/modules/{mod['id']}/measure")).json()
+    assert measure["survey_id"]
+    assert len(measure["questions"]) == 3
+
+
+@pytest.mark.asyncio
+async def test_measure_without_instrument_is_400(client):
+    client.set_user("instructor-1")
+    course = await _create_course(client)
+    cid = course["id"]
+    code = course["join_code"]
+    mod = (
+        await client.post(f"{BASE}/courses/{cid}/modules", json={"topic": "Diversity", "order_index": 0})
+    ).json()
+
+    client.set_user("student-1")
+    await client.post(f"{BASE}/courses/join", json={"join_code": code})
+    resp = await client.get(f"{BASE}/courses/{cid}/modules/{mod['id']}/measure")
+    assert resp.status_code == 400
 
 
 @pytest.mark.asyncio

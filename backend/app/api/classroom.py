@@ -8,6 +8,7 @@ active membership. Students join a course with its short join code.
 
 from __future__ import annotations
 
+import json
 import secrets
 from datetime import datetime, timezone
 
@@ -25,6 +26,9 @@ from ..models.classroom import (
     ModuleCompletion,
     Team,
 )
+from ..models.survey import Answer, Question, Response, ScoringAlgorithm, Survey
+from ..services.classroom_deploy import deploy_module_survey, ensure_module_survey
+from ..services.scoring import score_answer
 from ..schemas.classroom import (
     ApplyTemplateRequest,
     AssignTeamRequest,
@@ -36,6 +40,11 @@ from ..schemas.classroom import (
     ModuleOut,
     MyEnrollmentOut,
     TeamCreate,
+    MeasureAnswer,
+    MeasureQuestion,
+    MeasureSubmit,
+    MeasureSubmitOut,
+    ModuleMeasureOut,
     TeamMemberOut,
     TeamMemberStatus,
     TeamModuleStatus,
@@ -43,6 +52,9 @@ from ..schemas.classroom import (
     TemplateOut,
 )
 from ..services.course_templates import apply_course_template, list_templates
+
+# question_type → (scale_min, scale_max) fallback when no algorithm is present
+_QTYPE_SCALE = {"likert_5": (1, 5), "likert_7": (1, 7)}
 
 classroom_router = APIRouter(prefix="/classroom", tags=["classroom"])
 
@@ -571,6 +583,220 @@ async def complete_module(
     mo = ModuleOut.model_validate(module)
     mo.completed = True
     return mo
+
+
+# ---------------------------------------------------------------------------
+# Measure taking
+# ---------------------------------------------------------------------------
+
+
+async def _load_module(db: AsyncSession, course_id: str, module_id: str) -> CourseModule:
+    module = (
+        await db.execute(
+            select(CourseModule).where(
+                CourseModule.id == module_id, CourseModule.course_id == course_id
+            )
+        )
+    ).scalar_one_or_none()
+    if module is None:
+        raise HTTPException(status_code=404, detail="Module not found in this course.")
+    return module
+
+
+def _derive_scale(questions: list[Question], algos: list[ScoringAlgorithm]) -> tuple[int, int]:
+    """
+    Recover the per-item response scale (e.g. 1–5, 0–6) from the scoring bounds.
+    Each factor algorithm's bounds are n_items × scale, so summing factor bounds
+    over the total question count yields the uniform per-item scale.
+    """
+    factor_algos = [a for a in algos if a.factor_id is not None]
+    n = len(questions)
+    if factor_algos and n:
+        lo = round(sum(a.min_possible for a in factor_algos) / n)
+        hi = round(sum(a.max_possible for a in factor_algos) / n)
+        if hi > lo:
+            return int(lo), int(hi)
+    qt = questions[0].question_type if questions else "likert_5"
+    return _QTYPE_SCALE.get(qt, (1, 5))
+
+
+@classroom_router.post("/courses/{course_id}/modules/{module_id}/deploy", response_model=ModuleOut)
+async def deploy_module(
+    course_id: str,
+    module_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: AuthUser = Depends(require_user),
+) -> ModuleOut:
+    """Deploy the module's instrument as a published class survey. Manager only."""
+    await _require_manager(db, course_id, user)
+    course = (await db.execute(select(Course).where(Course.id == course_id))).scalar_one()
+    module = await _load_module(db, course_id, module_id)
+    if module.survey_id:
+        return ModuleOut.model_validate(module)
+    if not module.instrument_id:
+        raise HTTPException(status_code=400, detail="This module has no instrument to deploy.")
+    try:
+        await deploy_module_survey(db, course, module)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    await db.commit()
+    await db.refresh(module)
+    return ModuleOut.model_validate(module)
+
+
+@classroom_router.get(
+    "/courses/{course_id}/modules/{module_id}/measure", response_model=ModuleMeasureOut
+)
+async def get_module_measure(
+    course_id: str,
+    module_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: AuthUser = Depends(require_user),
+) -> ModuleMeasureOut:
+    """Return the module's survey questions for taking, lazily deploying if needed."""
+    member = await _require_member(db, course_id, user)
+    course = (await db.execute(select(Course).where(Course.id == course_id))).scalar_one()
+    module = await _load_module(db, course_id, module_id)
+
+    survey = await ensure_module_survey(db, course, module)
+    if survey is None:
+        raise HTTPException(
+            status_code=400, detail="No instrument is attached to this module yet."
+        )
+
+    questions = (
+        await db.execute(
+            select(Question)
+            .where(Question.survey_id == survey.id)
+            .order_by(Question.position)
+        )
+    ).scalars().all()
+    algos = (
+        await db.execute(
+            select(ScoringAlgorithm).where(ScoringAlgorithm.survey_id == survey.id)
+        )
+    ).scalars().all()
+    scale_min, scale_max = _derive_scale(list(questions), list(algos))
+
+    completion = (
+        await db.execute(
+            select(ModuleCompletion).where(
+                ModuleCompletion.module_id == module_id,
+                ModuleCompletion.enrollment_id == member.id,
+                ModuleCompletion.completed_at.is_not(None),
+            )
+        )
+    ).scalar_one_or_none()
+
+    def _opts(raw: str | None):
+        if not raw:
+            return None
+        try:
+            return json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            return None
+
+    return ModuleMeasureOut(
+        module_id=module.id,
+        survey_id=survey.id,
+        topic=module.topic,
+        week_no=module.week_no,
+        reading_ref=module.reading_ref,
+        scale_min=scale_min,
+        scale_max=scale_max,
+        already_completed=completion is not None,
+        questions=[
+            MeasureQuestion(
+                id=q.id,
+                text=q.text,
+                question_type=q.question_type,
+                options=_opts(q.options),
+                position=q.position,
+                factor=q.factor,
+                reverse_scored=q.reverse_scored,
+            )
+            for q in questions
+        ],
+    )
+
+
+@classroom_router.post(
+    "/courses/{course_id}/modules/{module_id}/submit", response_model=MeasureSubmitOut
+)
+async def submit_module_measure(
+    course_id: str,
+    module_id: str,
+    payload: MeasureSubmit,
+    db: AsyncSession = Depends(get_db),
+    user: AuthUser = Depends(require_user),
+) -> MeasureSubmitOut:
+    """Record the student's response to the module's measure and log completion."""
+    member = await _require_member(db, course_id, user)
+    course = (await db.execute(select(Course).where(Course.id == course_id))).scalar_one()
+    module = await _load_module(db, course_id, module_id)
+
+    survey = await ensure_module_survey(db, course, module)
+    if survey is None:
+        raise HTTPException(status_code=400, detail="No instrument is attached to this module yet.")
+
+    questions = {
+        q.id: q
+        for q in (
+            await db.execute(select(Question).where(Question.survey_id == survey.id))
+        ).scalars().all()
+    }
+    if not payload.answers:
+        raise HTTPException(status_code=422, detail="No answers submitted.")
+    for ans in payload.answers:
+        if ans.question_id not in questions:
+            raise HTTPException(
+                status_code=400, detail=f"Question {ans.question_id} is not part of this measure."
+            )
+
+    response = Response(survey_id=survey.id, respondent_ref=member.id)
+    db.add(response)
+    await db.flush()
+
+    for ans in payload.answers:
+        q = questions[ans.question_id]
+        legacy = None
+        if q.question_type in ("likert_5", "likert_7"):
+            try:
+                legacy = float(ans.value)
+            except ValueError:
+                legacy = None
+        db.add(
+            Answer(
+                response_id=response.id,
+                question_id=ans.question_id,
+                value=ans.value,
+                score=legacy,
+                numeric_score=score_answer(q, ans.value),
+            )
+        )
+
+    completion = (
+        await db.execute(
+            select(ModuleCompletion).where(
+                ModuleCompletion.module_id == module_id,
+                ModuleCompletion.enrollment_id == member.id,
+            )
+        )
+    ).scalar_one_or_none()
+    if completion is None:
+        completion = ModuleCompletion(
+            module_id=module_id,
+            enrollment_id=member.id,
+            survey_response_id=response.id,
+            completed_at=_now(),
+        )
+        db.add(completion)
+    else:
+        completion.survey_response_id = response.id
+        completion.completed_at = _now()
+
+    await db.commit()
+    return MeasureSubmitOut(response_id=response.id, module_id=module_id, completed=True)
 
 
 @classroom_router.post("/courses/{course_id}/apply-template", response_model=list[ModuleOut])

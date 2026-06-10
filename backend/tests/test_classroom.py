@@ -148,6 +148,107 @@ async def test_module_lifecycle_and_completion(client):
 
 
 @pytest.mark.asyncio
+async def test_create_course_with_template_seeds_modules(client):
+    client.set_user("instructor-1")
+    resp = await client.post(
+        f"{BASE}/courses",
+        json={
+            "code": "PSY 272",
+            "title": "Intro I-O",
+            "term": "Fall 2026",
+            "template": "psy272-modern-workplace",
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    course = resp.json()
+    assert course["module_count"] == 5
+
+    mods = (await client.get(f"{BASE}/courses/{course['id']}/modules")).json()
+    weeks = [m["week_no"] for m in mods]
+    assert weeks == [11, 12, 13, 15, 16]
+    topics = [m["topic"] for m in mods]
+    assert "Stress & well-being" in topics
+    # concept + prompts content was seeded as JSON
+    stress = next(m for m in mods if m["week_no"] == 12)
+    assert stress["concept_json"] and "Perceived stress" in stress["concept_json"]
+    assert stress["prompts_json"] and "Demand–Control" in stress["prompts_json"]
+    assert stress["reading_ref"] == "Levy ch. 11"
+
+
+@pytest.mark.asyncio
+async def test_templates_catalogue(client):
+    client.set_user("instructor-1")
+    cat = (await client.get(f"{BASE}/templates")).json()
+    keys = [t["key"] for t in cat]
+    assert "psy272-modern-workplace" in keys
+    psy = next(t for t in cat if t["key"] == "psy272-modern-workplace")
+    assert len(psy["topics"]) == 5
+
+
+@pytest.mark.asyncio
+async def test_apply_template_is_idempotent_by_week(client):
+    client.set_user("instructor-1")
+    course = await _create_course(client)
+    cid = course["id"]
+
+    first = await client.post(
+        f"{BASE}/courses/{cid}/apply-template",
+        json={"template": "psy272-modern-workplace"},
+    )
+    assert first.status_code == 200
+    assert len(first.json()) == 5
+
+    # re-applying creates nothing new (same weeks)
+    again = await client.post(
+        f"{BASE}/courses/{cid}/apply-template",
+        json={"template": "psy272-modern-workplace"},
+    )
+    assert len(again.json()) == 0
+    mods = (await client.get(f"{BASE}/courses/{cid}/modules")).json()
+    assert len(mods) == 5
+
+
+@pytest.mark.asyncio
+async def test_team_module_status(client):
+    client.set_user("instructor-1")
+    course = await _create_course(client)
+    cid = course["id"]
+    code = course["join_code"]
+    mod = (
+        await client.post(
+            f"{BASE}/courses/{cid}/modules", json={"week_no": 12, "topic": "Stress", "order_index": 0}
+        )
+    ).json()
+    team = (await client.post(f"{BASE}/courses/{cid}/teams", json={"name": "Lighthouse"})).json()
+
+    # two students join and land on the same team
+    for uid, name in [("stu-a", "Aya"), ("stu-b", "Ben")]:
+        client.set_user(uid)
+        await client.post(f"{BASE}/courses/join", json={"join_code": code, "name": name})
+
+    client.set_user("instructor-1")
+    roster = (await client.get(f"{BASE}/courses/{cid}/roster")).json()
+    for e in roster:
+        if e["role"] == "student":
+            await client.post(
+                f"{BASE}/courses/{cid}/enrollments/{e['id']}/team", json={"team_id": team["id"]}
+            )
+
+    # student A completes the module
+    client.set_user("stu-a")
+    await client.post(f"{BASE}/courses/{cid}/modules/{mod['id']}/complete")
+
+    status = (
+        await client.get(f"{BASE}/courses/{cid}/modules/{mod['id']}/team-status")
+    ).json()
+    assert status["team_name"] == "Lighthouse"
+    assert status["total"] == 2
+    assert status["submitted"] == 1
+    me = next(m for m in status["members"] if m["is_me"])
+    assert me["completed"] is True
+
+
+@pytest.mark.asyncio
 async def test_student_cannot_create_module(client):
     client.set_user("instructor-1")
     course = await _create_course(client)

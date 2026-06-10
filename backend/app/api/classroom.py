@@ -26,6 +26,7 @@ from ..models.classroom import (
     Team,
 )
 from ..schemas.classroom import (
+    ApplyTemplateRequest,
     AssignTeamRequest,
     CourseCreate,
     CourseOut,
@@ -36,8 +37,12 @@ from ..schemas.classroom import (
     MyEnrollmentOut,
     TeamCreate,
     TeamMemberOut,
+    TeamMemberStatus,
+    TeamModuleStatus,
     TeamOut,
+    TemplateOut,
 )
+from ..services.course_templates import apply_course_template, list_templates
 
 classroom_router = APIRouter(prefix="/classroom", tags=["classroom"])
 
@@ -152,9 +157,28 @@ async def create_course(
             status="active",
         )
     )
+    module_count = 0
+    if payload.template:
+        try:
+            created = await apply_course_template(db, course, payload.template)
+            module_count = len(created)
+        except KeyError:
+            raise HTTPException(
+                status_code=400, detail=f"Unknown course template: {payload.template!r}"
+            )
     await db.commit()
     await db.refresh(course)
-    return _course_out(course, my_role="instructor", member_count=1, team_count=0, module_count=0)
+    return _course_out(
+        course, my_role="instructor", member_count=1, team_count=0, module_count=module_count
+    )
+
+
+@classroom_router.get("/templates", response_model=list[TemplateOut])
+async def get_templates(
+    user: AuthUser = Depends(require_user),
+) -> list[TemplateOut]:
+    """Catalogue of ready-made weekly module sets for the create-course UI."""
+    return [TemplateOut(**t) for t in list_templates()]
 
 
 @classroom_router.get("/courses", response_model=list[CourseOut])
@@ -547,6 +571,118 @@ async def complete_module(
     mo = ModuleOut.model_validate(module)
     mo.completed = True
     return mo
+
+
+@classroom_router.post("/courses/{course_id}/apply-template", response_model=list[ModuleOut])
+async def apply_template(
+    course_id: str,
+    payload: ApplyTemplateRequest,
+    db: AsyncSession = Depends(get_db),
+    user: AuthUser = Depends(require_user),
+) -> list[ModuleOut]:
+    """Apply a module template to an existing course (idempotent by week). Manager only."""
+    await _require_manager(db, course_id, user)
+    course = (
+        await db.execute(select(Course).where(Course.id == course_id))
+    ).scalar_one()
+    try:
+        created = await apply_course_template(db, course, payload.template)
+    except KeyError:
+        raise HTTPException(status_code=400, detail=f"Unknown course template: {payload.template!r}")
+    await db.commit()
+    for m in created:
+        await db.refresh(m)
+    return [ModuleOut.model_validate(m) for m in created]
+
+
+@classroom_router.get(
+    "/courses/{course_id}/modules/{module_id}/team-status", response_model=TeamModuleStatus
+)
+async def team_module_status(
+    course_id: str,
+    module_id: str,
+    db: AsyncSession = Depends(get_db),
+    user: AuthUser = Depends(require_user),
+) -> TeamModuleStatus:
+    """The requesting student's team's completion of a module (powers the team panel)."""
+    member = await _require_member(db, course_id, user)
+
+    if not member.team_id:
+        # Solo / unassigned: report just the student's own status.
+        own = (
+            await db.execute(
+                select(ModuleCompletion).where(
+                    ModuleCompletion.module_id == module_id,
+                    ModuleCompletion.enrollment_id == member.id,
+                )
+            )
+        ).scalar_one_or_none()
+        done = own is not None and own.completed_at is not None
+        return TeamModuleStatus(
+            module_id=module_id,
+            team_id=None,
+            team_name=None,
+            total=1,
+            submitted=1 if done else 0,
+            members=[
+                TeamMemberStatus(
+                    enrollment_id=member.id,
+                    name=member.name,
+                    is_me=True,
+                    completed=done,
+                    completed_at=own.completed_at if own else None,
+                )
+            ],
+        )
+
+    team = (
+        await db.execute(select(Team).where(Team.id == member.team_id))
+    ).scalar_one_or_none()
+    members = (
+        await db.execute(
+            select(Enrollment)
+            .where(Enrollment.team_id == member.team_id, Enrollment.status == "active")
+            .order_by(Enrollment.name)
+        )
+    ).scalars().all()
+
+    completions = {
+        c.enrollment_id: c
+        for c in (
+            await db.execute(
+                select(ModuleCompletion).where(
+                    ModuleCompletion.module_id == module_id,
+                    ModuleCompletion.enrollment_id.in_([m.id for m in members]),
+                )
+            )
+        ).scalars().all()
+    }
+
+    member_statuses = []
+    submitted = 0
+    for m in members:
+        c = completions.get(m.id)
+        done = c is not None and c.completed_at is not None
+        if done:
+            submitted += 1
+        member_statuses.append(
+            TeamMemberStatus(
+                enrollment_id=m.id,
+                name=m.name,
+                is_me=(m.id == member.id),
+                completed=done,
+                completed_at=c.completed_at if c else None,
+            )
+        )
+
+    return TeamModuleStatus(
+        module_id=module_id,
+        team_id=team.id if team else member.team_id,
+        team_name=team.name if team else None,
+        total=len(members),
+        submitted=submitted,
+        members=member_statuses,
+    )
 
 
 @classroom_router.get(

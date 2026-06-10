@@ -921,3 +921,112 @@ export interface BatchDeployResponse {
   total_items: number
   factors_created: number
 }
+
+// ---------------------------------------------------------------------------
+// Classroom (instructor/student course layer)
+// ---------------------------------------------------------------------------
+
+export interface ClassroomCourse {
+  id: string
+  code: string
+  title: string
+  term: string | null
+  section: string | null
+  project_title: string | null
+  join_code: string
+  status: string
+  created_at: string
+  my_role: "instructor" | "ta" | "student" | null
+  member_count?: number | null
+  team_count?: number | null
+  module_count?: number | null
+}
+
+export interface ClassroomTemplate {
+  key: string
+  name: string
+  description: string
+  topics: string[]
+}
+
+export interface ClassroomTeamMember {
+  id: string
+  user_id: string | null
+  name: string | null
+  email: string | null
+  role: string
+}
+
+export interface ClassroomTeam {
+  id: string
+  course_id: string
+  name: string
+  created_at: string
+  members: ClassroomTeamMember[]
+}
+
+export interface ClassroomEnrollment {
+  id: string
+  course_id: string
+  user_id: string | null
+  name: string | null
+  email: string | null
+  role: "instructor" | "ta" | "student"
+  team_id: string | null
+  status: string
+  created_at: string
+}
+
+export interface ClassroomModule {
+  id: string
+  course_id: string
+  week_no: number | null
+  topic: string
+  title: string | null
+  instrument_id: string | null
+  survey_id: string | null
+  reading_ref: string | null
+  concept_json: string | null
+  prompts_json: string | null
+  due_date: string | null
+  order_index: number
+  status: string
+  completed: boolean | null
+}
+
+export interface ClassroomMyEnrollment {
+  enrollment: ClassroomEnrollment
+  team: ClassroomTeam | null
+  course: ClassroomCourse
+}
+
+export interface ClassroomTeamMemberStatus {
+  enrollment_id: string
+  name: string | null
+  is_me: boolean
+  completed: boolean
+  completed_at: string | null
+}
+
+export interface ClassroomTeamModuleStatus {
+  module_id: string
+  team_id: string | null
+  team_name: string | null
+  total: number
+  submitted: number
+  members: ClassroomTeamMemberStatus[]
+}
+
+// Parsed shapes of the module's concept_json / prompts_json
+export interface ModuleConcept {
+  definition?: string
+  why_it_matters?: string
+  reading?: string
+  lenses?: string[]
+  key_terms?: string[]
+}
+
+export interface ModulePrompts {
+  guiding_questions?: string[]
+  concept_options?: string[]
+}

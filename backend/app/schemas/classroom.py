@@ -19,6 +19,19 @@ class CourseCreate(BaseModel):
     term: Optional[str] = Field(None, max_length=100, examples=["Fall 2026"])
     section: Optional[str] = Field(None, max_length=50, examples=["002"])
     project_title: Optional[str] = Field(None, max_length=255)
+    # Optional starter pack of weekly modules (e.g. "psy272-modern-workplace").
+    template: Optional[str] = Field(None, max_length=64)
+
+
+class TemplateOut(BaseModel):
+    key: str
+    name: str
+    description: str
+    topics: list[str]
+
+
+class ApplyTemplateRequest(BaseModel):
+    template: str = Field(..., max_length=64)
 
 
 class CourseOut(BaseModel):
@@ -148,3 +161,22 @@ class MyEnrollmentOut(BaseModel):
     enrollment: EnrollmentOut
     team: Optional[TeamOut] = None
     course: CourseOut
+
+
+class TeamMemberStatus(BaseModel):
+    enrollment_id: str
+    name: Optional[str] = None
+    is_me: bool = False
+    completed: bool = False
+    completed_at: Optional[datetime] = None
+
+
+class TeamModuleStatus(BaseModel):
+    """A student's team's completion of one module — powers the dashboard team panel."""
+
+    module_id: str
+    team_id: Optional[str] = None
+    team_name: Optional[str] = None
+    total: int
+    submitted: int
+    members: list[TeamMemberStatus] = []

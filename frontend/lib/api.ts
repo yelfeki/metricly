@@ -872,3 +872,68 @@ export async function importSurveyFile(file: File): Promise<ImportResult> {
   }
   return res.json()
 }
+
+// ---------------------------------------------------------------------------
+// Classroom (instructor/student course layer)
+// ---------------------------------------------------------------------------
+
+import type {
+  ClassroomCourse,
+  ClassroomEnrollment,
+  ClassroomModule,
+  ClassroomMyEnrollment,
+  ClassroomTeam,
+  ClassroomTeamModuleStatus,
+  ClassroomTemplate,
+} from "./types"
+
+const CL = "/api/v1/classroom"
+
+export const listMyCourses = (): Promise<ClassroomCourse[]> => get(`${CL}/courses`)
+
+export const getCourse = (courseId: string): Promise<ClassroomCourse> =>
+  get(`${CL}/courses/${courseId}`)
+
+export const createCourse = (body: {
+  code: string
+  title: string
+  term?: string | null
+  section?: string | null
+  project_title?: string | null
+  template?: string | null
+}): Promise<ClassroomCourse> => post(`${CL}/courses`, body)
+
+export const joinCourse = (join_code: string, name?: string): Promise<ClassroomCourse> =>
+  post(`${CL}/courses/join`, { join_code, name })
+
+export const getCourseTemplates = (): Promise<ClassroomTemplate[]> => get(`${CL}/templates`)
+
+export const getMyEnrollment = (courseId: string): Promise<ClassroomMyEnrollment> =>
+  get(`${CL}/courses/${courseId}/me`)
+
+export const listCourseModules = (courseId: string): Promise<ClassroomModule[]> =>
+  get(`${CL}/courses/${courseId}/modules`)
+
+export const completeCourseModule = (
+  courseId: string,
+  moduleId: string,
+  surveyResponseId?: string
+): Promise<ClassroomModule> =>
+  post(
+    `${CL}/courses/${courseId}/modules/${moduleId}/complete${
+      surveyResponseId ? `?survey_response_id=${encodeURIComponent(surveyResponseId)}` : ""
+    }`,
+    {}
+  )
+
+export const getTeamModuleStatus = (
+  courseId: string,
+  moduleId: string
+): Promise<ClassroomTeamModuleStatus> =>
+  get(`${CL}/courses/${courseId}/modules/${moduleId}/team-status`)
+
+export const getCourseRoster = (courseId: string): Promise<ClassroomEnrollment[]> =>
+  get(`${CL}/courses/${courseId}/roster`)
+
+export const listCourseTeams = (courseId: string): Promise<ClassroomTeam[]> =>
+  get(`${CL}/courses/${courseId}/teams`)

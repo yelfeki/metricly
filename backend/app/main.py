@@ -16,6 +16,7 @@ from .api.library import library_router
 from .api.reports import reports_router
 from .api.skills_explorer import skills_explorer_router
 from .api.competencies import competencies_router
+from .api.classroom import classroom_router
 from .core.auth import _fetch_jwks
 from .core.database import AsyncSessionLocal, Base, engine, run_migrations
 from .models import survey as _survey_models  # noqa: F401 — registers ORM metadata
@@ -23,6 +24,7 @@ from .models import framework as _framework_models  # noqa: F401 — registers O
 from .models import library as _library_models  # noqa: F401 — registers ORM metadata
 from .models import report as _report_models  # noqa: F401 — registers ORM metadata
 from .models import competency as _competency_models  # noqa: F401 — registers ORM metadata
+from .models import classroom as _classroom_models  # noqa: F401 — registers ORM metadata
 from .services.library_seed import seed_library
 from .services.competency_seed import (
     seed_competency_frameworks,
@@ -103,6 +105,7 @@ app.include_router(library_router, prefix="/api/v1")
 app.include_router(reports_router, prefix="/api/v1")
 app.include_router(skills_explorer_router, prefix="/api/v1")
 app.include_router(competencies_router, prefix="/api/v1")
+app.include_router(classroom_router, prefix="/api/v1")
 
 
 @app.get("/health")

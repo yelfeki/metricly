@@ -336,6 +336,71 @@ async def run_migrations() -> None:
         "ALTER TABLE competency_definitions ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'active'",
         "CREATE INDEX IF NOT EXISTS ix_competency_definitions_organization_id ON competency_definitions (organization_id)",
         "ALTER TABLE competency_proficiency_levels ADD COLUMN IF NOT EXISTS descriptor TEXT",
+        # v2.0 — classroom layer (courses, teams, enrollments, modules, completions)
+        """CREATE TABLE IF NOT EXISTS courses (
+            id VARCHAR(36) PRIMARY KEY,
+            instructor_user_id VARCHAR(36) NOT NULL,
+            code VARCHAR(50) NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            term VARCHAR(100),
+            section VARCHAR(50),
+            project_title VARCHAR(255),
+            join_code VARCHAR(12) NOT NULL UNIQUE,
+            status VARCHAR(20) NOT NULL DEFAULT 'active',
+            created_at TIMESTAMP WITH TIME ZONE NOT NULL
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_courses_instructor_user_id ON courses (instructor_user_id)",
+        "CREATE INDEX IF NOT EXISTS ix_courses_join_code ON courses (join_code)",
+        """CREATE TABLE IF NOT EXISTS teams (
+            id VARCHAR(36) PRIMARY KEY,
+            course_id VARCHAR(36) NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+            name VARCHAR(255) NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE NOT NULL
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_teams_course_id ON teams (course_id)",
+        """CREATE TABLE IF NOT EXISTS enrollments (
+            id VARCHAR(36) PRIMARY KEY,
+            course_id VARCHAR(36) NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+            user_id VARCHAR(36),
+            email VARCHAR(255),
+            name VARCHAR(255),
+            role VARCHAR(20) NOT NULL DEFAULT 'student',
+            team_id VARCHAR(36) REFERENCES teams(id) ON DELETE SET NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'active',
+            created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+            CONSTRAINT uq_enrollment_course_user UNIQUE (course_id, user_id)
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_enrollments_course_id ON enrollments (course_id)",
+        "CREATE INDEX IF NOT EXISTS ix_enrollments_user_id ON enrollments (user_id)",
+        "CREATE INDEX IF NOT EXISTS ix_enrollments_email ON enrollments (email)",
+        "CREATE INDEX IF NOT EXISTS ix_enrollments_team_id ON enrollments (team_id)",
+        """CREATE TABLE IF NOT EXISTS course_modules (
+            id VARCHAR(36) PRIMARY KEY,
+            course_id VARCHAR(36) NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+            week_no INTEGER,
+            topic VARCHAR(255) NOT NULL,
+            title VARCHAR(255),
+            instrument_id VARCHAR(36) REFERENCES instruments(id) ON DELETE SET NULL,
+            survey_id VARCHAR(36) REFERENCES surveys(id) ON DELETE SET NULL,
+            reading_ref VARCHAR(255),
+            concept_json TEXT,
+            prompts_json TEXT,
+            due_date DATE,
+            order_index INTEGER NOT NULL DEFAULT 0,
+            status VARCHAR(20) NOT NULL DEFAULT 'scheduled',
+            created_at TIMESTAMP WITH TIME ZONE NOT NULL
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_course_modules_course_id ON course_modules (course_id)",
+        """CREATE TABLE IF NOT EXISTS module_completions (
+            id VARCHAR(36) PRIMARY KEY,
+            module_id VARCHAR(36) NOT NULL REFERENCES course_modules(id) ON DELETE CASCADE,
+            enrollment_id VARCHAR(36) NOT NULL REFERENCES enrollments(id) ON DELETE CASCADE,
+            survey_response_id VARCHAR(36) REFERENCES responses(id) ON DELETE SET NULL,
+            completed_at TIMESTAMP WITH TIME ZONE,
+            CONSTRAINT uq_completion_module_enrollment UNIQUE (module_id, enrollment_id)
+        )""",
+        "CREATE INDEX IF NOT EXISTS ix_module_completions_module_id ON module_completions (module_id)",
+        "CREATE INDEX IF NOT EXISTS ix_module_completions_enrollment_id ON module_completions (enrollment_id)",
     ]
     for stmt in migrations:
         try:
